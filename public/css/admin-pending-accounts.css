@@ -1,0 +1,153 @@
+/* Modal Background */
+.custom-modal {
+    display: none; 
+    position: fixed; 
+    z-index: 9999; 
+    left: 0;
+    top: 0;
+    width: 100%; 
+    height: 100%; 
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6); 
+    transition: all 0.3s ease;
+}
+
+/* Modal Box */
+.modal-content {
+    background-color: #fff;
+    margin: 5% auto; 
+    padding: 0;
+    border-radius: 10px;
+    width: 450px;
+    max-width: 90%;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    animation: slideDown 0.4s ease;
+    position: relative;
+}
+
+/* Header */
+.modal-header {
+    background: #3490dc;
+    color: #fff;
+    padding: 15px 20px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+/* Body */
+.modal-body {
+    padding: 20px;
+    font-size: 14px;
+    color: #333;
+}
+
+/* Footer */
+.modal-footer {
+    padding: 15px 20px;
+    text-align: right;
+    border-top: 1px solid #eee;
+}
+
+/* Close Icon */
+.close {
+    color: #fff;
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    font-size: 26px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #ddd;
+}
+
+/* Buttons */
+.btn-view {
+    background-color: #3490dc;
+    color: #fff;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-view:hover {
+    background-color: #2779bd;
+}
+
+.btn-approve {
+    background-color: #38c172;
+    color: #fff;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-approve:hover {
+    background-color: #2f9e5d;
+}
+
+.btn-reject {
+    background-color: #e3342f;
+    color: #fff;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-reject:hover {
+    background-color: #cc1f1a;
+}
+
+.btn-close-footer {
+    background-color: #6c757d;
+    color: #fff;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-close-footer:hover {
+    background-color: #5a6268;
+}
+
+/* Avatar */
+.user-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.avatar img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #3490dc;
+}
+
+/* Slide Animation */
+@keyframes slideDown {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Responsive */
+@media (max-width: 500px) {
+    .modal-content {
+        width: 95%;
+    }
+    .user-info {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .details p {
+        margin: 5px 0;
+    }
+}
