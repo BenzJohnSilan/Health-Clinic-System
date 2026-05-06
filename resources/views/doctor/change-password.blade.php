@@ -1,4 +1,4 @@
-@extends('layouts.patient')
+@extends('layouts.doctor')
 
 @section('head')
 <link rel="stylesheet" href="{{ asset('css/change-password.css') }}">
@@ -32,7 +32,7 @@
     <div class="profile-card">
 
         <!-- Change Password Form -->
-        <form id="changePasswordForm" action="{{ route('patient.change-password.update') }}" method="POST" class="profile-form">
+        <form id="changePasswordForm" action="{{ route('doctor.change-password.update') }}" method="POST" class="profile-form">
             @csrf
 
             <div class="form-grid">

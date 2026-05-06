@@ -88,7 +88,6 @@
                 <label for="appointment_time">Time Slot</label>
                 <select name="appointment_time" id="appointment_time" required>
                     <option value="">-- Select Time Slot --</option>
-
                     <option value="09:00" {{ old('appointment_time') == '09:00' ? 'selected' : '' }}>9:00 AM - 9:30 AM</option>
                     <option value="09:30" {{ old('appointment_time') == '09:30' ? 'selected' : '' }}>9:30 AM - 10:00 AM</option>
                     <option value="10:00" {{ old('appointment_time') == '10:00' ? 'selected' : '' }}>10:00 AM - 10:30 AM</option>
@@ -109,15 +108,26 @@
 
             <!-- Doctor -->
             <div class="form-group">
-                <label for="doctor_id">Select Doctor</label>
-                <select name="doctor_id" id="doctor_id" required>
-                    <option value="">-- Choose Doctor --</option>
-                    @foreach($doctors as $doctor)
-                        <option value="{{ $doctor->id }}" {{ old('doctor_id') == $doctor->id ? 'selected' : '' }}>
-                            {{ $doctor->first_name }} {{ $doctor->last_name }}
-                        </option>
-                    @endforeach
-                </select>
+                <label for="doctor_id">Doctor</label>
+
+                @if($doctors->count() === 1)
+                    {{-- Only one doctor: show as read-only text, hidden input for submission --}}
+                    <input type="text"
+                           value="{{ $doctors->first()->first_name }} {{ $doctors->first()->last_name }}"
+                           disabled
+                           style="background-color: #f0f0f0; cursor: not-allowed; width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px;">
+                    <input type="hidden" name="doctor_id" id="doctor_id" value="{{ $doctors->first()->id }}">
+                @else
+                    {{-- Multiple doctors: show dropdown --}}
+                    <select name="doctor_id" id="doctor_id" required>
+                        <option value="">-- Choose Doctor --</option>
+                        @foreach($doctors as $doctor)
+                            <option value="{{ $doctor->id }}" {{ old('doctor_id') == $doctor->id ? 'selected' : '' }}>
+                                {{ $doctor->first_name }} {{ $doctor->last_name }}
+                            </option>
+                        @endforeach
+                    </select>
+                @endif
             </div>
 
             <!-- Reason -->
@@ -145,38 +155,44 @@
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 
 <!-- ================= JAVASCRIPT ================= -->
+@php
+    $bookedSlotsJson = $bookedSlots->map(fn($s) => [
+        'doctor_id'        => $s->doctor_id,
+        'appointment_date' => \Carbon\Carbon::parse($s->appointment_date)->format('Y-m-d'),
+        'appointment_time' => substr($s->appointment_time, 0, 5),
+    ])->values()->toArray();
+@endphp
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+
+    // ===== BOOKED SLOTS FROM SERVER =====
+    const bookedSlots = @json($bookedSlotsJson);
 
     // ===== REALTIME CLOCK =====
     const datetimeElement = document.getElementById('datetime');
     function updateDateTime() {
         const now = new Date();
         const options = {
-            weekday:'long',
-            year:'numeric',
-            month:'long',
-            day:'numeric',
-            hour:'2-digit',
-            minute:'2-digit',
-            second:'2-digit'
+            weekday:'long', year:'numeric', month:'long',
+            day:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit'
         };
         datetimeElement.textContent = now.toLocaleString('en-US', options);
     }
     updateDateTime();
-    setInterval(updateDateTime,1000);
+    setInterval(updateDateTime, 1000);
 
     // ===== CALENDAR =====
     const calendarEl = document.getElementById('calendar');
-    const calendar = new FullCalendar.Calendar(calendarEl,{
-        initialView:'dayGridMonth',
-        height:720,
-        headerToolbar:{
-            left:'prev,next today',
-            center:'title',
-            right:'dayGridMonth,timeGridWeek,timeGridDay'
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        height: "auto",
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
-        events:[
+        events: [
             @foreach($upcomingAppointments as $appointment)
                 @php
                     $start = \Carbon\Carbon::parse($appointment->appointment_date)->setTimeFromTimeString($appointment->appointment_time);
@@ -192,74 +208,106 @@ document.addEventListener('DOMContentLoaded', function () {
         ],
         displayEventTime: true,
         eventTimeFormat: { hour: '2-digit', minute: '2-digit', meridiem: 'short' },
-
         eventContent: function(arg) {
             return {
                 html: `<div style="line-height:1.2;">
                         <strong>${arg.event.title}</strong><br>
-                        <small>${arg.event.start.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - ${arg.event.end.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</small>
+                        <small>${arg.event.start.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} -
+                        ${arg.event.end.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</small>
                        </div>`
             };
         },
-
-        eventDidMount: function(info){
+        eventDidMount: function(info) {
             const now = new Date();
-            if(info.event.end < now){
-                info.el.classList.add('past-event'); // gray for past
+            if (info.event.end < now) {
+                info.el.classList.add('past-event');
             }
         }
     });
     calendar.render();
 
     // ===== MODAL LOGIC =====
-    const modal = document.getElementById('appointmentModal');
-    const openModalBtn = document.getElementById('openModalBtn');
-    const closeModalBtn = document.getElementById('closeModalBtn');
+    const modal          = document.getElementById('appointmentModal');
+    const openModalBtn   = document.getElementById('openModalBtn');
+    const closeModalBtn  = document.getElementById('closeModalBtn');
     const cancelModalBtn = document.getElementById('cancelModalBtn');
 
     openModalBtn.addEventListener('click', () => {
         modal.style.display = 'block';
         setDefaultDate();
-        disablePastTimes();
+        updateTimeSlots();
     });
 
-    closeModalBtn.onclick = () => modal.style.display='none';
-    cancelModalBtn.onclick = () => modal.style.display='none';
-    window.onclick = (e)=>{ if(e.target===modal){ modal.style.display='none'; }};
+    closeModalBtn.onclick  = () => modal.style.display = 'none';
+    cancelModalBtn.onclick = () => modal.style.display = 'none';
+    window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
 
-    function setDefaultDate(){
+    function setDefaultDate() {
         const dateInput = document.getElementById('appointment_date');
         const today = new Date();
         dateInput.value = today.toISOString().split('T')[0];
     }
 
-    // ===== DISABLE LUNCH + PAST TIMES =====
-    const dateInput = document.getElementById('appointment_date');
-    dateInput.addEventListener('change', disablePastTimes);
-    function disablePastTimes(){
-        const selectedDate = document.getElementById('appointment_date').value;
-        const today = new Date().toISOString().split('T')[0];
-        const now = new Date();
-        const currentMinutes = now.getHours()*60 + now.getMinutes();
+    // ===== UNIFIED TIME SLOT UPDATER =====
+    const dateInput   = document.getElementById('appointment_date');
+    const doctorInput = document.getElementById('doctor_id');
 
-        const options = document.querySelectorAll('#appointment_time option');
-        options.forEach(option=>{
-            if(!option.value) return;
+    dateInput.addEventListener('change', updateTimeSlots);
 
-            const timeParts = option.value.split(':');
-            const optionMinutes = parseInt(timeParts[0])*60 + parseInt(timeParts[1]);
+    // Only add change listener if it's a <select> (multiple doctors)
+    if (doctorInput && doctorInput.tagName === 'SELECT') {
+        doctorInput.addEventListener('change', updateTimeSlots);
+    }
 
-            // disable lunch
-            if(option.dataset.lunch){
+    function updateTimeSlots() {
+        const selectedDate   = dateInput.value;
+        const selectedDoctor = doctorInput ? doctorInput.value : '';
+        const today          = new Date().toISOString().split('T')[0];
+        const now            = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+        const timeOptions = document.querySelectorAll('#appointment_time option');
+
+        timeOptions.forEach(option => {
+            if (!option.value) return;
+
+            const [h, m]        = option.value.split(':').map(Number);
+            const optionMinutes = h * 60 + m;
+            const timeKey       = option.value;
+
+            // Store original label once
+            if (!option.getAttribute('data-base-text')) {
+                option.setAttribute('data-base-text', option.textContent);
+            }
+            const baseText = option.getAttribute('data-base-text');
+
+            // 1) Always disable lunch break
+            if (option.dataset.lunch) {
                 option.disabled = true;
+                option.textContent = baseText;
                 return;
             }
 
-            // disable past times if today
-            if(selectedDate === today){
-                option.disabled = optionMinutes <= currentMinutes;
-            }else{
+            // 2) Disable past times if today is selected
+            if (selectedDate === today && optionMinutes <= currentMinutes) {
+                option.disabled = true;
+                option.textContent = baseText + ' (Unavailable)';
+                return;
+            }
+
+            // 3) Disable booked slots for selected doctor + date
+            const isBooked = selectedDoctor && selectedDate && bookedSlots.some(slot =>
+                String(slot.doctor_id)  === String(selectedDoctor) &&
+                slot.appointment_date   === selectedDate &&
+                slot.appointment_time   === timeKey
+            );
+
+            if (isBooked) {
+                option.disabled = true;
+                option.textContent = baseText + ' - Booked';
+            } else {
                 option.disabled = false;
+                option.textContent = baseText;
             }
         });
     }
@@ -269,6 +317,8 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.style.display = 'block';
     @endif
 
+    // ===== RUN ONCE ON LOAD =====
+    updateTimeSlots();
 });
 </script>
 

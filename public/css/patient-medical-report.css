@@ -1,0 +1,143 @@
+/* ================= RESET ================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+body {
+    background: #f4f6f8;
+    color: #333;
+}
+
+/* ================= PAGE HEADER ================= */
+.page-header {
+    margin-bottom: 25px;
+}
+
+.page-header h2 {
+    font-size: 28px;
+    font-weight: 600;
+    color: #111827;
+}
+
+/* ================= TABLE WRAPPER ================= */
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+/* ================= TABLE ================= */
+.medical-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+}
+
+/* HEADER */
+.medical-table th {
+    background-color: #6a0dad;
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 13px 16px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+/* BODY */
+.medical-table td {
+    padding: 13px 16px;
+    font-size: 14px;
+    color: #374151;
+    border-bottom: 1px solid #f0e6ff;
+    vertical-align: middle;
+}
+
+/* ZEBRA ROWS */
+.medical-table tbody tr:nth-child(even) td {
+    background-color: #f9f5ff;
+}
+
+.medical-table tbody tr:nth-child(odd) td {
+    background-color: #ffffff;
+}
+
+/* HOVER EFFECT */
+.medical-table tbody tr:hover td {
+    background-color: #ede9f7;
+    transition: background-color 0.2s ease;
+}
+
+/* ================= STATUS ================= */
+.status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.78rem;
+    color: #fff;
+    text-transform: capitalize;
+}
+
+/* Status colors (same as appointments) */
+.status.pending      { background-color: #f59e0b; }
+.status.approved     { background-color: #10b981; }
+.status.rejected     { background-color: #ef4444; }
+.status.rescheduled  { background-color: #3b82f6; }
+.status.cancelled    { background-color: #6b7280; }
+.status.completed    { background-color: #8b5cf6; }
+
+/* ================= VIEW BUTTON ================= */
+.btn-view {
+    display: inline-block;
+    padding: 7px 14px;
+    background-color: #6a0dad;
+    color: #fff;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-view:hover {
+    background-color: #560aaf;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(106, 13, 173, 0.3);
+}
+
+/* ================= EMPTY ================= */
+.no-data {
+    text-align: center;
+    font-style: italic;
+    color: #9ca3af;
+    padding: 32px 0 !important;
+    background-color: #fff !important;
+}
+
+/* ================= ALIGNMENT ================= */
+.medical-table td:last-child,
+.medical-table th:last-child {
+    text-align: center;
+}
+
+/* ================= RESPONSIVE ================= */
+@media screen and (max-width: 900px) {
+    .medical-table th,
+    .medical-table td {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .medical-table th,
+    .medical-table td {
+        padding: 9px 10px;
+        font-size: 12px;
+    }
+}

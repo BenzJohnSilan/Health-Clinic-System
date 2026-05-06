@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         // ===================== USERS TABLE =====================
@@ -29,9 +26,31 @@ return new class extends Migration
             $table->string('address');
 
             // ================= CONTACT =================
-            $table->string('contact_number')->unique(); // +639XXXXXXXXX
+            $table->string('contact_number')->unique();
 
-            // ================= LOGIN CREDENTIALS =================
+            // ================= VERIFICATION =================
+            $table->string('id_type')->nullable();
+            $table->string('valid_id')->nullable();
+
+            // ================= REASON =================
+            $table->enum('reason', [
+                'Check-up / Consultation',
+                'Appointment Booking',
+                'Medical Record Access',
+                'Others',
+            ])->nullable();
+
+            // ================= MEDICAL INFORMATION =================
+            $table->string('blood_type')->nullable();
+            $table->text('allergies')->nullable();
+
+            // ================= EMERGENCY CONTACT =================
+            $table->string('emergency_name')->nullable();
+            $table->string('emergency_contact_number')->nullable();
+            $table->string('relationship')->nullable();
+            $table->string('emergency_address')->nullable();
+
+            // ================= LOGIN =================
             $table->string('username')->unique();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
@@ -41,24 +60,11 @@ return new class extends Migration
             $table->enum('role', ['Admin', 'Patient', 'Doctor'])
                   ->default('Patient');
 
-            /*
-            =========================================================
-            ACCOUNT CONTROL SYSTEM
-            Active   = pwede mag login
-            Inactive = disabled ng admin
-            =========================================================
-            */
+            // ================= ACCOUNT STATUS =================
             $table->enum('status', ['Active', 'Inactive'])
                   ->default('Active');
 
-            /*
-            =========================================================
-            APPROVAL SYSTEM
-            Pending  = waiting for admin approval
-            Approved = approved by admin
-            Rejected = denied by admin
-            =========================================================
-            */
+            // ================= APPROVAL =================
             $table->enum('approval_status', ['Pending', 'Approved', 'Rejected'])
                   ->default('Pending');
 
@@ -66,7 +72,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // ===================== PASSWORD RESET TOKENS =====================
+        // ===================== PASSWORD RESET =====================
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->id();
             $table->string('email')->index();
@@ -74,13 +80,15 @@ return new class extends Migration
             $table->timestamp('created_at')->nullable();
         });
 
-        // ===================== SESSIONS TABLE =====================
+        // ===================== SESSIONS =====================
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
+
             $table->foreignId('user_id')
-                  ->nullable()
-                  ->constrained('users')
-                  ->onDelete('cascade');
+                ->nullable()
+                ->constrained('users')
+                ->onDelete('cascade');
+
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
             $table->longText('payload');
@@ -88,9 +96,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('sessions');

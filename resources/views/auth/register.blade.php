@@ -1,331 +1,401 @@
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-    <meta charset="UTF-8">
-    <title>Register</title>
-    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register — ClinicRMS</title>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ asset('css/register.css') }}">
 
-    <style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: "Segoe UI", sans-serif;
-    }
+</head>
 
-    body {
-        background: linear-gradient(to right, #e6ebf5, #f2f4f8);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-    }
+<body>
 
-    /* MAIN WRAPPER */
-    .wrapper {
-        display: flex;
-        width: 950px;
-        height: 520px;
-        background: #f5f7fb;
-        border-radius: 25px;
-        overflow: hidden;
-        box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-    }
+<div class="bg-blob bg-blob-1"></div>
+<div class="bg-blob bg-blob-2"></div>
 
-    /* LEFT SIDE */
-    .left {
-        width: 50%;
-        background: linear-gradient(135deg, #6a11cb, #a044ff);
-        color: white;
+<div class="wrapper">
 
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        padding: 60px 40px;
+    <!-- ===== LEFT ===== -->
+    <div class="left">
+        <div class="left-inner">
+            <div class="left-icon"><i class='bx bx-plus-medical'></i></div>
 
-        border-top-right-radius: 0;
-        border-bottom-right-radius: 140px;
-        position: relative;
-    }
-
-    .left::after {
-        content: "";
-        position: absolute;
-        width: 300px;
-        height: 300px;
-        background: rgba(255,255,255,0.1);
-        border-radius: 50%;
-        top: -60px;
-        right: -60px;
-    }
-
-    .left h1 {
-        font-size: 28px;
-        line-height: 1.4;
-        margin-bottom: 25px;
-    }
-
-    .left h2 {
-        font-size: 25px;
-        margin-bottom: 10px;
-    }
-
-    .left p {
-        font-size: 14px;
-        opacity: 0.9;
-        margin-bottom: 25px;
-    }
-
-    .left button {
-        padding: 12px 35px;
-        border-radius: 30px;
-        border: 2px solid #fff;
-        background: transparent;
-        color: white;
-        font-weight: 500;
-        cursor: pointer;
-        transition: 0.3s;
-    }
-
-    .left button:hover {
-        background: white;
-        color: #6a11cb;
-    }
-
-    /* RIGHT SIDE */
-    .right {
-        width: 50%;
-        padding: 50px 40px;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        overflow-y: auto;
-    }
-
-    /* TITLE */
-    .right h2 {
-        text-align: center;
-        margin-bottom: 20px;
-        font-size: 26px;
-        color: #333;
-    }
-
-    /* ERROR / SUCCESS MESSAGES */
-    .messages {
-        text-align: center;
-        margin-bottom: 15px;
-    }
-
-    .messages .error {
-        color: red;
-        font-size: 13px;
-        margin-bottom: 5px;
-    }
-
-    .messages .success {
-        color: green;
-        font-size: 13px;
-        margin-bottom: 5px;
-    }
-
-    /* INPUT */
-    .input-group {
-        position: relative;
-        margin-bottom: 18px;
-    }
-
-    .input-group input, 
-    .input-group select {
-        width: 100%;
-        padding: 12px 45px 12px 15px;
-        border-radius: 30px;
-        border: none;
-        background: #eef1f6;
-        outline: none;
-        font-size: 14px;
-    }
-
-    .input-group i {
-        position: absolute;
-        left: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #777;
-    }
-
-    .input-group .toggle {
-        left: auto;
-        right: 15px;
-        cursor: pointer;
-    }
-
-    /* SECTION HEADER */
-    .section-header {
-        font-weight: 600;
-        margin: 20px 0 10px 0;
-        color: #6a11cb;
-        font-size: 14px;
-    }
-
-    /* BUTTON */
-    .register-btn {
-        width: 100%;
-        padding: 13px;
-        border-radius: 30px;
-        border: none;
-        background: linear-gradient(135deg, #6a11cb, #a044ff);
-        color: white;
-        font-size: 15px;
-        font-weight: 500;
-        cursor: pointer;
-        margin-top: 15px;
-    }
-
-    /* LINK */
-    .login-link {
-        text-align: center;
-        margin-top: 15px;
-        font-size: 14px;
-        color: #555;
-    }
-
-    /* SCROLLBAR */
-    .right::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    .right::-webkit-scrollbar-thumb {
-        background: #6a11cb;;
-        border-radius: 10px;
-    }
-
-    /* RESPONSIVE */
-    @media (max-width: 768px) {
-        .wrapper {
-            flex-direction: column;
-            height: auto;
-        }
-
-        .left {
-            border-radius: 0;
-        }
-
-        .right {
-            width: 100%;
-            padding: 30px 20px;
-        }
-    }
-    </style>
-    </head>
-
-    <body>
-
-    <div class="wrapper">
-
-        <!-- LEFT -->
-        <div class="left">
             <h1>Health Clinic Record<br>Management System</h1>
-            <h2>Welcome!</h2>
-            <p>Already have an account?</p>
-            <button onclick="window.location.href='{{ route('login') }}'">Login</button>
+            <div class="left-divider"></div>
+
+            <p>Create your account to access<br>clinic services and appointments.</p>
+
+            <ul class="left-steps">
+                <li><i class='bx bx-check'></i> Fill in your personal details</li>
+                <li><i class='bx bx-check'></i> Upload a valid ID for verification</li>
+                <li><i class='bx bx-check'></i> Set your login credentials</li>
+                <li><i class='bx bx-check'></i> Start booking appointments</li>
+            </ul>
+
+            <p style="margin-bottom:14px;">Already have an account?</p>
+            <a href="{{ route('login') }}" class="btn-login">
+                <i class='bx bx-log-in'></i> Login Here
+            </a>
+        </div>
+    </div>
+
+    <!-- ===== RIGHT ===== -->
+    <div class="right">
+
+        <div class="right-header">
+            <h2>Create Account ✨</h2>
+            <p>Fill out the form below to register as a patient.</p>
         </div>
 
-        <!-- RIGHT -->
-        <div class="right">
-            <h2>Create Account</h2>
+        <!-- MESSAGES -->
+        <div class="messages">
+            @if($errors->any())
+                @foreach($errors->all() as $error)
+                    <div class="alert-error"><i class='bx bx-error-circle'></i> {{ $error }}</div>
+                @endforeach
+            @endif
+            @if(session('success'))
+                <div class="alert-success"><i class='bx bx-check-circle'></i> {{ session('success') }}</div>
+            @endif
+        </div>
 
-            <!-- ERROR / SUCCESS MESSAGES -->
-            <div class="messages">
-                @if ($errors->any())
-                    @foreach ($errors->all() as $error)
-                        <div class="error">{{ $error }}</div>
-                    @endforeach
-                @endif
+        <form method="POST" action="{{ route('register.store') }}" enctype="multipart/form-data">
+            @csrf
 
-                @if(session('success'))
-                    <div class="success">{{ session('success') }}</div>
-                @endif
+            <!-- ===== PROFILE PICTURE ===== -->
+            <div class="section-header">
+                <div class="section-header-icon"><i class='bx bxs-camera'></i></div>
+                <span>Profile Picture</span>
             </div>
 
-            <form method="POST" action="{{ route('register.store') }}" enctype="multipart/form-data">
-                @csrf
+            <div class="input-group">
+                <label class="file-label">
+                    <i class='bx bx-image-add'></i>
+                    <span id="avatarLabel">Click to upload profile photo (JPG, PNG)</span>
+                    <input type="file" name="avatar" accept="image/jpg,image/jpeg,image/png"
+                           onchange="document.getElementById('avatarLabel').textContent = this.files[0]?.name || 'Click to upload profile photo'">
+                </label>
+            </div>
 
-                <!-- PROFILE -->
-                <div class="input-group section-header">
-                    Profile Picture
+            <!-- ===== PERSONAL INFORMATION ===== -->
+            <div class="section-header">
+                <div class="section-header-icon"><i class='bx bxs-user-detail'></i></div>
+                <span>Personal Information</span>
+            </div>
+
+            <div class="form-row">
+                <div class="input-group">
+                    <label class="input-label">First Name *</label>
+                    <div class="input-wrap">
+                        <i class='bx bxs-user input-icon'></i>
+                        <input type="text" name="first_name" placeholder="Juan" value="{{ old('first_name') }}" required>
+                    </div>
                 </div>
                 <div class="input-group">
-                    <input type="file" name="avatar">
+                    <label class="input-label">Middle Name</label>
+                    <div class="input-wrap">
+                        <i class='bx bxs-user input-icon'></i>
+                        <input type="text" name="middle_name" placeholder="Santos" value="{{ old('middle_name') }}">
+                    </div>
                 </div>
+            </div>
 
-                <!-- PERSONAL INFO -->
-                <div class="input-group section-header">Personal Info</div>
-                <div class="input-group"><input name="first_name" placeholder="First Name" required></div>
-                <div class="input-group"><input name="middle_name" placeholder="Middle Name"></div>
-                <div class="input-group"><input name="last_name" placeholder="Last Name" required></div>
-                <div class="input-group"><input name="suffix" placeholder="Suffix"></div>
-                <div class="input-group"><input type="date" name="birthdate" id="birthdate" required></div>
-                <div class="input-group"><input type="text" id="agePreview" placeholder="Age" readonly></div>
+            <div class="form-row">
                 <div class="input-group">
-                    <select name="gender" required>
-                        <option value="">Gender</option>
-                        <option>Male</option>
-                        <option>Female</option>
+                    <label class="input-label">Last Name *</label>
+                    <div class="input-wrap">
+                        <i class='bx bxs-user input-icon'></i>
+                        <input type="text" name="last_name" placeholder="dela Cruz" value="{{ old('last_name') }}" required>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Suffix</label>
+                    <div class="input-wrap">
+                        <i class='bx bxs-tag input-icon'></i>
+                        <input type="text" name="suffix" placeholder="Jr., Sr., III" value="{{ old('suffix') }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="input-group">
+                    <label class="input-label">Birthdate *</label>
+                    <div class="input-wrap">
+                        <i class='bx bxs-calendar input-icon'></i>
+                        <input type="date" name="birthdate" id="birthdate" value="{{ old('birthdate') }}" required>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Age</label>
+                    <div class="input-wrap">
+                        <i class='bx bxs-hourglass input-icon'></i>
+                        <input type="text" id="agePreview" placeholder="Auto-filled" readonly
+                               style="background: var(--card-bg); cursor: not-allowed;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="input-group">
+                    <label class="input-label">Gender *</label>
+                    <div class="input-wrap">
+                        <i class='bx bx-male-female input-icon'></i>
+                        <select name="gender" required>
+                            <option value="">-- Select Gender --</option>
+                            <option value="Male"   {{ old('gender')=='Male'   ? 'selected':'' }}>Male</option>
+                            <option value="Female" {{ old('gender')=='Female' ? 'selected':'' }}>Female</option>
+                            <option value="Other"  {{ old('gender')=='Other'  ? 'selected':'' }}>Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Civil Status *</label>
+                    <div class="input-wrap">
+                        <i class='bx bxs-heart input-icon'></i>
+                        <select name="civil_status" required>
+                            <option value="">-- Select Status --</option>
+                            <option value="Single"    {{ old('civil_status')=='Single'    ? 'selected':'' }}>Single</option>
+                            <option value="Married"   {{ old('civil_status')=='Married'   ? 'selected':'' }}>Married</option>
+                            <option value="Widowed"   {{ old('civil_status')=='Widowed'   ? 'selected':'' }}>Widowed</option>
+                            <option value="Separated" {{ old('civil_status')=='Separated' ? 'selected':'' }}>Separated</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Complete Address *</label>
+                <div class="input-wrap">
+                    <i class='bx bxs-map input-icon'></i>
+                    <input type="text" name="address" placeholder="House No., Street, Barangay, City, Province" value="{{ old('address') }}" required>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Contact Number *</label>
+                <div class="input-wrap">
+                    <i class='bx bxs-phone input-icon'></i>
+                    <input type="tel" name="contact_number" id="contact_number"
+                        placeholder="09XXXXXXXXX" maxlength="11" required>
+                </div>
+            </div>
+
+            <!-- ===== VERIFICATION INFORMATION ===== -->
+            <div class="section-header">
+                <div class="section-header-icon"><i class='bx bxs-id-card'></i></div>
+                <span>Verification Information</span>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">ID Type *</label>
+                <div class="input-wrap">
+                    <i class='bx bxs-credit-card input-icon'></i>
+                    <select name="id_type" required>
+                        <option value="">-- Select ID Type --</option>
+                        <option value="PhilHealth"        {{ old('id_type')=='PhilHealth'        ? 'selected':'' }}>PhilHealth</option>
+                        <option value="Driver's License"  {{ old('id_type')=="Driver's License"  ? 'selected':'' }}>Driver's License</option>
+                        <option value="Passport"          {{ old('id_type')=='Passport'          ? 'selected':'' }}>Passport</option>
+                        <option value="SSS"               {{ old('id_type')=='SSS'               ? 'selected':'' }}>SSS</option>
+                        <option value="UMID"              {{ old('id_type')=='UMID'              ? 'selected':'' }}>UMID</option>
+                        <option value="Voter's ID"        {{ old('id_type')=="Voter's ID"        ? 'selected':'' }}>Voter's ID</option>
                     </select>
                 </div>
-                <div class="input-group">
-                    <select name="civil_status" required>
-                        <option value="">Civil Status</option>
-                        <option>Single</option>
-                        <option>Married</option>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Upload Valid ID *</label>
+                <label class="file-label">
+                    <i class='bx bx-upload'></i>
+                    <span id="idLabel">Click to upload your valid ID (JPG, PNG)</span>
+                    <input type="file" name="valid_id" accept="image/jpg,image/jpeg,image/png" required
+                           onchange="document.getElementById('idLabel').textContent = this.files[0]?.name || 'Click to upload your valid ID'">
+                </label>
+            </div>
+
+            <!-- ===== REASON FOR REGISTRATION ===== -->
+            <div class="section-header">
+                <div class="section-header-icon"><i class='bx bxs-notepad'></i></div>
+                <span>Reason for Registration</span>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Purpose *</label>
+                <div class="input-wrap">
+                    <i class='bx bxs-info-circle input-icon'></i>
+                    <select name="reason" required>
+                        <option value="">-- Select Reason --</option>
+                        <option value="Check-up / Consultation" {{ old('reason')=='Check-up / Consultation' ? 'selected':'' }}>Check-up / Consultation</option>
+                        <option value="Appointment Booking"     {{ old('reason')=='Appointment Booking'     ? 'selected':'' }}>Appointment Booking</option>
+                        <option value="Medical Record Access"   {{ old('reason')=='Medical Record Access'   ? 'selected':'' }}>Medical Record Access</option>
+                        <option value="Others"                  {{ old('reason')=='Others'                  ? 'selected':'' }}>Others</option>
                     </select>
                 </div>
-                <div class="input-group"><input name="address" placeholder="Address" required></div>
-                <div class="input-group"><input name="contact_number" placeholder="Contact Number" required></div>
+            </div>
 
-                <!-- LOGIN INFO -->
-                <div class="input-group section-header">Login Info</div>
-                <div class="input-group"><input name="username" placeholder="Username" required></div>
-                <div class="input-group"><input type="email" name="email" placeholder="Email" required></div>
-                <div class="input-group">
-                    <input type="password" id="password" name="password" placeholder="Password" required>
-                    <i class='bx bxs-show toggle' id="togglePassword"></i>
+            <!-- ===== MEDICAL INFORMATION ===== -->
+            <div class="section-header">
+                <div class="section-header-icon"><i class='bx bxs-heart-circle'></i></div>
+                <span>Medical Information</span>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Blood Type *</label>
+                <div class="input-wrap">
+                    <i class='bx bx-droplet input-icon'></i>
+                    <select name="blood_type" required>
+                        <option value="">-- Select Blood Type --</option>
+                        <option value="Unknown" {{ old('blood_type')=='Unknown' ? 'selected':'' }}>Unknown / Not Sure</option>
+                        <option value="A+"  {{ old('blood_type')=='A+'  ? 'selected':'' }}>A+</option>
+                        <option value="A-"  {{ old('blood_type')=='A-'  ? 'selected':'' }}>A-</option>
+                        <option value="B+"  {{ old('blood_type')=='B+'  ? 'selected':'' }}>B+</option>
+                        <option value="B-"  {{ old('blood_type')=='B-'  ? 'selected':'' }}>B-</option>
+                        <option value="AB+" {{ old('blood_type')=='AB+' ? 'selected':'' }}>AB+</option>
+                        <option value="AB-" {{ old('blood_type')=='AB-' ? 'selected':'' }}>AB-</option>
+                        <option value="O+"  {{ old('blood_type')=='O+'  ? 'selected':'' }}>O+</option>
+                        <option value="O-"  {{ old('blood_type')=='O-'  ? 'selected':'' }}>O-</option>
+                    </select>
                 </div>
-                <div class="input-group"><input type="password" name="password_confirmation" placeholder="Confirm Password" required></div>
+            </div>
 
-                <button type="submit" class="register-btn">Register</button>
-            </form>
+            <div class="input-group">
+                <label class="input-label">Known Allergies</label>
+                <div class="input-wrap textarea-wrap">
+                    <i class='bx bxs-virus input-icon'></i>
+                    <textarea name="allergies" placeholder="List any existing allergies (e.g. Penicillin, Shellfish, Dust)">{{ old('allergies') }}</textarea>
+                </div>
+            </div>
+
+            <!-- ===== EMERGENCY CONTACT ===== -->
+            <div class="section-header">
+                <div class="section-header-icon"><i class='bx bxs-phone-call'></i></div>
+                <span>Emergency Contact Information</span>
+            </div>
+
+            <div class="form-row">
+                <div class="input-group">
+                    <label class="input-label">Full Name *</label>
+                    <div class="input-wrap">
+                        <i class='bx bxs-user input-icon'></i>
+                        <input type="text" name="emergency_name" placeholder="Full name" value="{{ old('emergency_name') }}" required>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Relationship *</label>
+                    <div class="input-wrap">
+                        <i class='bx bxs-group input-icon'></i>
+                        <input type="text" name="relationship" placeholder="e.g. Parent, Spouse" value="{{ old('relationship') }}" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="input-group">
+                    <label class="input-label">Contact Number *</label>
+                    <div class="input-wrap">
+                        <i class='bx bxs-phone input-icon'></i>
+                        <input type="tel" name="emergency_contact_number"
+                            placeholder="09XXXXXXXXX" maxlength="11"
+                            value="{{ old('emergency_contact_number') }}" required>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Address *</label>
+                    <div class="input-wrap">
+                        <i class='bx bxs-map input-icon'></i>
+                        <input type="text" name="emergency_address" placeholder="Complete address" value="{{ old('emergency_address') }}" required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== LOGIN INFORMATION ===== -->
+            <div class="section-header">
+                <div class="section-header-icon"><i class='bx bxs-lock-alt'></i></div>
+                <span>Login Information</span>
+            </div>
+
+            <div class="form-row">
+                <div class="input-group">
+                    <label class="input-label">Username *</label>
+                    <div class="input-wrap">
+                        <i class='bx bxs-user-circle input-icon'></i>
+                        <input type="text" name="username" placeholder="Choose a username" value="{{ old('username') }}" required>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Email Address *</label>
+                    <div class="input-wrap">
+                        <i class='bx bxs-envelope input-icon'></i>
+                        <input type="email" name="email" placeholder="your@email.com" value="{{ old('email') }}" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="input-group">
+                    <label class="input-label">Password *</label>
+                    <div class="input-wrap">
+                        <i class='bx bxs-lock-alt input-icon'></i>
+                        <input type="password" id="password" name="password" placeholder="Min. 6 characters" required>
+                        <i class='bx bxs-show input-toggle' id="togglePassword"></i>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Confirm Password *</label>
+                    <div class="input-wrap">
+                        <i class='bx bxs-lock input-icon'></i>
+                        <input type="password" name="password_confirmation" placeholder="Re-enter password" required>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="register-btn">
+                <i class='bx bx-user-plus'></i> Create Account
+            </button>
+        </form>
+
+        <div class="login-link">
+            Already have an account? <a href="{{ route('login') }}">Login here</a>
         </div>
 
     </div>
+</div>
 
-    <script>
-    // Calculate age
-    const birthdateInput = document.getElementById('birthdate');
-    const agePreview = document.getElementById('agePreview');
-    birthdateInput.addEventListener('change', function () {
-        const birthdate = new Date(this.value);
-        const today = new Date();
-        let age = today.getFullYear() - birthdate.getFullYear();
-        const m = today.getMonth() - birthdate.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < birthdate.getDate())) {
-            age--;
-        }
-        agePreview.value = age;
-    });
+<script>
+// Age auto-fill
+const birthdateInput = document.getElementById('birthdate');
+const agePreview     = document.getElementById('agePreview');
 
-    // Toggle password show/hide
-    const toggle = document.getElementById('togglePassword');
-    const password = document.getElementById('password');
-    toggle.addEventListener('click', () => {
-        const type = password.type === 'password' ? 'text' : 'password';
-        password.type = type;
-        toggle.classList.toggle('bxs-show');
-        toggle.classList.toggle('bxs-hide');
-    });
-    </script>
+function calculateAge(val) {
+    if (!val) return;
+    const birth = new Date(val);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    agePreview.value = age + ' years old';
+}
 
-    </body>
-    </html>
+calculateAge(birthdateInput.value);
+birthdateInput.addEventListener('change', function () { calculateAge(this.value); });
+
+// Numbers only on contact
+document.getElementById('contact_number').addEventListener('input', function () {
+    this.value = this.value.replace(/[^0-9]/g, '');
+});
+
+// Password toggle
+const toggle   = document.getElementById('togglePassword');
+const password = document.getElementById('password');
+
+toggle.addEventListener('click', () => {
+    const isHidden = password.type === 'password';
+    password.type  = isHidden ? 'text' : 'password';
+    toggle.classList.toggle('bxs-show', !isHidden);
+    toggle.classList.toggle('bxs-hide',  isHidden);
+});
+</script>
+
+</body>
+</html>

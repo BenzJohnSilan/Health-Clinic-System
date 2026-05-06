@@ -1,0 +1,367 @@
+/* ================================================================
+   doctor-show-appointment.css
+   ================================================================ */
+
+/* ── Page wrapper ───────────────────────────────────────────────── */
+.sa-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 28px 24px 48px;
+}
+
+/* ── Header ─────────────────────────────────────────────────────── */
+.sa-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.sa-header__left {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.sa-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 6px;
+    padding: 6px 10px;
+    border-radius: 7px;
+    background: #f3f4f6;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background .15s;
+}
+.sa-back-link:hover { background: #e5e7eb; }
+
+.sa-header__title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 3px;
+    line-height: 1.2;
+}
+
+.sa-header__sub {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+}
+
+/* ── Alerts ─────────────────────────────────────────────────────── */
+.sa-alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 20px;
+}
+.sa-alert--success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.sa-alert--error   { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+/* ── Two-column grid ─────────────────────────────────────────────── */
+.sa-grid {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 24px;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .sa-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Card ───────────────────────────────────────────────────────── */
+.sa-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+
+.sa-card__header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+
+.sa-card__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.sa-card__icon--blue   { background: #eff6ff; color: #2563eb; }
+.sa-card__icon--teal   { background: #f0fdfa; color: #0d9488; }
+.sa-card__icon--green  { background: #f0fdf4; color: #16a34a; }
+.sa-card__icon--purple { background: #f5f3ff; color: #7c3aed; }
+.sa-card__icon--orange { background: #fff7ed; color: #ea580c; }
+
+.sa-card__title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+/* ── Info list (dl) ─────────────────────────────────────────────── */
+.sa-info-list {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid #f3f4f6;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.sa-info-row {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+.sa-info-row:last-child { border-bottom: none; }
+
+.sa-info-row dt {
+    background: #f9fafb;
+    padding: 11px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    border-right: 1px solid #f3f4f6;
+}
+
+.sa-info-row dd {
+    padding: 11px 14px;
+    font-size: 14px;
+    color: #1f2937;
+    margin: 0;
+}
+
+.sa-patient-name {
+    font-weight: 600;
+    color: #111827 !important;
+}
+
+/* ── Status badges ──────────────────────────────────────────────── */
+.sa-badge {
+    display: inline-block;
+    padding: 3px 11px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+.sa-badge--approved    { background: #dcfce7; color: #166534; }
+.sa-badge--completed   { background: #dbeafe; color: #1e40af; }
+.sa-badge--pending     { background: #fef9c3; color: #854d0e; }
+.sa-badge--rejected    { background: #fee2e2; color: #991b1b; }
+.sa-badge--cancelled   { background: #f3f4f6; color: #374151; }
+.sa-badge--rescheduled { background: #ede9fe; color: #5b21b6; }
+
+/* ── Diagnosis text (read-only) ─────────────────────────────────── */
+.sa-diagnosis-text {
+    white-space: pre-wrap;
+    color: #1f2937;
+    font-size: 14px;
+    line-height: 1.7;
+    margin: 0;
+    background: #f9fafb;
+    border: 1px solid #f3f4f6;
+    border-radius: 8px;
+    padding: 14px;
+}
+
+/* ── Empty state ─────────────────────────────────────────────────── */
+.sa-empty {
+    font-size: 14px;
+    color: #9ca3af;
+    font-style: italic;
+    margin: 0;
+    padding: 10px 0;
+}
+
+/* ── Form elements ──────────────────────────────────────────────── */
+.sa-form-group {
+    margin-bottom: 14px;
+}
+
+.sa-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.sa-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.sa-input,
+.sa-textarea {
+    width: 100%;
+    padding: 10px 13px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #1f2937;
+    background: #fff;
+    box-sizing: border-box;
+    transition: border-color .15s, box-shadow .15s;
+    font-family: inherit;
+}
+.sa-input:focus,
+.sa-textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+}
+.sa-textarea { resize: vertical; }
+
+.sa-complete-note {
+    font-size: 12px;
+    font-weight: 400;
+    color: #9ca3af;
+    margin-left: 4px;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────── */
+.sa-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    transition: background .15s, box-shadow .15s, opacity .15s;
+    white-space: nowrap;
+}
+.sa-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+.sa-btn--primary {
+    background: #2563eb;
+    color: #fff;
+}
+.sa-btn--primary:hover { background: #1d4ed8; }
+
+.sa-btn--success {
+    background: #16a34a;
+    color: #fff;
+}
+.sa-btn--success:hover { background: #15803d; }
+
+.sa-btn--outline {
+    background: #fff;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+.sa-btn--outline:hover { background: #f9fafb; }
+
+.sa-btn--ghost {
+    background: transparent;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
+}
+.sa-btn--ghost:hover { background: #f3f4f6; }
+
+.sa-btn--full { width: 100%; justify-content: center; }
+
+/* Icon-only button */
+.sa-btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 7px;
+    border: none;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background .15s;
+}
+.sa-btn-icon--danger { background: #fee2e2; color: #dc2626; }
+.sa-btn-icon--danger:hover { background: #fca5a5; }
+
+.sa-form-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+/* ── Prescription items ──────────────────────────────────────────── */
+.sa-rx-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+.sa-rx-item:last-of-type { border-bottom: none; }
+
+.sa-rx-item__body { flex: 1; min-width: 0; }
+
+.sa-rx-item__name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sa-rx-item__meta {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+}
+
+.sa-rx-sep { color: #d1d5db; }
+
+/* ── Print ────────────────────────────────────────────────────────── */
+@media print {
+    .sa-header .sa-btn,
+    .sa-back-link,
+    .sa-btn-icon,
+    form .sa-btn {
+        display: none !important;
+    }
+    .sa-card {
+        box-shadow: none;
+        border: 1px solid #e5e7eb;
+        break-inside: avoid;
+    }
+}

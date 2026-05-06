@@ -16,9 +16,9 @@ class AdminSeeder extends Seeder
 
             // VALUES (if not exists, create this)
             [
-                'first_name'        => 'Super',
+                'first_name'        => 'Admin',
                 'middle_name'       => null,
-                'last_name'         => 'Admin',
+                'last_name'         => 'Account',
                 'suffix'            => null,
 
                 'username'          => 'admin',

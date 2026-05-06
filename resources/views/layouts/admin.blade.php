@@ -78,6 +78,16 @@
             <span>Pending Appointments</span>
         </a>
 
+        <a href="{{ route('admin.medicines.index') }}">
+            <i class='bx bx-capsule'></i>
+            <span>Medicine</span>
+        </a>
+
+        <a href="{{ route('admin.user-logs') }}">
+            <i class='bx bx-history'></i>
+            <span>User Logs</span>
+        </a>
+
         <button class="logout-link" onclick="openLogoutModal()">
             <i class='bx bx-log-out'></i>
             <span>Logout</span>
@@ -208,11 +218,13 @@
             <!-- Avatar + Dropdown -->
             <div class="dropdown-toggle" id="avatarDropdown">
                 <strong>{{ $admin->username }}</strong>
-                @if($admin->avatar)
-                    <img src="{{ asset('storage/'.$admin->avatar) }}">
-                @else
-                    <img src="https://via.placeholder.com/45">
-                @endif
+                @php
+                    $avatar = ($admin->avatar && file_exists(storage_path('app/public/' . $admin->avatar)))
+                        ? asset('storage/' . $admin->avatar)
+                        : asset('images/default-avatar.jpg');
+                @endphp
+
+                <img src="{{ $avatar }}" alt="Admin Avatar">
             </div>
 
             <div class="dropdown-menu" id="dropdownMenu">
@@ -324,5 +336,6 @@ if(showAllAlerts){
 }
 </script>
 
+@yield('scripts')
 </body>
 </html>

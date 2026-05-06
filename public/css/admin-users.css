@@ -1,6 +1,8 @@
-/* ================= RESET (OPTIONAL BUT RECOMMENDED) ================= */
+/* ================= RESET ================= */
 * {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 /* ================= PAGE HEADER ================= */
@@ -19,6 +21,39 @@
     font-weight: 600;
 }
 
+/* ================= FILTER BAR ================= */
+.filter-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.filter-bar input,
+.filter-bar select {
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+.filter-bar input {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-bar select {
+    min-width: 150px;
+}
+
+.filter-bar input:focus,
+.filter-bar select:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79,70,229,0.15);
+}
+
 /* ================= BUTTONS ================= */
 .btn-primary {
     background-color: #4f46e5;
@@ -35,7 +70,7 @@
     background-color: #4338ca;
 }
 
-/* ================= ALERT MESSAGES ================= */
+/* ================= ALERT ================= */
 .alert-success,
 .alert-error {
     width: 100%;
@@ -112,11 +147,7 @@
     font-size: 14px;
 }
 
-.modal input[type="text"],
-.modal input[type="email"],
-.modal input[type="password"],
-.modal input[type="number"],
-.modal input[type="file"],
+.modal input,
 .modal select {
     padding: 10px 12px;
     border: 1px solid #d1d5db;
@@ -164,6 +195,7 @@
     background-color: #f0f4ff;
 }
 
+/* ================= TABLE BUTTONS ================= */
 .users-table button {
     background-color: #ef4444;
     color: #fff;
@@ -203,5 +235,9 @@
     .page-header {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .filter-bar {
+        flex-direction: column;
     }
 }

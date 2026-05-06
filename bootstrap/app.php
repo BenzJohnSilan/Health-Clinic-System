@@ -16,7 +16,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // Register route middleware aliases
         $middleware->alias([
             'prevent-back-history' => \App\Http\Middleware\PreventBackHistory::class,
+
+            // existing guest middleware (your override)
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
+
+            // ✅ ADD THIS: role-based middleware
+            'role' => \App\Http\Middleware\CheckRole::class,
         ]);
 
     })

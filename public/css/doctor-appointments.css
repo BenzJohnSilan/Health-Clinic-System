@@ -14,6 +14,27 @@
     color: #333;
 }
 
+/* ================= ALERTS ================= */
+.alert-success {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+
+.alert-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+
 /* ================= TABLE ================= */
 .table-container {
     overflow-x: auto;
@@ -59,39 +80,275 @@
     font-size: 13px;
     display: inline-block;
 }
-.status.approved { color: #2563eb; background: #dbeafe; }
-.status.completed { color: #16a34a; background: #d1fae5; }
-.status.pending   { color: #f59e0b; background: #fef3c7; }
-.status.rejected  { color: #dc2626; background: #fee2e2; }
-.status.cancelled { color: #b91c1c; background: #fecaca; }
 
-/* ================= BUTTONS ================= */
-.btn-edit {
-    background-color: #4f46e5;
+.status.approved   { color: #2563eb; background: #dbeafe; }
+.status.completed  { color: #16a34a; background: #d1fae5; }
+.status.pending    { color: #f59e0b; background: #fef3c7; }
+.status.rejected   { color: #dc2626; background: #fee2e2; }
+.status.cancelled  { color: #b91c1c; background: #fecaca; }
+.status.rescheduled { color: #7c3aed; background: #ede9fe; }
+
+.reschedule-by {
+    font-size: 12px;
+    color: #6b7280;
+    margin-left: 4px;
+}
+
+/* ================= ACTION BUTTONS ================= */
+.appointments-table td:nth-child(5) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+
+.btn-view {
+    background-color: #6a0dad;
     color: #fff;
-    padding: 6px 12px;
-    border-radius: 6px;
+    padding: 7px 12px;
+    border-radius: 8px;
     font-size: 13px;
     text-decoration: none;
-    margin-right: 6px;
+    display: inline-block;
+    transition: background-color 0.2s;
 }
-.btn-edit:hover {
+
+.btn-view:hover {
+    background-color: #560aaf;
+}
+
+.btn-report {
+    background-color: #4f46e5;
+    color: #fff;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.2s;
+}
+
+.btn-report:hover {
     background-color: #4338ca;
 }
 
-.btn-delete {
-    background-color: #ef4444;
+.btn-reschedule {
+    background-color: #f59e0b;
     color: #fff;
     border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
+    padding: 7px 12px;
+    border-radius: 8px;
     font-size: 13px;
     cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
+    transition: background-color 0.2s;
 }
-.btn-delete:hover {
-    background-color: #b91c1c;
+
+.btn-reschedule:hover {
+    background-color: #d97706;
+}
+
+/* ================= MODAL OVERLAY ================= */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 15, 30, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 16px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.modal-overlay.modal-visible {
+    opacity: 1;
+}
+
+.modal-overlay.modal-visible .modal-box {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+/* ================= MODAL BOX ================= */
+.modal-box {
+    background: #fff;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.15),
+        0 4px 16px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transform: translateY(12px) scale(0.98);
+    opacity: 0;
+    transition: transform 0.22s ease, opacity 0.22s ease;
+}
+
+/* ================= MODAL HEADER ================= */
+.modal-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 22px 24px 18px;
+}
+
+.modal-icon {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    background: #fef3c7;
+    color: #d97706;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 3px;
+    line-height: 1.3;
+}
+
+.modal-subtitle {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.modal-close {
+    margin-left: auto;
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+    padding: 4px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.modal-close:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+/* ================= MODAL DIVIDER ================= */
+.modal-divider {
+    height: 1px;
+    background: #e5e7eb;
+    margin: 0;
+}
+
+/* ================= MODAL BODY ================= */
+.modal-body {
+    padding: 22px 24px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.form-label svg {
+    color: #9ca3af;
+}
+
+.form-input {
+    padding: 9px 12px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #111827;
+    background: #f9fafb;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.form-input:focus {
+    border-color: #f59e0b;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
+}
+
+.form-hint {
+    font-size: 11.5px;
+    color: #9ca3af;
+    margin-top: 2px;
+}
+
+/* ================= MODAL FOOTER ================= */
+.modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px;
+    background: #f9fafb;
+}
+
+.btn-cancel {
+    background: none;
+    border: 1.5px solid #d1d5db;
+    color: #374151;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.btn-cancel:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+}
+
+.btn-confirm {
+    background: #f59e0b;
+    color: #fff;
+    border: none;
+    padding: 9px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: background-color 0.15s, box-shadow 0.15s;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.btn-confirm:hover {
+    background: #d97706;
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.4);
 }
 
 /* ================= RESPONSIVE ================= */
@@ -107,8 +364,36 @@
         font-size: 13px;
     }
 
-    .btn-edit, .btn-delete {
+    .btn-view, .btn-report, .btn-reschedule {
         font-size: 12px;
         padding: 5px 10px;
+    }
+
+    .appointments-table td:nth-child(5) {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-header {
+        padding: 18px 18px 14px;
+    }
+
+    .modal-body {
+        padding: 18px;
+    }
+
+    .modal-footer {
+        padding: 14px 18px;
+        flex-direction: column-reverse;
+    }
+
+    .btn-cancel,
+    .btn-confirm {
+        width: 100%;
+        justify-content: center;
     }
 }

@@ -10,12 +10,38 @@ return new class extends Migration
     {
         Schema::create('appointments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('patient_id')->constrained('users')->onDelete('cascade'); // patients
-            $table->foreignId('doctor_id')->constrained('users')->onDelete('cascade');  // doctors
+
+            // patients
+            $table->foreignId('patient_id')
+                ->constrained('users')
+                ->onDelete('cascade');
+
+            // doctors
+            $table->foreignId('doctor_id')
+                ->constrained('users')
+                ->onDelete('cascade');
+
             $table->date('appointment_date');
             $table->time('appointment_time');
-            $table->string('status')->default('Pending'); // Pending, Approved, Rejected
-            $table->text('reason')->nullable(); // changed from notes to reason
+
+            // Pending, Approved, Rejected, Completed, Cancelled, Rescheduled
+            $table->string('status')->default('Pending');
+
+            // tracking reschedule source
+            $table->string('rescheduled_by')->nullable();
+
+            // reason for appointment
+            $table->text('reason')->nullable();
+
+            // 🩺 Doctor's diagnosis for this appointment
+            $table->text('diagnosis')->nullable();
+
+            /**
+             * 🔐 IMPORTANT:
+             * Prevent duplicate booking of same doctor, date, and time
+             */
+            $table->unique(['doctor_id', 'appointment_date', 'appointment_time']);
+
             $table->timestamps();
         });
     }

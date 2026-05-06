@@ -14,6 +14,24 @@
         <button id="openAddModal" class="btn-primary">+ Add User</button>
     </div>
 
+    <!-- ================= SEARCH & FILTER ================= -->
+    <div class="filter-bar">
+        <input type="text" id="searchInput" placeholder="Search user...">
+
+        <select id="roleFilter">
+            <option value="">All Roles</option>
+            <option value="Admin">Admin</option>
+            <option value="Doctor">Doctor</option>
+            <option value="Patient">Patient</option>
+        </select>
+
+        <select id="statusFilter">
+            <option value="">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+        </select>
+    </div>
+
     <!-- ================= SUCCESS MESSAGE ================= -->
     @if(session('success'))
         <div class="alert-success">
@@ -80,7 +98,8 @@
                 <input type="text" name="address" required>
 
                 <label>Contact Number</label>
-                <input type="text" name="contact_number" id="add_contact_number" required maxlength="11" pattern="\d{11}" title="Please enter exactly 11 digits" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                <input type="text" name="contact_number" required maxlength="11"
+                       pattern="\d{11}" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
 
                 <label>Username</label>
                 <input type="text" name="username" required>
@@ -121,22 +140,22 @@
                 <input type="file" name="avatar">
 
                 <label>First Name</label>
-                <input type="text" name="first_name" id="edit_first_name" required>
+                <input type="text" id="edit_first_name" name="first_name" required>
 
                 <label>Middle Name</label>
-                <input type="text" name="middle_name" id="edit_middle_name">
+                <input type="text" id="edit_middle_name" name="middle_name">
 
                 <label>Last Name</label>
-                <input type="text" name="last_name" id="edit_last_name" required>
+                <input type="text" id="edit_last_name" name="last_name" required>
 
                 <label>Suffix</label>
-                <input type="text" name="suffix" id="edit_suffix">
+                <input type="text" id="edit_suffix" name="suffix">
 
                 <label>Birthday</label>
-                <input type="date" name="birthdate" id="edit_birthdate" required>
+                <input type="date" id="edit_birthdate" name="birthdate" required>
 
                 <label>Gender</label>
-                <select name="gender" id="edit_gender" required>
+                <select id="edit_gender" name="gender" required>
                     <option value="">-- Select --</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
@@ -144,7 +163,7 @@
                 </select>
 
                 <label>Civil Status</label>
-                <select name="civil_status" id="edit_civil_status" required>
+                <select id="edit_civil_status" name="civil_status" required>
                     <option value="">-- Select --</option>
                     <option value="Single">Single</option>
                     <option value="Married">Married</option>
@@ -153,26 +172,27 @@
                 </select>
 
                 <label>Address</label>
-                <input type="text" name="address" id="edit_address" required>
+                <input type="text" id="edit_address" name="address" required>
 
                 <label>Contact Number</label>
-                <input type="text" name="contact_number" id="edit_contact_number" required maxlength="11" pattern="\d{11}" title="Please enter exactly 11 digits" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                <input type="text" id="edit_contact_number" name="contact_number" required maxlength="11"
+                       pattern="\d{11}" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
 
                 <label>Username</label>
-                <input type="text" name="username" id="edit_username" required>
+                <input type="text" id="edit_username" name="username" required>
 
                 <label>Email</label>
-                <input type="email" name="email" id="edit_email" required>
+                <input type="email" id="edit_email" name="email" required>
 
                 <label>Role</label>
-                <select name="role" id="edit_role" required>
+                <select id="edit_role" name="role" required>
                     <option value="Admin">Admin</option>
                     <option value="Doctor">Doctor</option>
                     <option value="Patient">Patient</option>
                 </select>
 
                 <label>Status</label>
-                <select name="status" id="edit_status" required>
+                <select id="edit_status" name="status" required>
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                 </select>
@@ -198,7 +218,13 @@
         </thead>
         <tbody>
         @foreach($users as $user)
-            <tr>
+            <tr class="user-row"
+                data-name="{{ strtolower($user->first_name . ' ' . $user->last_name) }}"
+                data-username="{{ strtolower($user->username) }}"
+                data-email="{{ strtolower($user->email) }}"
+                data-role="{{ $user->role }}"
+                data-status="{{ $user->status }}"
+            >
                 <td>{{ $user->id }}</td>
                 <td>{{ $user->first_name }} {{ $user->last_name }}</td>
                 <td>{{ $user->username }}</td>
@@ -213,9 +239,7 @@
                 <td>{{ $user->role }}</td>
                 <td>{{ $user->status }}</td>
                 <td>
-                    <button
-                        type="button"
-                        class="editBtn"
+                    <button type="button" class="editBtn"
                         data-id="{{ $user->id }}"
                         data-first="{{ $user->first_name }}"
                         data-middle="{{ $user->middle_name }}"
@@ -229,8 +253,7 @@
                         data-username="{{ $user->username }}"
                         data-email="{{ $user->email }}"
                         data-role="{{ $user->role }}"
-                        data-status="{{ $user->status }}"
-                    >
+                        data-status="{{ $user->status }}">
                         Edit
                     </button>
 
@@ -256,31 +279,62 @@ document.getElementById('openAddModal').onclick  = () => addModal.style.display 
 document.getElementById('closeAddModal').onclick = () => addModal.style.display = 'none';
 document.getElementById('closeEditModal').onclick = () => editModal.style.display = 'none';
 
+/* ================= EDIT ================= */
 document.querySelectorAll('.editBtn').forEach(btn => {
     btn.onclick = () => {
-        document.getElementById('edit_first_name').value     = btn.dataset.first;
-        document.getElementById('edit_middle_name').value    = btn.dataset.middle;
-        document.getElementById('edit_last_name').value      = btn.dataset.last;
-        document.getElementById('edit_suffix').value         = btn.dataset.suffix;
-        document.getElementById('edit_birthdate').value      = btn.dataset.birthdate;
-        document.getElementById('edit_gender').value         = btn.dataset.gender;
-        document.getElementById('edit_civil_status').value   = btn.dataset.civil;
-        document.getElementById('edit_address').value        = btn.dataset.address;
+        document.getElementById('edit_first_name').value = btn.dataset.first;
+        document.getElementById('edit_middle_name').value = btn.dataset.middle;
+        document.getElementById('edit_last_name').value = btn.dataset.last;
+        document.getElementById('edit_suffix').value = btn.dataset.suffix;
+        document.getElementById('edit_birthdate').value = btn.dataset.birthdate;
+        document.getElementById('edit_gender').value = btn.dataset.gender;
+        document.getElementById('edit_civil_status').value = btn.dataset.civil;
+        document.getElementById('edit_address').value = btn.dataset.address;
         document.getElementById('edit_contact_number').value = btn.dataset.contact;
-        document.getElementById('edit_username').value       = btn.dataset.username;
-        document.getElementById('edit_email').value          = btn.dataset.email;
-        document.getElementById('edit_role').value           = btn.dataset.role;
-        document.getElementById('edit_status').value         = btn.dataset.status;
+        document.getElementById('edit_username').value = btn.dataset.username;
+        document.getElementById('edit_email').value = btn.dataset.email;
+        document.getElementById('edit_role').value = btn.dataset.role;
+        document.getElementById('edit_status').value = btn.dataset.status;
 
-        document.getElementById('editUserForm').action =
-            `/admin/users/${btn.dataset.id}`;
-
+        document.getElementById('editUserForm').action = `/admin/users/${btn.dataset.id}`;
         editModal.style.display = 'flex';
     };
 });
 
+/* ================= SEARCH + FILTER ================= */
+const searchInput = document.getElementById('searchInput');
+const roleFilter  = document.getElementById('roleFilter');
+const statusFilter = document.getElementById('statusFilter');
+
+const rows = document.querySelectorAll('.user-row');
+
+function filterUsers() {
+    const search = searchInput.value.toLowerCase();
+    const role   = roleFilter.value;
+    const status = statusFilter.value;
+
+    rows.forEach(row => {
+        const name = row.dataset.name;
+        const username = row.dataset.username;
+        const email = row.dataset.email;
+        const userRole = row.dataset.role;
+        const userStatus = row.dataset.status;
+
+        let matchSearch = name.includes(search) || username.includes(search) || email.includes(search);
+        let matchRole = role === "" || userRole === role;
+        let matchStatus = status === "" || userStatus === status;
+
+        row.style.display = (matchSearch && matchRole && matchStatus) ? "" : "none";
+    });
+}
+
+searchInput.addEventListener('input', filterUsers);
+roleFilter.addEventListener('change', filterUsers);
+statusFilter.addEventListener('change', filterUsers);
+
+/* ================= CLOSE MODAL ================= */
 window.onclick = e => {
-    if (e.target === addModal)  addModal.style.display  = 'none';
+    if (e.target === addModal)  addModal.style.display = 'none';
     if (e.target === editModal) editModal.style.display = 'none';
 };
 </script>

@@ -14,9 +14,6 @@
 <!-- CSS -->
 <link rel="stylesheet" href="{{ asset('css/patient-layout.css') }}">
 
-
-<link rel="stylesheet" href="{{ asset('css/patient-appointments.css') }}">
-
 @yield('head')
 </head>
 <body>
@@ -38,7 +35,7 @@
         </a>
 
         <!-- Placeholder links -->
-        <a href="#" class="disabled-link">
+        <a href="{{ route('patient.medical.report') }}">
             <i class='bx bx-folder'></i>
             <span>Medical Report</span>
         </a>

@@ -31,8 +31,8 @@
             <i class='bx bx-calendar'></i>
             <span>Appointments</span>
         </a>
-        <!-- Placeholder links -->
-        <a href="#" class="disabled-link">
+
+        <a href="{{ route('doctor.patient') }}">
             <i class='bx bx-user-circle'></i>
             <span>Patient</span>
         </a>
@@ -40,6 +40,11 @@
         <a href="#" class="disabled-link">
             <i class='bx bx-folder'></i>
             <span>Medical Report</span>
+        </a>
+
+        <a href="{{ route('doctor.medicines.index') }}">
+            <i class='bx bx-capsule'></i>
+            <span>Medicine</span>
         </a>
 
         <!-- Logout triggers modal -->

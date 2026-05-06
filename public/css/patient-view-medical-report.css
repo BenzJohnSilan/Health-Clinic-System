@@ -1,0 +1,431 @@
+/* =============================================
+   SCREEN LAYOUT
+============================================= */
+.report-page-wrapper {
+    width: 100%;
+    padding: 36px 24px 60px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.print-action-bar {
+    width: 100%;
+    max-width: 780px;
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 14px;
+}
+
+.btn-print {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 22px;
+    background: #1a1a2e;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-print:hover { background: #2d2d4a; }
+
+.btn-print svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+/* =============================================
+   REPORT CARD
+============================================= */
+.report-card {
+    width: 100%;
+    max-width: 780px;
+    background: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 48px 60px 56px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+    color: #1a1a1a;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+    box-sizing: border-box;
+}
+
+/* HEADER */
+.rpt-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    border-bottom: 2px solid #1a1a2e;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+}
+
+.rpt-clinic-name {
+    font-family: 'EB Garamond', serif;
+    font-size: 26px;
+    font-weight: 600;
+    color: #1a1a2e;
+    line-height: 1.1;
+}
+
+.rpt-clinic-sub {
+    font-size: 11px;
+    color: #777;
+    margin-top: 3px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+.rpt-doc-tag { text-align: right; }
+
+.rpt-doc-name {
+    font-family: 'EB Garamond', serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: #1a1a2e;
+}
+
+.rpt-doc-label {
+    font-size: 10px;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+}
+
+/* TITLE BAND */
+.rpt-title-band {
+    background: #1a1a2e;
+    color: #fff;
+    text-align: center;
+    padding: 10px 0;
+    margin-bottom: 22px;
+    letter-spacing: 3px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-radius: 2px;
+}
+
+/* DATE / TIME ROW */
+.rpt-appt-row {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    background: #fafaf8;
+    border: 1px solid #e0ddd8;
+    border-radius: 4px;
+    padding: 12px 18px;
+    margin-bottom: 20px;
+}
+
+.rpt-appt-cell { display: flex; flex-direction: column; }
+
+.rpt-appt-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #999;
+    margin-bottom: 2px;
+}
+
+.rpt-appt-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a2e;
+}
+
+.rpt-appt-divider {
+    width: 1px;
+    height: 32px;
+    background: #e0ddd8;
+    flex-shrink: 0;
+}
+
+/* SECTION */
+.rpt-section { margin-bottom: 20px; }
+
+.rpt-section-heading {
+    font-family: 'EB Garamond', serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1a2e;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.rpt-section-heading::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e0ddd8;
+}
+
+/* PATIENT GRID */
+.rpt-patient-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    border: 1px solid #e0ddd8;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.rpt-patient-cell {
+    padding: 10px 14px;
+    border-right: 1px solid #e0ddd8;
+    border-bottom: 1px solid #e0ddd8;
+}
+
+.rpt-patient-cell.span-full {
+    grid-column: 1 / -1;
+    border-right: none;
+}
+
+.rpt-patient-cell.no-border-b { border-bottom: none; }
+.rpt-patient-cell.no-border-r { border-right: none; }
+
+.rpt-patient-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    color: #999;
+    margin-bottom: 2px;
+}
+
+.rpt-patient-value {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1a1a2e;
+}
+
+/* DIAGNOSIS */
+.rpt-diagnosis-box {
+    background: #fafaf8;
+    border-left: 3px solid #1a1a2e;
+    padding: 12px 16px;
+    border-radius: 0 4px 4px 0;
+    font-size: 13px;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* DOCTOR'S NOTES */
+.rpt-notes-box {
+    background: #fafaf8;
+    border: 1px solid #e0ddd8;
+    border-radius: 4px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: #333;
+    line-height: 1.7;
+    white-space: pre-line;
+}
+
+.rpt-notes-empty {
+    color: #bbb;
+    font-style: italic;
+    font-size: 12px;
+}
+
+/* PRESCRIPTIONS TABLE */
+.rpt-rx-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.rpt-rx-table thead tr { background: #1a1a2e; color: #fff; }
+
+.rpt-rx-table thead th {
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 500;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.rpt-rx-table tbody tr { border-bottom: 1px solid #eeece8; }
+.rpt-rx-table tbody tr:nth-child(even) { background: #fafaf8; }
+
+.rpt-rx-table tbody td {
+    padding: 9px 12px;
+    color: #333;
+    vertical-align: top;
+}
+
+.rpt-rx-table tbody td strong {
+    color: #1a1a2e;
+    font-weight: 500;
+}
+
+.rpt-empty {
+    color: #aaa;
+    font-style: italic;
+    font-size: 12px;
+    padding: 8px 0;
+}
+
+/* FOLLOW-UP */
+.rpt-followup-item {
+    background: #fafaf8;
+    border: 1px solid #e8e5e0;
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 12px;
+    font-size: 12px;
+}
+
+.rpt-followup-date-label,
+.rpt-followup-msg-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1.3px;
+    color: #999;
+    margin-bottom: 3px;
+}
+
+.rpt-followup-date-val {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a2e;
+    font-family: 'EB Garamond', serif;
+}
+
+.rpt-followup-msg { color: #444; font-size: 12px; line-height: 1.55; }
+
+/* SIGNATURE */
+.rpt-signature-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid #e0ddd8;
+}
+
+.rpt-note {
+    font-size: 10px;
+    color: #bbb;
+    max-width: 280px;
+    line-height: 1.5;
+}
+
+.rpt-sig-block { text-align: center; min-width: 190px; }
+
+.rpt-sig-line {
+    border-bottom: 1.5px solid #1a1a2e;
+    margin-bottom: 6px;
+    height: 36px;
+}
+
+.rpt-sig-name {
+    font-family: 'EB Garamond', serif;
+    font-size: 14px;
+    color: #1a1a2e;
+}
+
+.rpt-sig-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #999;
+    margin-top: 2px;
+}
+
+/* FOOTER */
+.rpt-footer {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 9px;
+    color: #ccc;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* =============================================
+   PRINT STYLES
+   Ginagamit natin ang CSS-only approach:
+   itinatago lahat ng elements sa body,
+   at ini-show lang ang report-page-wrapper.
+   HINDI na kailangan ng JS na nag-move ng element.
+============================================= */
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 14mm 16mm 14mm 16mm;
+    }
+
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* 1. Itago lahat — sidebar, nav, header, etc. */
+    body * {
+        visibility: hidden !important;
+    }
+
+    /* 2. I-show lang ang report wrapper at lahat ng laman nito */
+    .report-page-wrapper,
+    .report-page-wrapper * {
+        visibility: visible !important;
+    }
+
+    /* 3. I-position ang wrapper sa simula ng page */
+    .report-page-wrapper {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    /* 4. Itago ang print button — hindi dapat lumabas sa PDF */
+    .print-action-bar {
+        display: none !important;
+    }
+
+    /* 5. Report card — full width, walang shadow/border */
+    .report-card {
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        font-size: 11.5px !important;
+    }
+
+    /* 6. Tighter spacing para magkasya sa isang A4 page */
+    .rpt-header        { margin-bottom: 12px !important; padding-bottom: 10px !important; }
+    .rpt-title-band    { margin-bottom: 12px !important; padding: 7px 0 !important; }
+    .rpt-appt-row      { margin-bottom: 12px !important; padding: 9px 14px !important; }
+    .rpt-section       { margin-bottom: 12px !important; }
+    .rpt-signature-row { margin-top: 20px !important; padding-top: 12px !important; }
+    .rpt-footer        { margin-top: 12px !important; }
+    .rpt-sig-line      { height: 28px !important; }
+
+    .rpt-rx-table      { page-break-inside: avoid; }
+    .rpt-followup-item { page-break-inside: avoid; }
+}

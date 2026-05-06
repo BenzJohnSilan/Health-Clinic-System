@@ -9,14 +9,15 @@
 
     <!-- ================= PAGE HEADER ================= -->
     <div class="page-header">
-        <h1 class="page-title">My Approved Appointments</h1>
+        <h1 class="page-title">Appointments</h1>
     </div>
 
-    <!-- Success Message -->
+    <!-- Alerts -->
     @if(session('success'))
-        <div class="alert-success">
-            {{ session('success') }}
-        </div>
+        <div class="alert-success">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+        <div class="alert-error">{{ session('error') }}</div>
     @endif
 
     <!-- ================= APPOINTMENTS TABLE ================= -->
@@ -28,21 +29,30 @@
                     <th>Appointment Schedule</th>
                     <th>Reason</th>
                     <th>Status</th>
-                    <th style="width:160px;">Actions</th>
+                    <th style="width:220px;">Actions</th>
                 </tr>
             </thead>
 
             <tbody>
                 @forelse($appointments as $appointment)
+
+                @php
+                    $date = \Carbon\Carbon::parse($appointment->appointment_date);
+                    $time = \Carbon\Carbon::parse($appointment->appointment_time);
+                @endphp
+
                 <tr>
                     <!-- Patient Name -->
-                    <td>{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}</td>
-
-                    <!-- Schedule (Date + Time Inline) -->
                     <td>
-                        {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('F d, Y') }}
+                        {{ $appointment->patient->first_name ?? 'N/A' }}
+                        {{ $appointment->patient->last_name ?? '' }}
+                    </td>
+
+                    <!-- Schedule -->
+                    <td>
+                        {{ $date->format('F d, Y') }}
                         <span style="margin-left:8px; color:#555; font-size:13px;">
-                            {{ \Carbon\Carbon::parse($appointment->appointment_time)->format('h:i A') }}
+                            {{ $time->format('h:i A') }}
                         </span>
                     </td>
 
@@ -53,34 +63,61 @@
                     <td>
                         @if($appointment->status === 'Approved')
                             <span class="status approved">Approved</span>
+
                         @elseif($appointment->status === 'Completed')
                             <span class="status completed">Completed</span>
+
                         @elseif($appointment->status === 'Pending')
                             <span class="status pending">Pending</span>
+
                         @elseif($appointment->status === 'Rejected')
                             <span class="status rejected">Rejected</span>
+
                         @elseif($appointment->status === 'Cancelled')
                             <span class="status cancelled">Cancelled</span>
+
+                        @elseif($appointment->status === 'Rescheduled')
+                            <span class="status rescheduled">Rescheduled</span>
+                            @if($appointment->rescheduled_by)
+                                <span class="reschedule-by">
+                                    by {{ ucfirst($appointment->rescheduled_by) }}
+                                </span>
+                            @endif
+
                         @else
                             {{ $appointment->status }}
                         @endif
                     </td>
 
-                    <!-- Action Buttons -->
+                    <!-- Actions -->
                     <td>
-                        <a href="{{ route('doctor.appointments.show', $appointment->id) }}" class="btn-edit">
+                        <a href="{{ route('doctor.appointments.show', $appointment->id) }}" class="btn-view">
                             View
                         </a>
 
-                        <a href="{{ route('doctor.appointments.report', $appointment->id) }}" class="btn-delete">
+                        <a href="{{ route('doctor.appointments.report', $appointment->id) }}" class="btn-report">
                             Report
                         </a>
+
+                        {{-- Reschedule button --}}
+                        @if(in_array($appointment->status, ['Approved', 'Rescheduled']))
+                            <button
+                                class="btn-reschedule"
+                                onclick="openReschedule(
+                                    {{ $appointment->id }},
+                                    '{{ $date->format('Y-m-d') }}',
+                                    '{{ $time->format('H:i') }}'
+                                )">
+                                Reschedule
+                            </button>
+                        @endif
                     </td>
                 </tr>
+
                 @empty
                 <tr>
-                    <td colspan="5" style="text-align:center; font-style:italic; color:#555;">
-                        No approved appointments found.
+                    <td colspan="6" style="text-align:center; font-style:italic; color:#555;">
+                        No appointments found.
                     </td>
                 </tr>
                 @endforelse
@@ -89,123 +126,134 @@
     </div>
 
 </div>
+
+<!-- ===== RESCHEDULE MODAL ===== -->
+<div id="rescheduleModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+
+        <!-- Modal Header -->
+        <div class="modal-header">
+            <div class="modal-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+            </div>
+            <div>
+                <h3 class="modal-title">Reschedule Appointment</h3>
+                <p class="modal-subtitle">Set a new date and time for this appointment.</p>
+            </div>
+            <button class="modal-close" onclick="closeReschedule()" aria-label="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Divider -->
+        <div class="modal-divider"></div>
+
+        <!-- Modal Body -->
+        <form id="rescheduleForm" method="POST">
+            @csrf
+            @method('PATCH')
+
+            <div class="modal-body">
+                <div class="form-row">
+                    <!-- Date Field -->
+                    <div class="form-group">
+                        <label class="form-label" for="rescheduleDate">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            New Date
+                        </label>
+                        <input
+                            type="date"
+                            name="appointment_date"
+                            id="rescheduleDate"
+                            min="{{ date('Y-m-d') }}"
+                            required
+                            class="form-input"
+                        >
+                    </div>
+
+                    <!-- Time Field -->
+                    <div class="form-group">
+                        <label class="form-label" for="rescheduleTime">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            New Time
+                        </label>
+                        <input
+                            type="time"
+                            name="appointment_time"
+                            id="rescheduleTime"
+                            min="08:00"
+                            max="17:00"
+                            required
+                            class="form-input"
+                        >
+                        
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-divider"></div>
+            <div class="modal-footer">
+                <button type="button" onclick="closeReschedule()" class="btn-cancel">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-confirm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Confirm Reschedule
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<script>
+function openReschedule(id, date, time) {
+    document.getElementById('rescheduleDate').value = date;
+    document.getElementById('rescheduleTime').value = time;
+    document.getElementById('rescheduleForm').action = `/doctor/appointments/${id}/reschedule`;
+
+    const modal = document.getElementById('rescheduleModal');
+    modal.style.display = 'flex';
+    // Trigger animation
+    requestAnimationFrame(() => {
+        modal.classList.add('modal-visible');
+    });
+}
+
+function closeReschedule() {
+    const modal = document.getElementById('rescheduleModal');
+    modal.classList.remove('modal-visible');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 200);
+}
+
+document.getElementById('rescheduleModal').addEventListener('click', function (e) {
+    if (e.target === this) closeReschedule();
+});
+</script>
 @endsection
-
-@push('styles')
-<style>
-/* ================= PAGE HEADER ================= */
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
-    gap: 10px;
-}
-
-.page-title {
-    font-size: 28px;
-    font-weight: 600;
-    color: #333;
-}
-
-/* ================= TABLE ================= */
-.table-container {
-    overflow-x: auto;
-}
-
-.appointments-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-    background: #fff;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-}
-
-.appointments-table th,
-.appointments-table td {
-    padding: 12px 15px;
-    text-align: left;
-    font-size: 14px;
-    border-bottom: 1px solid #e5e7eb;
-    vertical-align: middle;
-}
-
-.appointments-table th {
-    background-color: #f3f4f6;
-    font-weight: 600;
-}
-
-.appointments-table tr:nth-child(even) {
-    background-color: #f9fafb;
-}
-
-.appointments-table tr:hover {
-    background-color: #f0f4ff;
-}
-
-/* ================= STATUS ================= */
-.status {
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 5px;
-    font-size: 13px;
-    display: inline-block;
-}
-.status.approved { color: #2563eb; background: #dbeafe; }
-.status.completed { color: #16a34a; background: #d1fae5; }
-.status.pending   { color: #f59e0b; background: #fef3c7; }
-.status.rejected  { color: #dc2626; background: #fee2e2; }
-.status.cancelled { color: #b91c1c; background: #fecaca; }
-
-/* ================= BUTTONS ================= */
-.btn-edit {
-    background-color: #4f46e5;
-    color: #fff;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 13px;
-    text-decoration: none;
-    margin-right: 6px;
-}
-.btn-edit:hover {
-    background-color: #4338ca;
-}
-
-.btn-delete {
-    background-color: #ef4444;
-    color: #fff;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 13px;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
-}
-.btn-delete:hover {
-    background-color: #b91c1c;
-}
-
-/* ================= RESPONSIVE ================= */
-@media screen and (max-width: 700px) {
-    .page-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .appointments-table th,
-    .appointments-table td {
-        padding: 8px;
-        font-size: 13px;
-    }
-
-    .btn-edit, .btn-delete {
-        font-size: 12px;
-        padding: 5px 10px;
-    }
-}
-</style>
-@endpush

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Carbon\Carbon; // ✅ Import Carbon
+use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -12,50 +12,61 @@ class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
 
-    // ====================
-    // Mass Assignable Fields
-    // ====================
     protected $fillable = [
+        // PROFILE
         'avatar',
+
+        // PERSONAL INFO
         'first_name',
         'middle_name',
         'last_name',
         'suffix',
-        'birthdate',        // ✅ consistent sa controllers
+        'birthdate',
         'gender',
         'civil_status',
         'address',
         'contact_number',
+
+        // VERIFICATION
+        'id_type',
+        'valid_id',
+
+        // REASON
+        'reason',
+
+        // MEDICAL INFO
+        'blood_type',
+        'allergies',
+
+        // EMERGENCY CONTACT
+        'emergency_name',
+        'emergency_contact_number',
+        'relationship',
+        'emergency_address',
+
+        // LOGIN INFO
         'username',
         'email',
         'password',
+
+        // ACCOUNT CONTROL
         'role',
         'status',
-        'approval_status',  // ✅ for admin approval workflow
+        'approval_status',
     ];
 
-    // ====================
-    // Hidden Fields
-    // ====================
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    // ====================
-    // Casts
-    // ====================
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'birthdate' => 'date', // ✅ consistent
+        'birthdate' => 'date',
     ];
 
-    // ====================
-    // Accessors (Computed Fields)
-    // ====================
-
     /**
-     * Automatically compute age from birthdate
+     * Auto compute age
      */
     public function getAgeAttribute()
     {
@@ -64,12 +75,8 @@ class User extends Authenticatable implements MustVerifyEmail
             : null;
     }
 
-    // ====================
-    // Relationships
-    // ====================
-
     /**
-     * Get the appointments for the patient.
+     * Patient appointments
      */
     public function appointments()
     {

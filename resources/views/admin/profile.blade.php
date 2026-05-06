@@ -2,16 +2,36 @@
 
 @section('head')
 <link rel="stylesheet" href="{{ asset('css/profile.css') }}">
+
 <style>
-    /* Optional: styling ng avatar preview */
-    .avatar-preview {
-        border-radius: 50%;
-        object-fit: cover;
-        width: 120px;
-        height: 120px;
-        display: block;
-        margin: 0 auto 10px;
-    }
+/* ALERT ANIMATION */
+.alert-success,
+.alert-error {
+    padding: 12px 16px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    opacity: 1;
+}
+
+/* Colors */
+.alert-success {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #34d399;
+}
+
+.alert-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #f87171;
+}
+
+/* Fade out class */
+.fade-out {
+    opacity: 0;
+    transform: translateY(-10px);
+}
 </style>
 @endsection
 
@@ -24,9 +44,22 @@
         <h1>Manage Profile</h1>
     </div>
 
-    <!-- Success Alert -->
+    <!-- SUCCESS MESSAGE -->
     @if(session('success'))
-        <div class="alert-success">{{ session('success') }}</div>
+        <div class="alert-success auto-hide">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    <!-- ERROR MESSAGES -->
+    @if($errors->any())
+        <div class="alert-error auto-hide">
+            <ul style="margin:0; padding-left:18px;">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
     @endif
 
     <!-- PROFILE CARD -->
@@ -34,52 +67,76 @@
 
         <!-- Avatar Section -->
         <div class="avatar-section">
+
             <img 
-                src="{{ $admin->avatar ? asset('storage/' . $admin->avatar) : asset('images/default-avatar.png') }}" 
+                src="{{ ($admin->avatar && file_exists(storage_path('app/public/' . $admin->avatar))) 
+                    ? asset('storage/' . $admin->avatar) 
+                    : asset('images/default-avatar.jpg') }}" 
                 alt="Avatar" 
                 class="avatar-preview"
-            >
+            />
 
-            <div class="form-group">
-                <input type="file" id="avatar" name="avatar" accept="image/*" form="profileForm">
+            <div class="avatar-actions">
+
+                <input 
+                    type="file" 
+                    id="avatar" 
+                    name="avatar" 
+                    accept="image/*" 
+                    form="profileForm"
+                >
+
+                @if($admin->avatar)
+                    <form action="{{ route('admin.profile.remove-avatar', $admin->id) }}" method="POST">
+                        @csrf
+                        @method('DELETE')
+
+                        <button type="submit"
+                            class="btn-danger"
+                            onclick="return confirm('Remove profile picture?')">
+                            Remove Avatar
+                        </button>
+                    </form>
+                @endif
+
             </div>
         </div>
 
         <!-- Profile Form -->
-        <form id="profileForm" action="{{ route('admin.profile.update', $admin->id ?? 0) }}" method="POST" enctype="multipart/form-data" class="profile-form">
+        <form id="profileForm"
+              action="{{ route('admin.profile.update', $admin->id ?? 0) }}"
+              method="POST"
+              enctype="multipart/form-data"
+              class="profile-form">
+
             @csrf
-            @method('POST') <!-- or PUT if your route uses PUT -->
+            @method('POST')
 
             <div class="form-grid">
 
-                <!-- First Name -->
                 <div class="form-group">
-                    <label for="first_name">First Name</label>
-                    <input type="text" id="first_name" name="first_name" value="{{ old('first_name', $admin->first_name) }}" required>
+                    <label>First Name</label>
+                    <input type="text" name="first_name" value="{{ old('first_name', $admin->first_name) }}" required>
                 </div>
 
-                <!-- Middle Name -->
                 <div class="form-group">
-                    <label for="middle_name">Middle Name</label>
-                    <input type="text" id="middle_name" name="middle_name" value="{{ old('middle_name', $admin->middle_name) }}">
+                    <label>Middle Name</label>
+                    <input type="text" name="middle_name" value="{{ old('middle_name', $admin->middle_name) }}">
                 </div>
 
-                <!-- Last Name -->
                 <div class="form-group">
-                    <label for="last_name">Last Name</label>
-                    <input type="text" id="last_name" name="last_name" value="{{ old('last_name', $admin->last_name) }}" required>
+                    <label>Last Name</label>
+                    <input type="text" name="last_name" value="{{ old('last_name', $admin->last_name) }}" required>
                 </div>
 
-                <!-- Suffix -->
                 <div class="form-group">
-                    <label for="suffix">Suffix</label>
-                    <input type="text" id="suffix" name="suffix" value="{{ old('suffix', $admin->suffix) }}" placeholder="Jr., Sr., III">
+                    <label>Suffix</label>
+                    <input type="text" name="suffix" value="{{ old('suffix', $admin->suffix) }}">
                 </div>
 
-                <!-- Gender -->
                 <div class="form-group">
-                    <label for="gender">Gender</label>
-                    <select id="gender" name="gender" required>
+                    <label>Gender</label>
+                    <select name="gender" required>
                         <option value="">Select Gender</option>
                         <option value="Male" {{ $admin->gender == 'Male' ? 'selected' : '' }}>Male</option>
                         <option value="Female" {{ $admin->gender == 'Female' ? 'selected' : '' }}>Female</option>
@@ -87,10 +144,9 @@
                     </select>
                 </div>
 
-                <!-- Civil Status -->
                 <div class="form-group">
-                    <label for="civil_status">Civil Status</label>
-                    <select id="civil_status" name="civil_status" required>
+                    <label>Civil Status</label>
+                    <select name="civil_status" required>
                         <option value="">Select Status</option>
                         <option value="Single" {{ $admin->civil_status == 'Single' ? 'selected' : '' }}>Single</option>
                         <option value="Married" {{ $admin->civil_status == 'Married' ? 'selected' : '' }}>Married</option>
@@ -99,50 +155,62 @@
                     </select>
                 </div>
 
-                <!-- Address -->
                 <div class="form-group full">
-                    <label for="address">Address</label>
-                    <textarea id="address" name="address" rows="3" required>{{ old('address', $admin->address) }}</textarea>
+                    <label>Address</label>
+                    <textarea name="address" rows="3" required>{{ old('address', $admin->address) }}</textarea>
                 </div>
 
-                <!-- Contact Number -->
                 <div class="form-group">
-                    <label for="contact_number">Contact Number</label>
-                    <input type="text" id="contact_number" name="contact_number" value="{{ old('contact_number', $admin->contact_number) }}" required>
+                    <label>Contact Number</label>
+                    <input type="text" name="contact_number" value="{{ old('contact_number', $admin->contact_number) }}" required>
                 </div>
 
-                <!-- Username -->
                 <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" id="username" name="username" value="{{ old('username', $admin->username) }}" required>
+                    <label>Username</label>
+                    <input type="text" name="username" value="{{ old('username', $admin->username) }}" required>
                 </div>
 
-                <!-- Email -->
                 <div class="form-group full">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" value="{{ old('email', $admin->email) }}" required>
+                    <label>Email</label>
+                    <input type="email" name="email" value="{{ old('email', $admin->email) }}" required>
                 </div>
 
             </div>
 
-            <!-- Submit -->
             <button type="submit" class="btn-primary">Update Profile</button>
 
         </form>
 
     </div>
-
 </div>
 
 @endsection
 
 @section('scripts')
 <script>
+/* Avatar preview */
 document.getElementById('avatar').addEventListener('change', function(event) {
     const file = event.target.files[0];
-    if(file && file.type.startsWith('image/')) {
+    if (file && file.type.startsWith('image/')) {
         document.querySelector('.avatar-preview').src = URL.createObjectURL(file);
     }
+});
+
+/* AUTO FADE ALERTS */
+document.addEventListener("DOMContentLoaded", function () {
+    const alerts = document.querySelectorAll(".auto-hide");
+
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            alert.classList.add("fade-out");
+
+            // remove element after fade animation
+            setTimeout(() => {
+                alert.remove();
+            }, 500);
+
+        }, 3000); // 3 seconds before fade
+    });
 });
 </script>
 @endsection

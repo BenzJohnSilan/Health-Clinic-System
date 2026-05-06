@@ -28,11 +28,11 @@ body {
 
 /* Date & Time Container */
 #datetime-container {
-    background-color: #6a0dad; 
-    color: #fff; 
-    padding: 8px 15px; 
-    border-radius: 8px; 
-    font-weight: bold; 
+    background-color: #6a0dad;
+    color: #fff;
+    padding: 8px 15px;
+    border-radius: 8px;
+    font-weight: bold;
     font-size: 0.9rem;
     box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     min-width: 220px;
@@ -53,7 +53,7 @@ body {
 
 /* ================= DASHBOARD CARD ================= */
 .dashboard-card {
-    padding: 20px 20px 20px 15px; /* leave space for left color bar */
+    padding: 20px 20px 20px 15px;
     border-radius: 10px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     display: flex;
@@ -63,7 +63,6 @@ body {
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
-/* Left colored stripe */
 .dashboard-card::before {
     content: "";
     position: absolute;
@@ -72,16 +71,14 @@ body {
     width: 6px;
     height: 100%;
     border-radius: 10px 0 0 10px;
-    background-color: #4f46e5; /* default, overridden by type */
+    background-color: #4f46e5;
 }
 
-/* Hover effect */
 .dashboard-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 5px 15px rgba(0,0,0,0.15);
 }
 
-/* Card Info */
 .dashboard-card .card-info p {
     margin: 0;
     font-size: 12px;
@@ -96,61 +93,114 @@ body {
     color: #333;
 }
 
-/* Card Icon */
 .dashboard-card .card-icon {
     font-size: 30px;
 }
 
 /* ================= CARD COLORS ================= */
+.users-card { background-color: #f0f4ff; }
+.users-card::before { background-color: #4f46e5; }
+.users-card .card-icon { color: #4f46e5; }
 
-/* Users Card */
-.users-card {
-    background-color: #f0f4ff; /* Light indigo background */
-}
-.users-card::before {
-    background-color: #4f46e5; /* Indigo stripe */
-}
-.users-card .card-icon {
-    color: #4f46e5;
-}
+.doctors-card { background-color: #fff0f6; }
+.doctors-card::before { background-color: #ef4444; }
+.doctors-card .card-icon { color: #ef4444; }
 
-/* Doctors Card */
-.doctors-card {
-    background-color: #fff0f6; /* Light pink background */
-}
-.doctors-card::before {
-    background-color: #ef4444; /* Red stripe */
-}
-.doctors-card .card-icon {
-    color: #ef4444;
+.patients-card { background-color: #f0fff4; }
+.patients-card::before { background-color: #3b82f6; }
+.patients-card .card-icon { color: #3b82f6; }
+
+.upcoming-card { background-color: #fff7ed; }
+.upcoming-card::before { background-color: #f59e0b; }
+.upcoming-card .card-icon { color: #f59e0b; }
+
+/* ================= CALENDAR SECTION (NEW - MATCH PATIENT STYLE) ================= */
+.calendar-section {
+    margin-top: 30px;
 }
 
-/* Patients Card */
-.patients-card {
-    background-color: #f0fff4; /* Light green background */
-}
-.patients-card::before {
-    background-color: #3b82f6; /* Blue stripe */
-}
-.patients-card .card-icon {
-    color: #3b82f6;
+.calendar-card {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    transition: 0.3s ease;
 }
 
-/* Upcoming Appointments Card */
-.upcoming-card {
-    background-color: #fff7ed; /* Light orange background */
+.calendar-card:hover {
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
 }
-.upcoming-card::before {
-    background-color: #f59e0b; /* Orange stripe */
+
+/* FullCalendar Container */
+#calendar {
+    max-width: 100%;
+    margin: 0 auto;
 }
-.upcoming-card .card-icon {
-    color: #f59e0b;
+
+/* ================= FULLCALENDAR HEADER ================= */
+.fc-toolbar-title {
+    font-size: 24px !important;
+    font-weight: 700;
+    color: #111827;
+}
+
+/* Buttons */
+.fc .fc-button {
+    background-color: #6a0dad !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 8px 12px !important;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.fc .fc-button:hover {
+    background-color: #560aaf !important;
+}
+
+/* Calendar Grid */
+.fc-daygrid-day-number {
+    font-weight: 600;
+    color: #444;
+}
+
+/* ================= EVENTS ================= */
+.fc-daygrid-event {
+    background-color: #4caf50 !important;
+    border-radius: 10px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+    transition: 0.2s ease;
+}
+
+.fc-daygrid-event:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+}
+
+/* Past event */
+.fc-daygrid-event.past-event {
+    background-color: #9e9e9e !important;
+}
+
+/* Today highlight */
+.fc-day-today {
+    background-color: #f3ebff !important;
+    border-radius: 10px;
 }
 
 /* ================= RESPONSIVE ================= */
 @media screen and (max-width: 900px) {
     .cards-container {
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .calendar-card {
+        padding: 18px;
     }
 }
 
@@ -166,6 +216,9 @@ body {
     .page-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 10px;
+    }
+
+    .calendar-card {
+        padding: 15px;
     }
 }

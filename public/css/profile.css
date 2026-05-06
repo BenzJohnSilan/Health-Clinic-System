@@ -37,7 +37,23 @@
     border: 3px solid #e5e7eb;
 }
 
-/* ================= BUTTON ================= */
+/* ================= AVATAR ACTIONS (NEW FIX) ================= */
+.avatar-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+/* file input wrapper */
+.file-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+/* ================= BUTTONS ================= */
 .btn-primary {
     background-color: #6a0dad;
     color: #fff;
@@ -54,6 +70,22 @@
     transform: translateY(-1px);
 }
 
+.btn-danger {
+    background: #e3342f;
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: 0.2s;
+    white-space: nowrap;
+}
+
+.btn-danger:hover {
+    background: #cc1f1a;
+}
+
 /* ================= FORM ================= */
 .profile-form {
     display: flex;
@@ -61,7 +93,7 @@
     gap: 20px;
 }
 
-/* GRID (2 COLUMNS) */
+/* GRID */
 .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -74,7 +106,7 @@
     flex-direction: column;
 }
 
-/* FULL WIDTH FIELD */
+/* FULL WIDTH */
 .form-group.full {
     grid-column: span 2;
 }
@@ -101,12 +133,11 @@
     transition: border 0.2s, box-shadow 0.2s;
 }
 
-/* TEXTAREA */
 .profile-form textarea {
     resize: none;
 }
 
-/* FOCUS EFFECT */
+/* FOCUS */
 .profile-form input:focus,
 .profile-form select:focus,
 .profile-form textarea:focus {
@@ -115,7 +146,7 @@
     box-shadow: 0 0 0 2px rgba(79,70,229,0.15);
 }
 
-/* ================= ALERTS ================= */
+/* ================= ALERT ================= */
 .alert-success {
     width: 100%;
     margin: 10px 0 20px;
@@ -144,5 +175,9 @@
 
     .form-group.full {
         grid-column: span 1;
+    }
+
+    .avatar-actions {
+        flex-direction: column;
     }
 }
