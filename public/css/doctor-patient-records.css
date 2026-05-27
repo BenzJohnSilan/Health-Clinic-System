@@ -1,0 +1,158 @@
+/* ================= PAGE ================= */
+.container {
+    padding: 20px;
+}
+
+/* ================= HEADER ================= */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+/* ================= BACK BUTTON ================= */
+.back-btn {
+    background: #6a0dad;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: 0.3s ease;
+}
+
+.back-btn:hover {
+    background: #560aaf;
+}
+
+/* ================= CARD ================= */
+.card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.card-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #6a0dad;
+}
+
+/* ================= INFO GRID ================= */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.info-item {
+    background: #f9fafb;
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.info-label {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.info-value {
+    font-size: 15px;
+    font-weight: 500;
+    color: #222;
+}
+
+/* ================= TABLE ================= */
+.table-container {
+    overflow-x: auto;
+}
+
+.record-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.record-table th,
+.record-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+    font-size: 14px;
+}
+
+.record-table th {
+    background: #f3f4f6;
+    font-weight: 600;
+}
+
+.record-table tr:hover {
+    background: #f9fafb;
+}
+
+/* ================= STATUS BADGES ================= */
+.badge {
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.approved {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.completed {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.rescheduled {
+    background: #ffedd5;
+    color: #c2410c;
+}
+
+/* ================= BUTTON ================= */
+.btn-view {
+    background: #6a0dad;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    text-decoration: none;
+    transition: 0.3s ease;
+}
+
+.btn-view:hover {
+    background: #560aaf;
+}
+
+/* ================= EMPTY ================= */
+.empty-text {
+    color: #777;
+    font-size: 14px;
+    text-align: center;
+}

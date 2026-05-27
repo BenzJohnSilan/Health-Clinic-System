@@ -200,6 +200,7 @@
                         <option value="SSS"               {{ old('id_type')=='SSS'               ? 'selected':'' }}>SSS</option>
                         <option value="UMID"              {{ old('id_type')=='UMID'              ? 'selected':'' }}>UMID</option>
                         <option value="Voter's ID"        {{ old('id_type')=="Voter's ID"        ? 'selected':'' }}>Voter's ID</option>
+                        <option value="Others"            {{ old('id_type')=="Others"            ? 'selected':'' }}>Others</option>
                     </select>
                 </div>
             </div>
@@ -226,9 +227,10 @@
                     <i class='bx bxs-info-circle input-icon'></i>
                     <select name="reason" required>
                         <option value="">-- Select Reason --</option>
-                        <option value="Check-up / Consultation" {{ old('reason')=='Check-up / Consultation' ? 'selected':'' }}>Check-up / Consultation</option>
-                        <option value="Appointment Booking"     {{ old('reason')=='Appointment Booking'     ? 'selected':'' }}>Appointment Booking</option>
-                        <option value="Medical Record Access"   {{ old('reason')=='Medical Record Access'   ? 'selected':'' }}>Medical Record Access</option>
+                        <option value="To Book Appointments Online" {{ old('reason')=='To Book Appointments Online' ? 'selected':'' }}>To Book Appointments Online</option>
+                        <option value="To Access Clinic Services"   {{ old('reason')=='To Access Clinic Services'     ? 'selected':'' }}>To Access Clinic Services</option>
+                        <option value="To Manage Personal Health Records"   {{ old('reason')=='To Manage Personal Health Records'   ? 'selected':'' }}>To Manage Personal Health Records</option>
+                        <option value="For Easier Communication with the Clinic" {{ old('reason')=='For Easier Communication with the Clinic' ? 'selected':'' }}>For Easier Communication with the Clinic</option>
                         <option value="Others"                  {{ old('reason')=='Others'                  ? 'selected':'' }}>Others</option>
                     </select>
                 </div>
@@ -354,10 +356,6 @@
                 <i class='bx bx-user-plus'></i> Create Account
             </button>
         </form>
-
-        <div class="login-link">
-            Already have an account? <a href="{{ route('login') }}">Login here</a>
-        </div>
 
     </div>
 </div>

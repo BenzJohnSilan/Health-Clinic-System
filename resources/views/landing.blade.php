@@ -82,10 +82,11 @@
                 </div>
             </div>
 
+            <!-- Patient names replaced with anonymous identifiers for data privacy -->
             <div class="appt-item">
                 <div class="appt-dot" style="background:#6a11cb;"></div>
                 <div class="appt-info">
-                    <p>Juan dela Cruz</p>
+                    <p>Patient #001</p>
                     <span>9:00 AM · Dr. Santos</span>
                 </div>
                 <span class="appt-badge badge-approved">Approved</span>
@@ -93,7 +94,7 @@
             <div class="appt-item">
                 <div class="appt-dot" style="background:#a044ff;"></div>
                 <div class="appt-info">
-                    <p>Maria Reyes</p>
+                    <p>Patient #002</p>
                     <span>10:30 AM · Dr. Santos</span>
                 </div>
                 <span class="appt-badge badge-pending">Pending</span>
@@ -101,7 +102,7 @@
             <div class="appt-item">
                 <div class="appt-dot" style="background:#6a11cb;"></div>
                 <div class="appt-info">
-                    <p>Pedro Bautista</p>
+                    <p>Patient #003</p>
                     <span>1:00 PM · Dr. Santos</span>
                 </div>
                 <span class="appt-badge badge-approved">Approved</span>
@@ -391,13 +392,7 @@
                     <p>support@clinicrms.com<br>admin@clinicrms.com</p>
                 </div>
             </div>
-            <div class="contact-item">
-                <div class="contact-icon"><i class='bx bxs-time-five'></i></div>
-                <div>
-                    <h5>Clinic Hours</h5>
-                    <p>Monday – Friday: 9:00 AM – 5:00 PM<br>Saturday: 9:00 AM – 12:00 PM</p>
-                </div>
-            </div>
+            <!-- Clinic Hours removed here to avoid duplication with Location section -->
         </div>
 
         <div class="contact-form">

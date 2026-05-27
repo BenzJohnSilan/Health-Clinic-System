@@ -13,51 +13,60 @@ return new class extends Migration
             $table->id();
 
             // ================= PROFILE =================
-            $table->string('avatar')->nullable();
+            $table->string('avatar', 100)->nullable();
 
             // ================= PERSONAL INFORMATION =================
-            $table->string('first_name');
-            $table->string('middle_name')->nullable();
-            $table->string('last_name');
-            $table->string('suffix')->nullable();
+            $table->string('first_name', 50);
+            $table->string('middle_name', 50)->nullable();
+            $table->string('last_name', 50);
+            $table->string('suffix', 10)->nullable();
             $table->date('birthdate');
             $table->enum('gender', ['Male', 'Female', 'Other']);
             $table->enum('civil_status', ['Single', 'Married', 'Widowed', 'Separated']);
-            $table->string('address');
+            $table->string('address', 100);
 
             // ================= CONTACT =================
-            $table->string('contact_number')->unique();
+            $table->string('contact_number', 20)->unique();
 
             // ================= VERIFICATION =================
-            $table->string('id_type')->nullable();
+            $table->string('id_type', 50)->nullable();
             $table->string('valid_id')->nullable();
 
             // ================= REASON =================
             $table->enum('reason', [
-                'Check-up / Consultation',
-                'Appointment Booking',
-                'Medical Record Access',
-                'Others',
+                'To Book Appointments Online',
+                'To Access Clinic Services',
+                'To Manage Personal Health Records',
+                'For Easier Communication with the Clinic',
+                'Others'
             ])->nullable();
 
             // ================= MEDICAL INFORMATION =================
-            $table->string('blood_type')->nullable();
+            $table->string('blood_type', 10)->nullable();
             $table->text('allergies')->nullable();
 
             // ================= EMERGENCY CONTACT =================
-            $table->string('emergency_name')->nullable();
-            $table->string('emergency_contact_number')->nullable();
-            $table->string('relationship')->nullable();
-            $table->string('emergency_address')->nullable();
+            $table->string('emergency_name', 100)->nullable();
+            $table->string('emergency_contact_number', 20)->nullable();
+            $table->string('relationship', 50)->nullable();
+            $table->string('emergency_address', 100)->nullable();
+
+            // ================= DOCTOR INFORMATION =================
+            $table->string('specialization', 50)->nullable();
+            $table->string('license_number', 20)->nullable();
+
+            // ================= STAFF INFORMATION =================
+            $table->string('employee_id', 20)->nullable();
+            $table->string('position', 50)->nullable();
 
             // ================= LOGIN =================
-            $table->string('username')->unique();
-            $table->string('email')->unique();
+            $table->string('username', 50)->unique();
+            $table->string('email')->unique();       // ✅ FIXED: inalis ang (50) limit
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('password');              // ✅ FIXED: inalis ang (50) limit, bcrypt needs 60+ chars
 
             // ================= ROLE =================
-            $table->enum('role', ['Admin', 'Patient', 'Doctor'])
+            $table->enum('role', ['Admin', 'Patient', 'Doctor', 'Staff'])
                   ->default('Patient');
 
             // ================= ACCOUNT STATUS =================

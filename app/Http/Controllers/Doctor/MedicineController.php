@@ -11,7 +11,7 @@ class MedicineController extends Controller
     // Show inventory list
     public function index()
     {
-        $medicines = Medicine::all();
+        $medicines = Medicine::orderBy('created_at', 'desc')->paginate(10);
         return view('doctor.medicines.index', compact('medicines'));
     }
 

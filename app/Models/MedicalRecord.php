@@ -10,26 +10,34 @@ class MedicalRecord extends Model
 
     protected $fillable = [
         'patient_id',
+        'walkin_patient_id',
         'doctor_id',
         'appointment_id',
+        'chief_complaint',
         'diagnosis',
         'treatment',
         'notes',
+        'blood_pressure',
+        'temperature',
+        'weight',
+        'height',
     ];
 
-    // Patient relationship
     public function patient()
     {
         return $this->belongsTo(User::class, 'patient_id');
     }
 
-    // Doctor relationship
+    public function walkInPatient()
+    {
+        return $this->belongsTo(Patient::class, 'walkin_patient_id');
+    }
+
     public function doctor()
     {
         return $this->belongsTo(User::class, 'doctor_id');
     }
 
-    // Appointment relationship
     public function appointment()
     {
         return $this->belongsTo(Appointment::class);

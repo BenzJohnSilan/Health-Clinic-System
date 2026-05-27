@@ -35,6 +35,12 @@ class AdminController extends Controller
             ->where('status', 'Active')
             ->count();
 
+        // ✅ ADDED: Staff count for charts
+        $totalStaff = User::where('role', 'Staff')
+            ->where('approval_status', 'Approved')
+            ->where('status', 'Active')
+            ->count();
+
         $totalPatients = User::where('role', 'Patient')
             ->where('approval_status', 'Approved')
             ->where('status', 'Active')
@@ -90,6 +96,7 @@ class AdminController extends Controller
             // User stats
             'totalUsers',
             'totalDoctors',
+            'totalStaff',       // ✅ ADDED
             'totalPatients',
             'totalPending',
             // Appointment stats
@@ -237,7 +244,6 @@ class AdminController extends Controller
             'action'  => 'Changed Password',
             'details' => 'Admin changed password'
         ]);
-
 
         return back()->with('success', 'Password updated successfully.');
     }

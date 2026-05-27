@@ -152,6 +152,12 @@
 .doctors-card::after  { background: var(--accent-red); }
 .doctors-card .card-icon { color: var(--accent-red); }
 
+/* ✅ ADDED: Staff */
+.staff-card { background: #fffbeb; }
+.staff-card::before { background: var(--accent-amber); }
+.staff-card::after  { background: var(--accent-amber); }
+.staff-card .card-icon { color: var(--accent-amber); }
+
 /* Patients */
 .patients-card { background: #f0fbf6; }
 .patients-card::before { background: var(--accent-green); }

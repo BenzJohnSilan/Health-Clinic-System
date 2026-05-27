@@ -40,7 +40,15 @@
             <tbody>
                 @forelse($appointments as $appointment)
                 <tr>
-                    <td>{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}</td>
+                    <td>
+                        @if($appointment->patient)
+                            {{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}
+                        @elseif($appointment->walkinPatient)
+                            {{ $appointment->walkinPatient->first_name }} {{ $appointment->walkinPatient->last_name }}
+                        @else
+                            N/A
+                        @endif
+                    </td>
                     <td>{{ $appointment->doctor->first_name }} {{ $appointment->doctor->last_name }}</td>
                     <td>{{ \Carbon\Carbon::parse($appointment->appointment_date)->format('Y-m-d') }}</td>
                     <td>{{ \Carbon\Carbon::parse($appointment->appointment_time)->format('H:i') }}</td>

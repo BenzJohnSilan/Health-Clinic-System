@@ -22,6 +22,7 @@
             <option value="">All Roles</option>
             <option value="Admin">Admin</option>
             <option value="Doctor">Doctor</option>
+            <option value="Staff">Staff</option>
             <option value="Patient">Patient</option>
         </select>
 
@@ -34,15 +35,17 @@
 
     <!-- ================= SUCCESS MESSAGE ================= -->
     @if(session('success'))
-        <div class="alert-success">
-            {{ session('success') }}
-        </div>
+        <div class="alert-success">{{ session('success') }}</div>
     @endif
 
-    <!-- ================= ADD USER MODAL ================= -->
+    <!-- ================================================================
+         ADD USER MODAL
+    ================================================================ -->
     <div id="addUserModal" class="modal">
         <div class="modal-content">
-            <button id="closeAddModal" class="modal-close">&times;</button>
+
+            <!-- X close — ONLY way to close -->
+            <button id="closeAddModal" class="modal-close" type="button">&times;</button>
 
             <h3>Create New User</h3>
 
@@ -56,153 +59,379 @@
                 </div>
             @endif
 
-            <form action="{{ route('admin.users.store') }}" method="POST" enctype="multipart/form-data">
+            <!-- ===== STEP 1 : ROLE PICKER ===== -->
+            <div id="rolePicker">
+                <p class="step-hint">Select a role to continue</p>
+                <div class="role-cards">
+                    <button type="button" class="role-card" data-role="Admin">
+                        <span class="role-icon">🛡️</span>
+                        <span class="role-name">Admin</span>
+                    </button>
+                    <button type="button" class="role-card" data-role="Doctor">
+                        <span class="role-icon">🩺</span>
+                        <span class="role-name">Doctor</span>
+                    </button>
+                    <button type="button" class="role-card" data-role="Staff">
+                        <span class="role-icon">🗂️</span>
+                        <span class="role-name">Staff</span>
+                    </button>
+                    <button type="button" class="role-card" data-role="Patient">
+                        <span class="role-icon">🏥</span>
+                        <span class="role-name">Patient</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ===== STEP 2 : FORM (hidden until role chosen) ===== -->
+            <form id="addUserForm" action="{{ route('admin.users.store') }}" method="POST"
+                  enctype="multipart/form-data" style="display:none;">
                 @csrf
 
-                <label>Avatar</label>
-                <input type="file" name="avatar">
+                <!-- Hidden role value filled by JS -->
+                <input type="hidden" name="role" id="selectedRole">
 
-                <label>First Name</label>
-                <input type="text" name="first_name" required>
+                <!-- ── ROLE BREADCRUMB BAR ── -->
+                <div class="role-breadcrumb">
+                    <button type="button" id="backToRolePicker" class="btn-back-role">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"/>
+                        </svg>
+                        Change Role
+                    </button>
 
-                <label>Middle Name</label>
-                <input type="text" name="middle_name">
+                    <div class="role-breadcrumb-right">
+                        <span class="role-breadcrumb-dot" id="roleDotColor"></span>
+                        <span class="role-breadcrumb-label">Creating:&nbsp;</span>
+                        <strong id="selectedRoleLabel" class="role-breadcrumb-value"></strong>
+                    </div>
+                </div>
 
-                <label>Last Name</label>
-                <input type="text" name="last_name" required>
+                <!-- === ACCOUNT === -->
+                <div class="form-section">
+                    <div class="section-heading">
+                        <span class="section-badge">Account</span>
+                    </div>
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label>Avatar</label>
+                            <input type="file" name="avatar" accept=".jpg,.jpeg,.png">
+                        </div>
+                        <div class="form-group">
+                            <label>Username <span class="required">*</span></label>
+                            <input type="text" name="username" value="{{ old('username') }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email <span class="required">*</span></label>
+                            <input type="email" name="email" value="{{ old('email') }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Status <span class="required">*</span></label>
+                            <select name="status" required>
+                                <option value="Active"   {{ old('status','Active') == 'Active'   ? 'selected' : '' }}>Active</option>
+                                <option value="Inactive" {{ old('status')          == 'Inactive' ? 'selected' : '' }}>Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
 
-                <label>Suffix</label>
-                <input type="text" name="suffix">
+                <!-- === PERSONAL INFORMATION === -->
+                <div class="form-section">
+                    <div class="section-heading">
+                        <span class="section-badge">Personal Information</span>
+                    </div>
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label>First Name <span class="required">*</span></label>
+                            <input type="text" name="first_name" value="{{ old('first_name') }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Middle Name</label>
+                            <input type="text" name="middle_name" value="{{ old('middle_name') }}">
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name <span class="required">*</span></label>
+                            <input type="text" name="last_name" value="{{ old('last_name') }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Suffix</label>
+                            <input type="text" name="suffix" value="{{ old('suffix') }}" placeholder="Jr., Sr., III">
+                        </div>
+                        <div class="form-group">
+                            <label>Birthdate <span class="required">*</span></label>
+                            <input type="date" name="birthdate" value="{{ old('birthdate') }}"
+                                   max="{{ date('Y-m-d') }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Gender <span class="required">*</span></label>
+                            <select name="gender" required>
+                                <option value="">-- Select --</option>
+                                <option value="Male"   {{ old('gender') == 'Male'   ? 'selected' : '' }}>Male</option>
+                                <option value="Female" {{ old('gender') == 'Female' ? 'selected' : '' }}>Female</option>
+                                <option value="Other"  {{ old('gender') == 'Other'  ? 'selected' : '' }}>Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Civil Status <span class="required">*</span></label>
+                            <select name="civil_status" required>
+                                <option value="">-- Select --</option>
+                                <option value="Single"    {{ old('civil_status') == 'Single'    ? 'selected' : '' }}>Single</option>
+                                <option value="Married"   {{ old('civil_status') == 'Married'   ? 'selected' : '' }}>Married</option>
+                                <option value="Widowed"   {{ old('civil_status') == 'Widowed'   ? 'selected' : '' }}>Widowed</option>
+                                <option value="Separated" {{ old('civil_status') == 'Separated' ? 'selected' : '' }}>Separated</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Number <span class="required">*</span></label>
+                            <input type="text" name="contact_number" value="{{ old('contact_number') }}"
+                                   maxlength="11" pattern="\d{11}"
+                                   oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                                   placeholder="09XXXXXXXXX" required>
+                        </div>
+                        <div class="form-group form-group-full">
+                            <label>Address <span class="required">*</span></label>
+                            <input type="text" name="address" value="{{ old('address') }}" required>
+                        </div>
+                    </div>
+                </div>
 
-                <label>Birthday</label>
-                <input type="date" name="birthdate" max="{{ date('Y-m-d') }}" required>
+                <!-- === DOCTOR INFO (Doctor only) === -->
+                <div class="form-section role-section" data-for="Doctor" style="display:none;">
+                    <div class="section-heading">
+                        <span class="section-badge section-badge--doctor">Doctor Information</span>
+                    </div>
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label>Specialization <span class="required">*</span></label>
+                            <input type="text" name="specialization" value="{{ old('specialization') }}"
+                                   placeholder="e.g. Cardiology, Pediatrics">
+                        </div>
+                        <div class="form-group">
+                            <label>PRC License Number <span class="required">*</span></label>
+                            <input type="text" name="license_number" value="{{ old('license_number') }}"
+                                   placeholder="e.g. 0012345">
+                        </div>
+                    </div>
+                </div>
 
-                <label>Gender</label>
-                <select name="gender" required>
-                    <option value="">-- Select --</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                </select>
+                <!-- === STAFF INFO (Staff only) === -->
+                <div class="form-section role-section" data-for="Staff" style="display:none;">
+                    <div class="section-heading">
+                        <span class="section-badge section-badge--staff">Staff Information</span>
+                    </div>
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label>Employee ID</label>
+                            <div class="input-with-badge">
+                                <input type="text" id="employee_id_field" name="employee_id"
+                                       value="{{ old('employee_id') }}"
+                                       placeholder="EMP-0001" readonly
+                                       class="input-readonly">
+                                <span class="input-badge">Auto-generated</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Position <span class="required">*</span></label>
+                            <input type="text" name="position" value="{{ old('position') }}"
+                                   placeholder="e.g. Nurse, Receptionist">
+                        </div>
+                    </div>
+                </div>
 
-                <label>Civil Status</label>
-                <select name="civil_status" required>
-                    <option value="">-- Select --</option>
-                    <option value="Single">Single</option>
-                    <option value="Married">Married</option>
-                    <option value="Widowed">Widowed</option>
-                    <option value="Separated">Separated</option>
-                </select>
+                <!-- === MEDICAL INFO (Patient only) === -->
+                <div class="form-section role-section" data-for="Patient" style="display:none;">
+                    <div class="section-heading">
+                        <span class="section-badge section-badge--patient">Medical Information</span>
+                    </div>
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label>Blood Type</label>
+                            <select name="blood_type">
+                                <option value="">-- Select --</option>
+                                @foreach(['A+','A-','B+','B-','AB+','AB-','O+','O-'] as $bt)
+                                    <option value="{{ $bt }}" {{ old('blood_type') == $bt ? 'selected' : '' }}>{{ $bt }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Allergies</label>
+                            <input type="text" name="allergies" value="{{ old('allergies') }}"
+                                   placeholder="e.g. Penicillin, Pollen">
+                        </div>
+                        <div class="form-group">
+                            <label>ID Type</label>
+                            <select name="id_type">
+                                <option value="">-- Select --</option>
+                                @foreach(["PhilHealth ID","SSS ID","GSIS ID","Passport","Driver's License","Postal ID","Voter's ID","National ID","School ID","Senior Citizen ID"] as $idType)
+                                    <option value="{{ $idType }}" {{ old('id_type') == $idType ? 'selected' : '' }}>{{ $idType }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Upload Valid ID</label>
+                            <input type="file" name="valid_id" accept=".jpg,.jpeg,.png,.pdf">
+                        </div>
+                        <div class="form-group form-group-full">
+                            <label>Reason for Registration</label>
+                            <select name="reason">
+                                <option value="">-- Select Reason --</option>
+                                <option value="To Book Appointments Online"           {{ old('reason')=='To Book Appointments Online'           ? 'selected':'' }}>To Book Appointments Online</option>
+                                <option value="To Access Clinic Services"             {{ old('reason')=='To Access Clinic Services'             ? 'selected':'' }}>To Access Clinic Services</option>
+                                <option value="To Manage Personal Health Records"     {{ old('reason')=='To Manage Personal Health Records'     ? 'selected':'' }}>To Manage Personal Health Records</option>
+                                <option value="For Easier Communication with the Clinic" {{ old('reason')=='For Easier Communication with the Clinic' ? 'selected':'' }}>For Easier Communication with the Clinic</option>
+                                <option value="Others"                                {{ old('reason')=='Others'                                ? 'selected':'' }}>Others</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
 
-                <label>Address</label>
-                <input type="text" name="address" required>
+                <!-- === EMERGENCY CONTACT (Patient only) === -->
+                <div class="form-section role-section" data-for="Patient" style="display:none;">
+                    <div class="section-heading">
+                        <span class="section-badge section-badge--patient">Emergency Contact</span>
+                    </div>
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label>Contact Person Name</label>
+                            <input type="text" name="emergency_name" value="{{ old('emergency_name') }}">
+                        </div>
+                        <div class="form-group">
+                            <label>Relationship</label>
+                            <input type="text" name="relationship" value="{{ old('relationship') }}"
+                                   placeholder="e.g. Spouse, Parent, Sibling">
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Number</label>
+                            <input type="text" name="emergency_contact_number"
+                                   value="{{ old('emergency_contact_number') }}"
+                                   maxlength="11" pattern="\d{11}"
+                                   oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                                   placeholder="09XXXXXXXXX">
+                        </div>
+                        <div class="form-group">
+                            <label>Address</label>
+                            <input type="text" name="emergency_address" value="{{ old('emergency_address') }}">
+                        </div>
+                    </div>
+                </div>
 
-                <label>Contact Number</label>
-                <input type="text" name="contact_number" required maxlength="11"
-                       pattern="\d{11}" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                <button type="submit" class="btn-primary btn-submit">Create User</button>
 
-                <label>Username</label>
-                <input type="text" name="username" required>
+            </form><!-- /addUserForm -->
 
-                <label>Email</label>
-                <input type="email" name="email" required>
-
-                <label>Role</label>
-                <select name="role" required>
-                    <option value="Admin">Admin</option>
-                    <option value="Doctor">Doctor</option>
-                    <option value="Patient">Patient</option>
-                </select>
-
-                <label>Status</label>
-                <select name="status" required>
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                </select>
-
-                <button type="submit" class="btn-primary">Create User</button>
-            </form>
         </div>
-    </div>
+    </div><!-- /addUserModal -->
 
-    <!-- ================= EDIT USER MODAL ================= -->
+    <!-- ================================================================
+         EDIT USER MODAL
+    ================================================================ -->
     <div id="editUserModal" class="modal">
         <div class="modal-content">
-            <button id="closeEditModal" class="modal-close">&times;</button>
-
+            <button id="closeEditModal" class="modal-close" type="button">&times;</button>
             <h3>Edit User</h3>
 
             <form id="editUserForm" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
 
-                <label>Avatar</label>
-                <input type="file" name="avatar">
+                <div class="form-section">
+                    <div class="section-heading"><span class="section-badge">Account</span></div>
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label>Avatar</label>
+                            <input type="file" name="avatar" accept=".jpg,.jpeg,.png">
+                        </div>
+                        <div class="form-group">
+                            <label>Username</label>
+                            <input type="text" id="edit_username" name="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="edit_email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Role</label>
+                            <select id="edit_role" name="role" required>
+                                <option value="Admin">Admin</option>
+                                <option value="Doctor">Doctor</option>
+                                <option value="Staff">Staff</option>
+                                <option value="Patient">Patient</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="edit_status" name="status" required>
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
 
-                <label>First Name</label>
-                <input type="text" id="edit_first_name" name="first_name" required>
+                <div class="form-section">
+                    <div class="section-heading"><span class="section-badge">Personal Information</span></div>
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" id="edit_first_name" name="first_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Middle Name</label>
+                            <input type="text" id="edit_middle_name" name="middle_name">
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name</label>
+                            <input type="text" id="edit_last_name" name="last_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Suffix</label>
+                            <input type="text" id="edit_suffix" name="suffix">
+                        </div>
+                        <div class="form-group">
+                            <label>Birthdate</label>
+                            <input type="date" id="edit_birthdate" name="birthdate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Gender</label>
+                            <select id="edit_gender" name="gender" required>
+                                <option value="">-- Select --</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Civil Status</label>
+                            <select id="edit_civil_status" name="civil_status" required>
+                                <option value="">-- Select --</option>
+                                <option value="Single">Single</option>
+                                <option value="Married">Married</option>
+                                <option value="Widowed">Widowed</option>
+                                <option value="Separated">Separated</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Number</label>
+                            <input type="text" id="edit_contact_number" name="contact_number"
+                                   maxlength="11" pattern="\d{11}"
+                                   oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                        </div>
+                        <div class="form-group form-group-full">
+                            <label>Address</label>
+                            <input type="text" id="edit_address" name="address" required>
+                        </div>
+                    </div>
+                </div>
 
-                <label>Middle Name</label>
-                <input type="text" id="edit_middle_name" name="middle_name">
-
-                <label>Last Name</label>
-                <input type="text" id="edit_last_name" name="last_name" required>
-
-                <label>Suffix</label>
-                <input type="text" id="edit_suffix" name="suffix">
-
-                <label>Birthday</label>
-                <input type="date" id="edit_birthdate" name="birthdate" required>
-
-                <label>Gender</label>
-                <select id="edit_gender" name="gender" required>
-                    <option value="">-- Select --</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                </select>
-
-                <label>Civil Status</label>
-                <select id="edit_civil_status" name="civil_status" required>
-                    <option value="">-- Select --</option>
-                    <option value="Single">Single</option>
-                    <option value="Married">Married</option>
-                    <option value="Widowed">Widowed</option>
-                    <option value="Separated">Separated</option>
-                </select>
-
-                <label>Address</label>
-                <input type="text" id="edit_address" name="address" required>
-
-                <label>Contact Number</label>
-                <input type="text" id="edit_contact_number" name="contact_number" required maxlength="11"
-                       pattern="\d{11}" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-
-                <label>Username</label>
-                <input type="text" id="edit_username" name="username" required>
-
-                <label>Email</label>
-                <input type="email" id="edit_email" name="email" required>
-
-                <label>Role</label>
-                <select id="edit_role" name="role" required>
-                    <option value="Admin">Admin</option>
-                    <option value="Doctor">Doctor</option>
-                    <option value="Patient">Patient</option>
-                </select>
-
-                <label>Status</label>
-                <select id="edit_status" name="status" required>
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                </select>
-
-                <button type="submit" class="btn-primary">Update User</button>
+                <button type="submit" class="btn-primary btn-submit">Update User</button>
             </form>
         </div>
-    </div>
+    </div><!-- /editUserModal -->
 
-    <!-- ================= USERS TABLE ================= -->
+    <!-- ================================================================
+         USERS TABLE
+    ================================================================ -->
     <table class="users-table">
         <thead>
             <tr>
@@ -210,34 +439,40 @@
                 <th>Full Name</th>
                 <th>Username</th>
                 <th>Email</th>
-                <th>Email Verified</th>
+                <th>Verified</th>
                 <th>Role</th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-        @foreach($users as $user)
+        @forelse($users as $user)
             <tr class="user-row"
                 data-name="{{ strtolower($user->first_name . ' ' . $user->last_name) }}"
                 data-username="{{ strtolower($user->username) }}"
                 data-email="{{ strtolower($user->email) }}"
                 data-role="{{ $user->role }}"
-                data-status="{{ $user->status }}"
-            >
+                data-status="{{ $user->status }}">
                 <td>{{ $user->id }}</td>
-                <td>{{ $user->first_name }} {{ $user->last_name }}</td>
+                <td>
+                    @if($user->avatar)
+                        <img src="{{ asset('storage/' . $user->avatar) }}"
+                             style="width:30px;height:30px;border-radius:50%;object-fit:cover;
+                                    vertical-align:middle;margin-right:6px;">
+                    @endif
+                    {{ $user->first_name }} {{ $user->last_name }}
+                </td>
                 <td>{{ $user->username }}</td>
                 <td>{{ $user->email }}</td>
                 <td>
                     @if($user->email_verified_at)
-                        <span style="color:green;">Verified</span>
+                        <span class="badge badge--verified">✓ Verified</span>
                     @else
-                        <span style="color:red;">Unverified</span>
+                        <span class="badge badge--unverified">✗ Unverified</span>
                     @endif
                 </td>
-                <td>{{ $user->role }}</td>
-                <td>{{ $user->status }}</td>
+                <td><span class="badge badge--role badge--{{ strtolower($user->role) }}">{{ $user->role }}</span></td>
+                <td><span class="badge badge--{{ strtolower($user->status) }}">{{ $user->status }}</span></td>
                 <td>
                     <button type="button" class="editBtn"
                         data-id="{{ $user->id }}"
@@ -260,83 +495,199 @@
                     <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" style="display:inline;">
                         @csrf
                         @method('DELETE')
-                        <button onclick="return confirm('Delete user?')">Delete</button>
+                        <button type="submit" onclick="return confirm('Delete this user?')">Delete</button>
                     </form>
                 </td>
             </tr>
-        @endforeach
+        @empty
+            <tr>
+                <td colspan="8" style="text-align:center;color:#6b7280;padding:30px;">
+                    No approved users found.
+                </td>
+            </tr>
+        @endforelse
         </tbody>
     </table>
 
-</div>
+</div><!-- /container -->
 
-<!-- ================= JAVASCRIPT ================= -->
+<!-- ================================================================
+     JAVASCRIPT
+================================================================ -->
 <script>
-const addModal  = document.getElementById('addUserModal');
-const editModal = document.getElementById('editUserModal');
+/* ------------------------------------------------------------------
+   ELEMENTS
+------------------------------------------------------------------ */
+const addModal       = document.getElementById('addUserModal');
+const editModal      = document.getElementById('editUserModal');
+const rolePicker     = document.getElementById('rolePicker');
+const addUserForm    = document.getElementById('addUserForm');
+const selectedRoleEl = document.getElementById('selectedRole');
+const roleLabelEl    = document.getElementById('selectedRoleLabel');
+const roleDotEl      = document.getElementById('roleDotColor');
 
-document.getElementById('openAddModal').onclick  = () => addModal.style.display = 'flex';
-document.getElementById('closeAddModal').onclick = () => addModal.style.display = 'none';
-document.getElementById('closeEditModal').onclick = () => editModal.style.display = 'none';
+/* ------------------------------------------------------------------
+   ROLE META  –  color dots + labels
+------------------------------------------------------------------ */
+const ROLE_META = {
+    Admin:   { dot: '#6366f1', label: 'Admin'   },
+    Doctor:  { dot: '#22c55e', label: 'Doctor'  },
+    Staff:   { dot: '#eab308', label: 'Staff'   },
+    Patient: { dot: '#ec4899', label: 'Patient' },
+};
 
-/* ================= EDIT ================= */
+/* ------------------------------------------------------------------
+   HELPERS
+------------------------------------------------------------------ */
+function showRolePicker() {
+    rolePicker.style.display  = 'block';
+    addUserForm.style.display = 'none';
+}
+
+function showFormForRole(role) {
+    selectedRoleEl.value    = role;
+    roleLabelEl.textContent = role;
+
+    // Update colour dot
+    const meta = ROLE_META[role] ?? {};
+    if (roleDotEl) roleDotEl.style.backgroundColor = meta.dot ?? '#6b7280';
+
+    // Show/hide role-specific sections
+    document.querySelectorAll('#addUserForm .role-section').forEach(sec => {
+        sec.style.display = sec.dataset.for === role ? 'block' : 'none';
+    });
+
+    // Auto-generate Employee ID when Staff is selected
+    if (role === 'Staff') generateEmployeeId();
+
+    rolePicker.style.display  = 'none';
+    addUserForm.style.display = 'block';
+}
+
+function resetAddModal() {
+    addUserForm.reset();
+    showRolePicker();
+}
+
+/* ------------------------------------------------------------------
+   AUTO-GENERATE EMPLOYEE ID
+   Format: EMP-XXXX  (padded 4-digit number)
+   Fetches the latest count from the server so the ID is always fresh.
+------------------------------------------------------------------ */
+function generateEmployeeId() {
+    const field = document.getElementById('employee_id_field');
+    if (!field || field.value) return;   // already has an old('employee_id') value
+
+    fetch('/admin/users/next-employee-id')
+        .then(r => r.json())
+        .then(data => {
+            field.value = data.employee_id ?? 'EMP-0001';
+        })
+        .catch(() => {
+            // Fallback: count existing staff rows on this page
+            const staffCount = document.querySelectorAll('.badge--staff').length;
+            const next = String(staffCount + 1).padStart(4, '0');
+            field.value = `EMP-${next}`;
+        });
+}
+
+/* ------------------------------------------------------------------
+   OPEN  –  always start fresh at Step 1
+------------------------------------------------------------------ */
+document.getElementById('openAddModal').onclick = () => {
+    resetAddModal();
+    addModal.style.display = 'flex';
+};
+
+/* ------------------------------------------------------------------
+   CLOSE  –  X BUTTON ONLY
+------------------------------------------------------------------ */
+document.getElementById('closeAddModal').onclick = () => {
+    resetAddModal();
+    addModal.style.display = 'none';
+};
+
+document.getElementById('closeEditModal').onclick = () => {
+    editModal.style.display = 'none';
+};
+
+/* ------------------------------------------------------------------
+   ROLE CARDS  –  clicking a card moves to Step 2
+------------------------------------------------------------------ */
+document.querySelectorAll('#rolePicker .role-card').forEach(card => {
+    card.addEventListener('click', () => showFormForRole(card.dataset.role));
+});
+
+/* ------------------------------------------------------------------
+   BACK BUTTON
+------------------------------------------------------------------ */
+document.getElementById('backToRolePicker').onclick = () => {
+    addUserForm.reset();
+    showRolePicker();
+};
+
+/* ------------------------------------------------------------------
+   AUTO-RESTORE after Laravel validation failure
+------------------------------------------------------------------ */
+@if(old('role'))
+(function () {
+    const oldRole = @json(old('role'));
+    showFormForRole(oldRole);
+    addModal.style.display = 'flex';
+})();
+@endif
+
+/* ------------------------------------------------------------------
+   EDIT MODAL
+------------------------------------------------------------------ */
 document.querySelectorAll('.editBtn').forEach(btn => {
     btn.onclick = () => {
-        document.getElementById('edit_first_name').value = btn.dataset.first;
-        document.getElementById('edit_middle_name').value = btn.dataset.middle;
-        document.getElementById('edit_last_name').value = btn.dataset.last;
-        document.getElementById('edit_suffix').value = btn.dataset.suffix;
-        document.getElementById('edit_birthdate').value = btn.dataset.birthdate;
-        document.getElementById('edit_gender').value = btn.dataset.gender;
-        document.getElementById('edit_civil_status').value = btn.dataset.civil;
-        document.getElementById('edit_address').value = btn.dataset.address;
-        document.getElementById('edit_contact_number').value = btn.dataset.contact;
-        document.getElementById('edit_username').value = btn.dataset.username;
-        document.getElementById('edit_email').value = btn.dataset.email;
-        document.getElementById('edit_role').value = btn.dataset.role;
-        document.getElementById('edit_status').value = btn.dataset.status;
+        document.getElementById('edit_first_name').value     = btn.dataset.first     ?? '';
+        document.getElementById('edit_middle_name').value    = btn.dataset.middle    ?? '';
+        document.getElementById('edit_last_name').value      = btn.dataset.last      ?? '';
+        document.getElementById('edit_suffix').value         = btn.dataset.suffix    ?? '';
+        document.getElementById('edit_birthdate').value      = btn.dataset.birthdate ?? '';
+        document.getElementById('edit_gender').value         = btn.dataset.gender    ?? '';
+        document.getElementById('edit_civil_status').value   = btn.dataset.civil     ?? '';
+        document.getElementById('edit_address').value        = btn.dataset.address   ?? '';
+        document.getElementById('edit_contact_number').value = btn.dataset.contact   ?? '';
+        document.getElementById('edit_username').value       = btn.dataset.username  ?? '';
+        document.getElementById('edit_email').value          = btn.dataset.email     ?? '';
+        document.getElementById('edit_role').value           = btn.dataset.role      ?? '';
+        document.getElementById('edit_status').value         = btn.dataset.status    ?? '';
 
         document.getElementById('editUserForm').action = `/admin/users/${btn.dataset.id}`;
         editModal.style.display = 'flex';
     };
 });
 
-/* ================= SEARCH + FILTER ================= */
-const searchInput = document.getElementById('searchInput');
-const roleFilter  = document.getElementById('roleFilter');
+/* ------------------------------------------------------------------
+   SEARCH + FILTER
+------------------------------------------------------------------ */
+const searchInput  = document.getElementById('searchInput');
+const roleFilter   = document.getElementById('roleFilter');
 const statusFilter = document.getElementById('statusFilter');
-
-const rows = document.querySelectorAll('.user-row');
+const rows         = document.querySelectorAll('.user-row');
 
 function filterUsers() {
-    const search = searchInput.value.toLowerCase();
+    const search = searchInput.value.toLowerCase().trim();
     const role   = roleFilter.value;
     const status = statusFilter.value;
 
     rows.forEach(row => {
-        const name = row.dataset.name;
-        const username = row.dataset.username;
-        const email = row.dataset.email;
-        const userRole = row.dataset.role;
-        const userStatus = row.dataset.status;
+        const matchSearch = row.dataset.name.includes(search)
+                         || row.dataset.username.includes(search)
+                         || row.dataset.email.includes(search);
+        const matchRole   = !role   || row.dataset.role   === role;
+        const matchStatus = !status || row.dataset.status === status;
 
-        let matchSearch = name.includes(search) || username.includes(search) || email.includes(search);
-        let matchRole = role === "" || userRole === role;
-        let matchStatus = status === "" || userStatus === status;
-
-        row.style.display = (matchSearch && matchRole && matchStatus) ? "" : "none";
+        row.style.display = (matchSearch && matchRole && matchStatus) ? '' : 'none';
     });
 }
 
-searchInput.addEventListener('input', filterUsers);
-roleFilter.addEventListener('change', filterUsers);
-statusFilter.addEventListener('change', filterUsers);
-
-/* ================= CLOSE MODAL ================= */
-window.onclick = e => {
-    if (e.target === addModal)  addModal.style.display = 'none';
-    if (e.target === editModal) editModal.style.display = 'none';
-};
+searchInput.addEventListener('input',  filterUsers);
+roleFilter.addEventListener('change',  filterUsers);
+statusFilter.addEventListener('change',filterUsers);
 </script>
 
 @endsection

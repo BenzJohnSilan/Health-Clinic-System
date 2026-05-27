@@ -100,11 +100,32 @@
             </div>
         </div>
 
+        {{-- CHIEF COMPLAINT --}}
+        @if($medicalRecord && $medicalRecord->chief_complaint)
+        <div class="rpt-section">
+            <div class="rpt-section-heading">Chief Complaint</div>
+
+            <div class="rpt-diagnosis-box">
+                {{ $medicalRecord->chief_complaint }}
+            </div>
+        </div>
+        @endif
+
         {{-- DIAGNOSIS --}}
-        @if($appointment->diagnosis)
+        @if($medicalRecord && $medicalRecord->diagnosis)
         <div class="rpt-section">
             <div class="rpt-section-heading">Diagnosis</div>
-            <div class="rpt-diagnosis-box">{{ $appointment->diagnosis }}</div>
+            <div class="rpt-diagnosis-box">{{ $medicalRecord->diagnosis }}</div>
+        </div>
+        @endif
+
+        {{-- TREATMENT --}}
+        @if($medicalRecord && $medicalRecord->treatment)
+        <div class="rpt-section">
+            <div class="rpt-section-heading">Treatment</div>
+            <div class="rpt-diagnosis-box">
+                {{ $medicalRecord->treatment }}
+            </div>
         </div>
         @endif
 
@@ -112,7 +133,7 @@
         <div class="rpt-section">
             <div class="rpt-section-heading">Prescriptions</div>
 
-            @if($appointment->prescriptions->isNotEmpty())
+            @if($prescriptions->isNotEmpty())
                 <table class="rpt-rx-table">
                     <thead>
                         <tr>
@@ -125,7 +146,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($appointment->prescriptions as $i => $prescription)
+                        @foreach($prescriptions as $i => $prescription)
                         <tr>
                             <td>{{ $i + 1 }}</td>
                             <td>
@@ -148,17 +169,17 @@
             @endif
         </div>
 
-        {{-- FOLLOW-UP / REVIEW (FIXED) --}}
+        {{-- FOLLOW-UP / REVIEW --}}
         <div class="rpt-section">
             <div class="rpt-section-heading">Follow-up / Review</div>
 
-            @if($appointment->review)
+            @if($review)
                 <div class="rpt-followup-item">
                     <div>
                         <div class="rpt-followup-date-label">Next Review Date</div>
                         <div class="rpt-followup-date-val">
-                            {{ $appointment->review->next_review_date
-                                ? \Carbon\Carbon::parse($appointment->review->next_review_date)->format('M d, Y')
+                            {{ $review->next_review_date
+                                ? \Carbon\Carbon::parse($review->next_review_date)->format('M d, Y')
                                 : 'Not set' }}
                         </div>
                     </div>
@@ -166,7 +187,7 @@
                     <div>
                         <div class="rpt-followup-msg-label">Remarks / Instructions</div>
                         <div class="rpt-followup-msg">
-                            {{ $appointment->review->message ?? 'No message provided.' }}
+                            {{ $review->message ?? 'No message provided.' }}
                         </div>
                     </div>
                 </div>

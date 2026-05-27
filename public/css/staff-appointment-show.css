@@ -1,0 +1,139 @@
+.container {
+    padding: 20px;
+}
+
+.back-btn {
+    display: inline-block;
+    margin-bottom: 20px;
+    text-decoration: none;
+    color: #6a0dad;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.back-btn:hover {
+    text-decoration: underline;
+}
+
+.page-header {
+    margin-bottom: 20px;
+}
+
+.page-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+}
+
+/* ================= CARD ================= */
+
+.details-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.07);
+}
+
+.card-header {
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.card-header h2 {
+    font-size: 20px;
+    color: #6a0dad;
+    margin: 0;
+}
+
+/* ================= GRID ================= */
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+/* ================= LABELS ================= */
+
+.label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 6px;
+}
+
+.value {
+    font-size: 15px;
+    color: #111827;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+/* ================= STATUS ================= */
+
+.status {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 20px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    width: fit-content;
+}
+
+.status.pending {
+    background: #f59e0b;
+}
+
+.status.approved {
+    background: #10b981;
+}
+
+.status.rejected {
+    background: #ef4444;
+}
+
+.status.completed {
+    background: #8b5cf6;
+}
+
+.status.cancelled {
+    background: #6b7280;
+}
+
+.status.rescheduled {
+    background: #3b82f6;
+}
+
+.status.no-show {
+    background: #f97316;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 768px) {
+
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .details-card {
+        padding: 18px;
+    }
+
+    .page-title {
+        font-size: 24px;
+    }
+
+}

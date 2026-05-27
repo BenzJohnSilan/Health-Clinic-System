@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+
 @section('head')
 <link rel="stylesheet" href="{{ asset('css/doctor-medicines.css') }}">
 @endsection
@@ -7,7 +8,7 @@
 
 <div class="container">
 
-    <!-- HEADER -->
+    <!-- ================= PAGE HEADER ================= -->
     <div class="page-header">
         <h2>Medicine Inventory</h2>
         <div style="display:flex; gap:10px;">
@@ -16,19 +17,17 @@
         </div>
     </div>
 
-    <!-- SUCCESS MESSAGE -->
+    <!-- ================= ALERTS ================= -->
     @if(session('success'))
-        <div class="alert-success">
-            {{ session('success') }}
-        </div>
+        <div class="alert-success">{{ session('success') }}</div>
     @endif
 
-    <!-- EXPIRING SOON BANNER -->
+    <!-- ================= EXPIRING SOON BANNER ================= -->
     @php
         $expiringSoon = $medicines->filter(function($m) {
             $expDate  = \Carbon\Carbon::parse($m->expiration_date)->startOfDay();
             $today    = \Carbon\Carbon::today();
-            $daysLeft = $today->diffInDays($expDate, false); // signed: negative = already past
+            $daysLeft = $today->diffInDays($expDate, false);
             return !$m->is_expired && $daysLeft >= 0 && $daysLeft <= 30;
         });
     @endphp
@@ -40,7 +39,7 @@
         </div>
     @endif
 
-    <!-- SEARCH & FILTER -->
+    <!-- ================= SEARCH & FILTER ================= -->
     <div class="search-filter-bar">
         <input
             type="text"
@@ -69,7 +68,7 @@
         </div>
     </div>
 
-    <!-- TABLE -->
+    <!-- ================= TABLE ================= -->
     <div class="table-container">
         <table class="medicine-table" id="medicineTable">
             <thead>
@@ -154,21 +153,22 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="12" style="text-align:center; padding:20px; color:#888;">
-                        No medicines in inventory yet.
-                    </td>
+                    <td colspan="12" class="no-data">No medicines in inventory yet.</td>
                 </tr>
                 @endforelse
             </tbody>
         </table>
 
-        <div id="noResults" style="display:none; text-align:center; padding:20px; color:#888;">
+        <div id="noResults" style="display:none; text-align:center; padding:24px; color:#9ca3af; font-style:italic; background:#fff;">
             No medicines matched your search.
         </div>
     </div>
 
-    <!-- PAGINATION -->
-    <div class="pagination-bar" id="paginationBar"></div>
+    <!-- ================= PAGINATION ================= -->
+    <div class="pagination-wrapper">
+        <div class="pagination-info" id="paginationInfo">&nbsp;</div>
+        <nav class="pagination-nav" id="paginationNav" aria-label="Pagination"></nav>
+    </div>
 
 </div>
 
@@ -295,6 +295,9 @@
     </div>
 </div>
 
+<!-- ================= FONT AWESOME ================= -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
 @endsection
 
 <script>
@@ -334,38 +337,84 @@ function renderPage() {
         if (numCell) numCell.textContent = start + i + 1;
     });
 
-    document.getElementById('noResults').style.display = filteredRows.length === 0 ? 'block' : 'none';
-    renderPagination();
+    const noResults = document.getElementById('noResults');
+    noResults.style.display = filteredRows.length === 0 ? 'block' : 'none';
+
+    renderPaginationInfo(start, pageRows.length);
+    renderPaginationNav();
 }
 
-function renderPagination() {
-    const bar        = document.getElementById('paginationBar');
+function renderPaginationInfo(start, count) {
+    const info  = document.getElementById('paginationInfo');
+    const total = filteredRows.length;
+
+    if (total === 0) {
+        info.innerHTML = 'No results found';
+        return;
+    }
+
+    const from = start + 1;
+    const to   = start + count;
+    info.innerHTML = `Showing <strong>${from}–${to}</strong> of <strong>${total}</strong> result${total !== 1 ? 's' : ''}`;
+}
+
+function renderPaginationNav() {
+    const nav        = document.getElementById('paginationNav');
     const totalPages = Math.ceil(filteredRows.length / ROWS_PER_PAGE);
-    bar.innerHTML    = '';
+    nav.innerHTML    = '';
 
     if (totalPages <= 1) return;
 
-    const prev     = document.createElement('button');
-    prev.textContent = '← Prev';
-    prev.className   = 'page-btn';
-    prev.disabled    = currentPage === 1;
-    prev.onclick     = () => { currentPage--; renderPage(); };
-    bar.appendChild(prev);
+    /* ---- Previous ---- */
+    const isPrevDisabled = currentPage === 1;
+    const prev = document.createElement('span');
+    prev.innerHTML  = '<i class="fa-solid fa-chevron-left"></i>';
+    prev.className  = 'page-btn' + (isPrevDisabled ? ' disabled' : '');
+    if (!isPrevDisabled) {
+        prev.style.cursor = 'pointer';
+        prev.onclick = () => { currentPage--; renderPage(); };
+    }
+    nav.appendChild(prev);
 
+    /* ---- Page numbers with ellipsis ---- */
+    const pages = [];
     for (let i = 1; i <= totalPages; i++) {
-        const btn = document.createElement('button');
-        btn.textContent = i;
-        btn.className   = 'page-btn' + (i === currentPage ? ' active' : '');
-        btn.onclick     = () => { currentPage = i; renderPage(); };
-        bar.appendChild(btn);
+        if (i === 1 || i === totalPages || Math.abs(i - currentPage) <= 2) {
+            pages.push(i);
+        }
     }
 
-    const next     = document.createElement('button');
-    next.textContent = 'Next →';
-    next.className   = 'page-btn';
-    next.disabled    = currentPage === totalPages;
-    next.onclick     = () => { currentPage++; renderPage(); };
-    bar.appendChild(next);
+    let prevPage = null;
+    pages.forEach(page => {
+        if (prevPage !== null && page - prevPage > 1) {
+            const ellipsis = document.createElement('span');
+            ellipsis.className   = 'page-ellipsis';
+            ellipsis.textContent = '…';
+            nav.appendChild(ellipsis);
+        }
+
+        const btn = document.createElement('span');
+        btn.textContent = page;
+        btn.className   = 'page-btn' + (page === currentPage ? ' active' : '');
+        if (page !== currentPage) {
+            btn.style.cursor = 'pointer';
+            btn.onclick = () => { currentPage = page; renderPage(); };
+        }
+        nav.appendChild(btn);
+
+        prevPage = page;
+    });
+
+    /* ---- Next ---- */
+    const isNextDisabled = currentPage === totalPages;
+    const next = document.createElement('span');
+    next.innerHTML  = '<i class="fa-solid fa-chevron-right"></i>';
+    next.className  = 'page-btn' + (isNextDisabled ? ' disabled' : '');
+    if (!isNextDisabled) {
+        next.style.cursor = 'pointer';
+        next.onclick = () => { currentPage++; renderPage(); };
+    }
+    nav.appendChild(next);
 }
 
 function clearFilters() {
@@ -380,7 +429,7 @@ window.addEventListener('DOMContentLoaded', () => {
     renderPage();
 });
 
-// Export CSV
+/* ===== Export CSV ===== */
 function exportCSV() {
     const headers = ['#','Medicine Name','Brand','Category','Dosage','Quantity','Unit','Price','Total Value','Expiration Date','Status'];
     const rows = filteredRows.map((row, i) => {
@@ -410,30 +459,30 @@ function exportCSV() {
     URL.revokeObjectURL(url);
 }
 
-// Add Modal
+/* ===== Add Modal ===== */
 function openModal()  { document.getElementById('medicineModal').style.display = 'flex'; }
 function closeModal() { document.getElementById('medicineModal').style.display = 'none'; }
 
-// Edit Modal
+/* ===== Edit Modal ===== */
 function openEditModal(id, name, brand, category, dosage, quantity, unit, price, expiration_date) {
-    document.getElementById('editMedicineForm').action        = `/admin/medicines/${id}`;
-    document.getElementById('edit_medicine_name').value       = name;
-    document.getElementById('edit_brand').value               = brand;
-    document.getElementById('edit_category').value            = category;
-    document.getElementById('edit_dosage').value              = dosage;
-    document.getElementById('edit_quantity').value            = quantity;
-    document.getElementById('edit_unit').value                = unit;
-    document.getElementById('edit_price').value               = price;
-    document.getElementById('edit_expiration_date').value     = expiration_date;
+    document.getElementById('editMedicineForm').action         = `/admin/medicines/${id}`;
+    document.getElementById('edit_medicine_name').value        = name;
+    document.getElementById('edit_brand').value                = brand;
+    document.getElementById('edit_category').value             = category;
+    document.getElementById('edit_dosage').value               = dosage;
+    document.getElementById('edit_quantity').value             = quantity;
+    document.getElementById('edit_unit').value                 = unit;
+    document.getElementById('edit_price').value                = price;
+    document.getElementById('edit_expiration_date').value      = expiration_date;
     document.getElementById('editMedicineModal').style.display = 'flex';
 }
 function closeEditModal() { document.getElementById('editMedicineModal').style.display = 'none'; }
 
-// Close on outside click
+/* ===== Close on outside click ===== */
 window.onclick = function(e) {
-    ['medicineModal','editMedicineModal'].forEach(id => {
+    ['medicineModal', 'editMedicineModal'].forEach(id => {
         const modal = document.getElementById(id);
         if (e.target === modal) modal.style.display = 'none';
     });
-}
+};
 </script>

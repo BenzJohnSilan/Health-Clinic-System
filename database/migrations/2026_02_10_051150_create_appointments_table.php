@@ -11,35 +11,51 @@ return new class extends Migration
         Schema::create('appointments', function (Blueprint $table) {
             $table->id();
 
-            // patients
-            $table->foreignId('patient_id')
-                ->constrained('users')
-                ->onDelete('cascade');
+            // 🔖 Reference Number
+            $table->string('reference_no')->unique()->nullable();
 
-            // doctors
+            // 👤 Registered patient (users table) — null if walk-in
+            $table->foreignId('patient_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
+            // 🚶 Walk-in patient (patients table) — null if registered
+            $table->foreignId('walkin_patient_id')
+                ->nullable()
+                ->constrained('patients')
+                ->nullOnDelete();
+
+            // 👨‍⚕️ Doctor
             $table->foreignId('doctor_id')
                 ->constrained('users')
                 ->onDelete('cascade');
 
+            // 📅 Schedule
             $table->date('appointment_date');
             $table->time('appointment_time');
 
-            // Pending, Approved, Rejected, Completed, Cancelled, Rescheduled
-            $table->string('status')->default('Pending');
+            // 📌 Status
+            $table->enum('status', [
+                'Pending',
+                'Approved',
+                'Rejected',
+                'Completed',
+                'Cancelled',
+                'Rescheduled',
+                'No Show',
+            ])->default('Pending');
 
-            // tracking reschedule source
-            $table->string('rescheduled_by')->nullable();
+            // 🔁 Reschedule info
+            $table->foreignId('rescheduled_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
-            // reason for appointment
+            // 📝 Reason for appointment / rejection reason
             $table->text('reason')->nullable();
 
-            // 🩺 Doctor's diagnosis for this appointment
-            $table->text('diagnosis')->nullable();
-
-            /**
-             * 🔐 IMPORTANT:
-             * Prevent duplicate booking of same doctor, date, and time
-             */
+            // 🔐 No duplicate slot per doctor
             $table->unique(['doctor_id', 'appointment_date', 'appointment_time']);
 
             $table->timestamps();

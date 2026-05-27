@@ -28,6 +28,7 @@ class RedirectIfAuthenticated
             return match($role) {
                 'Admin' => redirect()->route('admin.dashboard'),
                 'Doctor' => redirect()->route('doctor.dashboard'),
+                'Staff' => redirect()->route('staff.dashboard'),
                 'Patient' => redirect()->route('patient.dashboard'),
                 default => redirect('/'),
             };

@@ -1,4 +1,52 @@
- /* ================= RESET & BODY ================= */
+/* ==========================================================
+   PATIENT DASHBOARD — patient-dashboard.css
+   ========================================================== */
+
+/* ============================================================
+   CSS VARIABLES  (mirrors admin palette)
+   ============================================================ */
+:root {
+    --primary:        #6a0dad;
+    --primary-light:  #9b30ff;
+    --primary-soft:   #f3e8ff;
+
+    --accent-blue:    #4f46e5;
+    --accent-blue-bg: #f0f2ff;
+
+    --accent-green:   #10b981;
+    --accent-green-bg:#f0fbf6;
+
+    --accent-red:     #ef4444;
+    --accent-red-bg:  #fff4f4;
+
+    --accent-orange:  #f97316;
+    --accent-orange-bg:#fff7ed;
+
+    --accent-amber:   #f59e0b;
+    --accent-amber-bg:#fffbeb;
+
+    --text-dark:   #1a1a2e;
+    --text-mid:    #444;
+    --text-light:  #888;
+    --text-xlight: #aaa;
+
+    --bg-page:   #f4f0fa;
+    --bg-card:   #ffffff;
+    --border:    #f0eaf8;
+    --shadow-sm: 0 2px 8px  rgba(106,13,173,0.07);
+    --shadow-md: 0 6px 20px rgba(106,13,173,0.10);
+    --shadow-lg: 0 12px 32px rgba(106,13,173,0.14);
+
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+
+    --transition: 0.22s ease;
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
 * {
     margin: 0;
     padding: 0;
@@ -7,105 +55,229 @@
 }
 
 body {
-    background: #f4f6f8;
-    color: #333;
+    background: var(--bg-page);
+    color: var(--text-dark);
 }
 
-/* ================= PAGE HEADER ================= */
+/* ============================================================
+   PAGE HEADER
+   ============================================================ */
 .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 25px;
+    gap: 12px;
+    margin-bottom: 28px;
 }
 
-.page-header .header-left,
-.page-header h1,
+.page-header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text-dark);
+    letter-spacing: -0.5px;
+    margin: 0;
+}
+
 .page-header .header-right {
     display: flex;
     align-items: center;
 }
 
-/* Left: Add Appointment Button */
-.page-header .header-left {
-    order: 1;
-}
-
-/* Center: Title */
-.page-header h1 {
-    order: 2;
-    font-size: 28px;
-    font-weight: 600;
-    flex: 1;
-    justify-content: center;
-    text-align: center;
-    color: #111827;
-}
-
-/* Right: Date & Time */
-.page-header .header-right {
-    order: 3;
-}
-
-/* ================= DATE & TIME ================= */
+/* ============================================================
+   DATE & TIME
+   ============================================================ */
 #datetime-container {
-    background-color: #6a0dad;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
     color: #fff;
-    padding: 8px 18px;
-    border-radius: 10px;
-    font-weight: bold;
-    font-size: 0.9rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    min-width: 180px;
+    padding: 9px 18px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    box-shadow: 0 4px 14px rgba(106,13,173,0.28);
+    min-width: 240px;
     text-align: center;
+    letter-spacing: 0.2px;
     transition: all 0.3s ease;
 }
 
-#datetime-container:hover {
-    background-color: #560aaf;
+/* ============================================================
+   STATISTICS SECTION  — admin dashboard-card style
+   ============================================================ */
+.stats-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 32px;
 }
 
-/* ================= ADD APPOINTMENT BUTTON ================= */
-.page-header a,
-.page-header button.btn-add {
-    background-color: #6a0dad;
-    color: #fff;
-    padding: 10px 18px;
-    border-radius: 10px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.95rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    transition: all 0.3s ease;
-    border: none;
-    cursor: pointer;
+/* Base card — same structure as .dashboard-card in admin */
+.stat-card {
+    padding: 22px 20px 22px 22px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform var(--transition), box-shadow var(--transition);
+    border: 1px solid var(--border);
+    cursor: default;
+
+    /* reset old flex-direction:column */
+    flex-direction: row;
+    gap: 0;
 }
 
-.page-header a:hover,
-.page-header button.btn-add:hover {
-    background-color: #560aaf;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+/* Left accent bar */
+.stat-card::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0;
+    width: 5px; height: 100%;
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
 }
 
-/* ================= CALENDAR SECTION ================= */
+/* Decorative circle (bottom-right) */
+.stat-card::after {
+    content: "";
+    position: absolute;
+    right: -20px; bottom: -20px;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    opacity: 0.06;
+    transition: transform var(--transition);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.stat-card:hover::after {
+    transform: scale(1.4);
+}
+
+/* ── Per-card colour themes ── */
+
+/* Total  → indigo/blue */
+#stat-total {
+    background: var(--accent-blue-bg);
+}
+#stat-total::before,
+#stat-total::after { background: var(--accent-blue); }
+#stat-total .stat-icon { color: var(--accent-blue); }
+
+/* Upcoming → primary purple */
+#stat-upcoming {
+    background: var(--primary-soft);
+}
+#stat-upcoming::before,
+#stat-upcoming::after { background: var(--primary); }
+#stat-upcoming .stat-icon { color: var(--primary); }
+
+/* Completed → green */
+#stat-completed {
+    background: var(--accent-green-bg);
+}
+#stat-completed::before,
+#stat-completed::after { background: var(--accent-green); }
+#stat-completed .stat-icon { color: var(--accent-green); }
+
+/* Cancelled → red */
+#stat-cancelled {
+    background: var(--accent-red-bg);
+}
+#stat-cancelled::before,
+#stat-cancelled::after { background: var(--accent-red); }
+#stat-cancelled .stat-icon { color: var(--accent-red); }
+
+/* This Month → orange */
+#stat-this-month {
+    background: var(--accent-orange-bg);
+}
+#stat-this-month::before,
+#stat-this-month::after { background: var(--accent-orange); }
+#stat-this-month .stat-icon { color: var(--accent-orange); }
+
+/* ── Inner layout (left = text, right = icon) ── */
+.stat-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    z-index: 1;
+}
+
+.stat-label {
+    font-size: 10.5px;
+    color: var(--text-light);
+    letter-spacing: 1.2px;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--text-dark);
+    line-height: 1;
+    letter-spacing: -0.5px;
+    margin: 6px 0 0;
+}
+
+/* Badge pill below the number */
+.stat-badge {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    background: rgba(0,0,0,0.06);
+    color: var(--text-mid);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 999px;
+    letter-spacing: 0.4px;
+    margin-top: 8px;
+}
+
+/* Icon — right side */
+.stat-icon {
+    font-size: 32px;
+    opacity: 0.85;
+    z-index: 1;
+    flex-shrink: 0;
+    /* Remove old box-style; just the icon itself like admin */
+    width: auto;
+    height: auto;
+    background: none;
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ============================================================
+   CALENDAR SECTION
+   ============================================================ */
 .calendar-section {
     width: 100%;
 }
 
 .calendar-card {
-    background: #ffffff;
+    background: var(--bg-card);
     padding: 30px;
-    border-radius: 25px;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
     margin-bottom: 30px;
+    transition: box-shadow var(--transition);
 }
 
 .calendar-card:hover {
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-md);
 }
 
 #calendar {
@@ -113,211 +285,123 @@ body {
     margin: 0 auto;
 }
 
-/* ================= FULLCALENDAR ================= */
+/* ============================================================
+   FULLCALENDAR OVERRIDES
+   ============================================================ */
 .fc-toolbar-title {
-    font-size: 28px !important;
-    font-weight: 700;
-    color: #111827;
+    font-size: 22px !important;
+    font-weight: 800;
+    color: var(--text-dark);
 }
 
 .fc-toolbar button {
-    border-radius: 10px !important;
-    padding: 10px 16px !important;
-    font-weight: 600;
-    transition: all 0.2s;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
-    background-color: #6a0dad !important;
+    border-radius: 8px !important;
+    padding: 8px 14px !important;
+    font-weight: 700;
+    font-size: 12px !important;
+    transition: all var(--transition);
+    background: linear-gradient(135deg, var(--primary), var(--primary-light)) !important;
     color: #fff !important;
     border: none !important;
+    box-shadow: 0 3px 10px rgba(106,13,173,0.22);
 }
 
 .fc-toolbar button:hover {
-    background-color: #560aaf !important;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 14px rgba(0,0,0,0.2);
+    opacity: 0.88;
+    transform: translateY(-1px);
+    box-shadow: 0 5px 14px rgba(106,13,173,0.30);
 }
 
 .fc-daygrid-day-number {
     font-weight: 600;
-    color: #444;
+    color: var(--text-mid);
 }
 
-/* ================= EVENTS ================= */
 .fc-daygrid-event {
-    border-radius: 12px;
-    padding: 10px 14px;
-    font-size: 15px;
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-size: 12px;
     font-weight: 600;
-    background-color: #4caf50 !important;
+    background-color: var(--accent-green) !important;
+    border-color: var(--accent-green) !important;
     color: #fff !important;
-    box-shadow: 0 3px 12px rgba(0,0,0,0.18);
-    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(16,185,129,0.25);
+    transition: all var(--transition);
 }
 
 .fc-daygrid-event:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    box-shadow: 0 4px 14px rgba(16,185,129,0.35);
 }
 
 .fc-daygrid-event.past-event {
-    background-color: #9e9e9e !important;
+    background-color: #9ca3af !important;
+    border-color: #9ca3af !important;
     color: #fff !important;
-    border: none !important;
 }
 
 .fc-day-today {
-    background-color: #f3ebff !important;
-    border-radius: 12px;
-    font-weight: 700;
-    color: #6a0dad;
+    background-color: var(--primary-soft) !important;
 }
 
-/* ================= MODAL (ADD APPOINTMENT) ================= */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 2000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.55);
-}
-
-.modal-content {
-    background-color: #fff;
-    margin: 6% auto;
-    padding: 25px;
-    border-radius: 14px;
-    width: 450px;
-    max-width: 92%;
-    position: relative;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    animation: fadeIn 0.25s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.modal-content h2 {
-    margin-bottom: 20px;
-    font-size: 22px;
-    font-weight: 600;
-    color: #111827;
-}
-
-/* Close button */
-.close {
-    position: absolute;
-    right: 18px;
-    top: 12px;
-    font-size: 26px;
-    font-weight: bold;
-    cursor: pointer;
-    color: #555;
-    transition: 0.2s;
-}
-
-.close:hover {
-    color: #6a0dad;
-}
-
-/* Form */
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 6px;
-    font-weight: 500;
-    color: #555;
-}
-
-.form-group input,
-.form-group textarea,
-.form-group select {
-    width: 100%;
-    padding: 10px 12px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    font-size: 14px;
-    transition: 0.2s;
-}
-
-.form-group input:focus,
-.form-group textarea:focus,
-.form-group select:focus {
-    border-color: #6a0dad;
-    box-shadow: 0 0 6px rgba(106, 13, 173, 0.25);
-    outline: none;
-}
-
-/* Buttons */
-.modal-buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 15px;
-}
-
-.btn-submit {
-    background-color: #6a0dad;
-    color: #fff;
-    padding: 10px 18px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: 0.2s;
-}
-
-.btn-submit:hover {
-    background-color: #560aaf;
-    transform: translateY(-2px);
-}
-
-.btn-cancel {
-    background-color: #f44336;
-    color: #fff;
-    padding: 10px 18px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: 0.2s;
-}
-
-.btn-cancel:hover {
-    transform: translateY(-2px);
-}
-
-/* ================= RESPONSIVE ================= */
-@media screen and (max-width: 900px) {
-    #datetime-container {
-        min-width: 150px;
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1200px) {
+    .stats-section {
+        grid-template-columns: repeat(3, 1fr);
     }
 }
 
-@media screen and (max-width: 600px) {
+@media (max-width: 900px) {
+    .stats-section {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    #datetime-container {
+        min-width: 200px;
+    }
+}
+
+@media (max-width: 600px) {
     .page-header {
         flex-direction: column;
         align-items: flex-start;
     }
 
     .page-header h1 {
-        text-align: left;
         font-size: 22px;
     }
 
-    .calendar-card {
-        padding: 20px;
+    #datetime-container {
+        min-width: 100%;
+        text-align: center;
     }
 
-    .modal-content {
-        width: 95%;
+    .stats-section {
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+
+    #stat-total {
+        grid-column: 1 / -1;
+    }
+
+    .stat-value {
+        font-size: 26px;
+    }
+
+    .calendar-card {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-section {
+        grid-template-columns: 1fr;
+    }
+
+    #stat-total {
+        grid-column: unset;
     }
 }

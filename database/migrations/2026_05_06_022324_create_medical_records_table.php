@@ -11,17 +11,38 @@ return new class extends Migration
         Schema::create('medical_records', function (Blueprint $table) {
             $table->id();
 
-            // 👤 LINKS
-            $table->foreignId('patient_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('doctor_id')->constrained('users')->onDelete('cascade');
+            // Registered patient (users table)
+            $table->foreignId('patient_id')
+                ->nullable()
+                ->constrained('users')
+                ->onDelete('cascade');
 
-            // 📅 optional link sa appointment
-            $table->foreignId('appointment_id')->nullable()->constrained()->onDelete('set null');
+            // Walk-in patient (patients table)
+            $table->foreignId('walkin_patient_id')
+                ->nullable()
+                ->constrained('patients')
+                ->onDelete('cascade');
 
-            // 🩺 MEDICAL INFO
+            $table->foreignId('doctor_id')
+                ->constrained('users')
+                ->onDelete('cascade');
+
+            $table->foreignId('appointment_id')
+                ->nullable()
+                ->constrained()
+                ->onDelete('set null');
+
+            // Medical info
+            $table->text('chief_complaint')->nullable();
             $table->text('diagnosis')->nullable();
             $table->text('treatment')->nullable();
             $table->text('notes')->nullable();
+
+            // Vital signs
+            $table->string('blood_pressure')->nullable();
+            $table->string('temperature')->nullable();
+            $table->string('weight')->nullable();
+            $table->string('height')->nullable();
 
             $table->timestamps();
         });

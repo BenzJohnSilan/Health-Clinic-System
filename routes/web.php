@@ -23,6 +23,9 @@ use App\Http\Controllers\Admin\AdminPatientController;
 use App\Http\Controllers\Admin\AdminMedicineController;
 use App\Http\Controllers\Admin\UserLogController;
 
+use App\Http\Controllers\Staff\StaffController;
+use App\Http\Controllers\Staff\StaffAppointmentController;
+use App\Http\Controllers\Staff\StaffPatientController;
 
 /*
 |--------------------------------------------------------------------------
@@ -106,11 +109,15 @@ Route::prefix('patient')
     ->group(function () {
 
         Route::get('/dashboard', [PatientController::class, 'dashboard'])->name('dashboard');
-        Route::get('/profile', [PatientController::class, 'profile'])->name('profile');
-        Route::post('/profile', [PatientController::class, 'updateProfile'])->name('profile.update');
 
-        Route::get('/change-password', [PatientController::class, 'changePassword'])->name('change-password');
-        Route::post('/change-password', [PatientController::class, 'updatePassword'])->name('change-password.update');
+        Route::get('/account-settings', [PatientController::class, 'settings'])
+            ->name('settings');
+
+        Route::put('/profile', [PatientController::class, 'updateProfile'])
+            ->name('profile.update');
+
+        Route::put('/change-password', [PatientController::class, 'updatePassword'])
+            ->name('change-password.update');
 
         Route::get('/appointments', [PatientAppointmentController::class, 'index'])->name('appointments.index');
         Route::post('/appointments', [PatientAppointmentController::class, 'store'])->name('appointments.store');
@@ -119,11 +126,20 @@ Route::prefix('patient')
         Route::delete('/appointments/{id}/cancel', [PatientAppointmentController::class, 'cancel'])
             ->name('appointments.cancel');
 
-        Route::get('/medical-report', [PatientController::class, 'medicalReport'])
-            ->name('medical.report');
+        Route::get('/appointment-history', [PatientController::class, 'medicalReport'])
+            ->name('appointment.history');
         
         Route::get('/medical-report/{id}', [PatientController::class, 'showMedicalReport'])
             ->name('medical-report.show');
+
+        Route::get('/prescription/{id}', [PatientController::class, 'showPrescription'])
+            ->name('prescription.show');
+
+        Route::get('/medical-certificate/{id}', [PatientController::class, 'showMedicalCertificate'])
+            ->name('medical-certificate.show');
+
+        Route::get('/activity-logs', [PatientController::class, 'activityLogs'])
+            ->name('activity.logs');
 
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     });
@@ -140,11 +156,14 @@ Route::prefix('doctor')
     ->group(function () {
 
         Route::get('/dashboard', [DoctorController::class, 'dashboard'])->name('dashboard');
-        Route::get('/profile', [DoctorController::class, 'profile'])->name('profile');
-        Route::post('/profile', [DoctorController::class, 'updateProfile'])->name('profile.update');
 
-        Route::get('/change-password', [DoctorController::class, 'changePassword'])->name('change-password');
-        Route::post('/change-password', [DoctorController::class, 'updatePassword'])->name('change-password.update');
+        // Profile (read-only view)
+        Route::get('/profile', [DoctorController::class, 'profile'])->name('profile');
+
+        // Account Settings (combined profile + password page)
+        Route::get('/account-settings', [DoctorController::class, 'accountSettings'])->name('account-settings');
+        Route::put('/account-settings/profile', [DoctorController::class, 'updateProfile'])->name('profile.update');
+        Route::put('/account-settings/password', [DoctorController::class, 'updatePassword'])->name('change-password.update');
 
         // Appointments
         Route::get('/appointments', [DoctorAppointmentController::class, 'index'])->name('appointments.index');
@@ -156,20 +175,22 @@ Route::prefix('doctor')
         Route::patch('/appointments/{id}/reschedule', [DoctorAppointmentController::class, 'reschedule'])
             ->name('appointments.reschedule');
 
-        // 🩺 Diagnosis
+        // Diagnosis
         Route::patch('/appointments/{id}/diagnosis', [DoctorAppointmentController::class, 'saveDiagnosis'])
             ->name('appointments.saveDiagnosis');
 
-        Route::get('/patient', [DoctorPatientController::class, 'index'])
-            ->name('patient');
-        
-        // View specific patient medical records
-        Route::get('/patient/{id}/records', [DoctorPatientController::class, 'showRecords'])
-            ->name('patient.records');
+        // Patients
+        Route::get('/patient', [DoctorPatientController::class, 'index'])->name('patient');
+        Route::get('/patient/{id}/records', [DoctorPatientController::class, 'showRecords'])->name('patient.records');
 
         // Review
-        Route::post('/review/store', [DoctorAppointmentController::class, 'storeReview'])
-            ->name('review.store');
+        Route::post('/review/store', [DoctorAppointmentController::class, 'storeReview'])->name('review.store');
+
+        // Medical Records
+        Route::get('/medical-records', [DoctorAppointmentController::class, 'medicalRecordsIndex'])
+            ->name('medical-records.index');
+        Route::get('/medical-records/{appointment}', [DoctorAppointmentController::class, 'showMedicalRecord'])
+            ->name('medical-records.show');
 
         // Medicine Inventory (View Only)
         Route::get('/medicines', [MedicineController::class, 'index'])->name('medicines.index');
@@ -177,6 +198,13 @@ Route::prefix('doctor')
         // Prescriptions
         Route::post('/prescriptions', [PrescriptionController::class, 'store'])->name('prescriptions.store');
         Route::delete('/prescriptions/{prescription}', [PrescriptionController::class, 'destroy'])->name('prescriptions.destroy');
+        Route::get('/prescription/{appointment}/print', [PrescriptionController::class, 'print'])
+            ->name('prescription.print');
+
+        // Medical Certificate
+        Route::get('/medical-certificate/{appointment}/print',
+            [DoctorAppointmentController::class, 'printMedicalCertificate'])
+            ->name('medical-certificate.print');
 
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     });
@@ -238,4 +266,61 @@ Route::prefix('admin')
         Route::get('/user-logs', [UserLogController::class, 'index'])->name('user-logs');
 
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| STAFF PANEL — palitan ang buong staff group mo sa web.php nito
+|--------------------------------------------------------------------------
+*/
+Route::prefix('staff')
+    ->middleware(['auth', 'verified', 'role:Staff', 'prevent-back-history'])
+    ->name('staff.')
+    ->group(function () {
+
+        Route::get('/dashboard', [StaffController::class, 'dashboard'])
+            ->name('dashboard');
+
+        Route::post('/logout', [LoginController::class, 'logout'])
+            ->name('logout');
+
+        Route::get('/appointments', [StaffAppointmentController::class, 'index'])
+            ->name('appointments.index');
+
+        Route::post('/appointments', [StaffAppointmentController::class, 'store'])
+            ->name('appointments.store');
+
+        Route::get('/appointments/{appointment}', [StaffAppointmentController::class, 'show'])
+            ->name('appointments.show');
+
+        // Pending Appointments
+        Route::get('/pending-appointments', [StaffAppointmentController::class, 'pending'])
+            ->name('pending-appointments');
+        Route::post('/appointments/{id}/approve', [StaffAppointmentController::class, 'approve'])
+            ->name('appointments.approve');
+        Route::post('/appointments/{id}/reject', [StaffAppointmentController::class, 'reject'])
+            ->name('appointments.reject');
+
+        Route::get('/patients', [StaffPatientController::class, 'index'])
+            ->name('patients.index');
+
+        Route::post('/patients/store', [StaffPatientController::class, 'store'])
+            ->name('patients.store');
+
+        Route::get('/account-settings', [StaffController::class, 'settings'])
+            ->name('settings');
+
+                // ================= PROFILE =================
+        Route::get('/profile', [StaffController::class, 'profile'])
+            ->name('profile');
+
+        Route::put('/profile', [StaffController::class, 'updateProfile'])
+            ->name('profile.update');
+
+        Route::get('/change-password', [StaffController::class, 'changePassword'])
+            ->name('change-password');
+
+        Route::put('/change-password', [StaffController::class, 'updatePassword'])
+            ->name('change-password.update');
     });

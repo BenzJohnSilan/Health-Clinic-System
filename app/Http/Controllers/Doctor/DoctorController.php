@@ -16,13 +16,30 @@ class DoctorController extends Controller
     public function dashboard()
     {
         $doctor = Auth::user();
-        $today = Carbon::today()->toDateString();
+        $today  = Carbon::today()->toDateString();
 
-        // ================= STATS =================
+        // Today's queue
+        $todayAppointments = Appointment::with(['patient', 'walkinPatient'])
+            ->where('doctor_id', $doctor->id)
+            ->whereDate('appointment_date', $today)
+            ->where('status', 'Approved')
+            ->orderBy('appointment_time')
+            ->get();
+
+        // Next patient up
+        $nextPatient = Appointment::with(['patient', 'walkinPatient'])
+            ->where('doctor_id', $doctor->id)
+            ->whereDate('appointment_date', $today)
+            ->where('status', 'Approved')
+            ->orderBy('appointment_time')
+            ->first();
+
+        // Stats
         $totalAppointments = Appointment::where('doctor_id', $doctor->id)->count();
 
         $upcomingAppointments = Appointment::where('doctor_id', $doctor->id)
             ->whereDate('appointment_date', '>=', $today)
+            ->whereIn('status', ['Approved', 'Pending', 'Rescheduled'])
             ->count();
 
         $totalPatients = Appointment::where('doctor_id', $doctor->id)
@@ -37,16 +54,15 @@ class DoctorController extends Controller
             ->where('status', 'Completed')
             ->count();
 
-        // ================= RECENT =================
-        $recentAppointments = Appointment::with('patient')
+        // Recent appointments
+        $recentAppointments = Appointment::with(['patient', 'walkinPatient'])
             ->where('doctor_id', $doctor->id)
             ->latest()
             ->take(5)
             ->get();
 
-        // ================= CALENDAR APPOINTMENTS (IMPORTANT) =================
-        // Only show active statuses — Cancelled and Rejected are excluded from the calendar
-        $appointments = Appointment::with('patient')
+        // Calendar data (last 6 months onward)
+        $appointments = Appointment::with(['patient', 'walkinPatient'])
             ->where('doctor_id', $doctor->id)
             ->whereIn('status', ['Pending', 'Approved', 'Rescheduled', 'Completed'])
             ->whereDate('appointment_date', '>=', Carbon::now()->subMonths(6))
@@ -59,12 +75,14 @@ class DoctorController extends Controller
             'pendingAppointments',
             'completedAppointments',
             'recentAppointments',
-            'appointments' // 👈 IMPORTANT FOR CALENDAR
+            'appointments',
+            'todayAppointments',
+            'nextPatient'
         ));
     }
 
     /**
-     * Doctor Profile Page
+     * Doctor Profile (read-only view)
      */
     public function profile()
     {
@@ -73,7 +91,16 @@ class DoctorController extends Controller
     }
 
     /**
-     * Change Password Page
+     * Doctor Account Settings (profile + password tabs)
+     */
+    public function accountSettings()
+    {
+        $doctor = Auth::user();
+        return view('doctor.account-settings', compact('doctor'));
+    }
+
+    /**
+     * Change Password Page (standalone, if still needed)
      */
     public function changePassword()
     {
@@ -83,6 +110,7 @@ class DoctorController extends Controller
 
     /**
      * Update Doctor Profile
+     * POST target: doctor.profile.update  →  PUT /doctor/account-settings/profile
      */
     public function updateProfile(Request $request)
     {
@@ -94,7 +122,7 @@ class DoctorController extends Controller
             'last_name'      => 'required|string|max:255',
             'suffix'         => 'nullable|string|max:50',
             'gender'         => 'required|string|in:Male,Female,Other',
-            'civil_status'   => 'required|string|in:Single,Married,Widowed,Separated',
+            'specialization' => 'required|string|max:255',   // ← matches blade field
             'address'        => 'required|string|max:500',
             'contact_number' => 'required|string|max:20',
             'username'       => 'required|string|max:255|unique:users,username,' . $doctor->id,
@@ -102,16 +130,16 @@ class DoctorController extends Controller
             'avatar'         => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        $doctor->first_name    = $request->first_name;
-        $doctor->middle_name   = $request->middle_name;
-        $doctor->last_name     = $request->last_name;
-        $doctor->suffix        = $request->suffix;
-        $doctor->gender        = $request->gender;
-        $doctor->civil_status  = $request->civil_status;
-        $doctor->address       = $request->address;
+        $doctor->first_name     = $request->first_name;
+        $doctor->middle_name    = $request->middle_name;
+        $doctor->last_name      = $request->last_name;
+        $doctor->suffix         = $request->suffix;
+        $doctor->gender         = $request->gender;
+        $doctor->specialization = $request->specialization;  // ← matches blade field
+        $doctor->address        = $request->address;
         $doctor->contact_number = $request->contact_number;
-        $doctor->username      = $request->username;
-        $doctor->email         = $request->email;
+        $doctor->username       = $request->username;
+        $doctor->email          = $request->email;
 
         if ($request->hasFile('avatar')) {
             $doctor->avatar = $request->file('avatar')->store('avatars', 'public');
@@ -119,12 +147,14 @@ class DoctorController extends Controller
 
         $doctor->save();
 
-        return redirect()->route('doctor.profile')
+        // Redirect back to account settings, profile tab
+        return redirect()->route('doctor.account-settings')
             ->with('success', 'Profile updated successfully!');
     }
 
     /**
      * Update Doctor Password
+     * POST target: doctor.change-password.update  →  PUT /doctor/account-settings/password
      */
     public function updatePassword(Request $request)
     {
@@ -137,14 +167,15 @@ class DoctorController extends Controller
 
         if (!\Hash::check($request->current_password, $doctor->password)) {
             return back()->withErrors([
-                'current_password' => 'Current password is incorrect'
+                'current_password' => 'Current password is incorrect.',
             ]);
         }
 
         $doctor->password = bcrypt($request->password);
         $doctor->save();
 
-        return redirect()->route('doctor.change-password')
+        // Redirect back to account settings, password tab
+        return redirect()->route('doctor.account-settings')
             ->with('success', 'Password updated successfully!');
     }
 }

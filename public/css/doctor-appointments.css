@@ -1,17 +1,25 @@
+/* ================= RESET ================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+body {
+    background: #f4f6f8;
+    color: #333;
+}
+
 /* ================= PAGE HEADER ================= */
 .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
-    gap: 10px;
+    margin-bottom: 25px;
 }
 
 .page-title {
     font-size: 28px;
     font-weight: 600;
-    color: #333;
+    color: #111827;
 }
 
 /* ================= ALERTS ================= */
@@ -35,58 +43,78 @@
     font-size: 14px;
 }
 
-/* ================= TABLE ================= */
+/* ================= TABLE WRAPPER ================= */
 .table-container {
+    width: 100%;
     overflow-x: auto;
 }
 
+/* ================= TABLE ================= */
 .appointments-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
-    background: #fff;
-    border-radius: 10px;
+    border-radius: 12px 12px 0 0;
     overflow: hidden;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
 }
 
-.appointments-table th,
-.appointments-table td {
-    padding: 12px 15px;
-    text-align: left;
+/* HEADER */
+.appointments-table thead th {
+    background-color: #6a0dad;
+    color: #fff;
+    font-weight: 600;
     font-size: 14px;
-    border-bottom: 1px solid #e5e7eb;
+    padding: 13px 16px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+/* BODY */
+.appointments-table td {
+    padding: 13px 16px;
+    font-size: 14px;
+    color: #374151;
+    border-bottom: 1px solid #f0e6ff;
     vertical-align: middle;
 }
 
-.appointments-table th {
-    background-color: #f3f4f6;
-    font-weight: 600;
+.appointments-table tbody tr:last-child td {
+    border-bottom: none;
 }
 
-.appointments-table tr:nth-child(even) {
-    background-color: #f9fafb;
+/* ZEBRA ROWS */
+.appointments-table tbody tr:nth-child(even) td {
+    background-color: #f9f5ff;
 }
 
-.appointments-table tr:hover {
-    background-color: #f0f4ff;
+.appointments-table tbody tr:nth-child(odd) td {
+    background-color: #ffffff;
+}
+
+/* HOVER */
+.appointments-table tbody tr:hover td {
+    background-color: #ede9f7;
+    transition: background-color 0.2s ease;
 }
 
 /* ================= STATUS ================= */
 .status {
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 5px;
-    font-size: 13px;
     display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.78rem;
+    color: #fff;
+    text-transform: capitalize;
 }
 
-.status.approved   { color: #2563eb; background: #dbeafe; }
-.status.completed  { color: #16a34a; background: #d1fae5; }
-.status.pending    { color: #f59e0b; background: #fef3c7; }
-.status.rejected   { color: #dc2626; background: #fee2e2; }
-.status.cancelled  { color: #b91c1c; background: #fecaca; }
-.status.rescheduled { color: #7c3aed; background: #ede9fe; }
+.status.pending      { background-color: #f59e0b; }
+.status.approved     { background-color: #10b981; }
+.status.rejected     { background-color: #ef4444; }
+.status.rescheduled  { background-color: #3b82f6; }
+.status.cancelled    { background-color: #6b7280; }
+.status.completed    { background-color: #8b5cf6; }
+.status.no-show      { background-color: #f97316; }
 
 .reschedule-by {
     font-size: 12px;
@@ -94,58 +122,217 @@
     margin-left: 4px;
 }
 
-/* ================= ACTION BUTTONS ================= */
-.appointments-table td:nth-child(5) {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: nowrap;
-    white-space: nowrap;
+/* ================= LAST COL ALIGNMENT ================= */
+.appointments-table td:last-child,
+.appointments-table th:last-child {
+    text-align: center;
 }
 
+/* ================= ACTION BUTTONS ================= */
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+}
+
+.btn-view,
+.btn-reschedule,
+.btn-no-show {
+    display: inline-block;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: none;
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+/* Consult — purple */
 .btn-view {
     background-color: #6a0dad;
     color: #fff;
-    padding: 7px 12px;
-    border-radius: 8px;
-    font-size: 13px;
-    text-decoration: none;
-    display: inline-block;
-    transition: background-color 0.2s;
 }
-
 .btn-view:hover {
     background-color: #560aaf;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(106, 13, 173, 0.3);
 }
 
-.btn-report {
-    background-color: #4f46e5;
-    color: #fff;
-    padding: 7px 12px;
-    border-radius: 8px;
-    font-size: 13px;
-    text-decoration: none;
-    display: inline-block;
-    transition: background-color 0.2s;
-}
-
-.btn-report:hover {
-    background-color: #4338ca;
-}
-
+/* Reschedule — amber */
 .btn-reschedule {
     background-color: #f59e0b;
     color: #fff;
-    border: none;
-    padding: 7px 12px;
-    border-radius: 8px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: background-color 0.2s;
 }
-
 .btn-reschedule:hover {
     background-color: #d97706;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+}
+
+/* No Show — red */
+.btn-no-show {
+    background-color: #ef4444;
+    color: #fff;
+}
+.btn-no-show:hover {
+    background-color: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+}
+
+/* ================= DISABLED CONSULT ================= */
+.btn-view-disabled {
+    display: inline-block;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    background-color: #e5e7eb;
+    color: #9ca3af;
+    cursor: not-allowed;
+    border: 1px solid #d1d5db;
+    user-select: none;
+    white-space: nowrap;
+}
+
+/* ================= TOOLTIP ================= */
+.btn-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.btn-wrapper .tooltip {
+    visibility: hidden;
+    opacity: 0;
+    background-color: #1f2937;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.btn-wrapper .tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #1f2937;
+}
+
+.btn-wrapper:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* ================= EMPTY ROW ================= */
+.no-data {
+    text-align: center !important;
+    font-style: italic;
+    color: #9ca3af;
+    padding: 32px 0 !important;
+    background-color: #fff !important;
+}
+
+/* ================= PAGINATION ================= */
+.pagination-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #fff;
+    border: 1px solid #f0e6ff;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+    margin-bottom: 30px;
+}
+
+.pagination-info {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.pagination-info strong {
+    color: #374151;
+    font-weight: 600;
+}
+
+.pagination-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 8px;
+    border: 1.5px solid #e9d5ff;
+    background: #fff;
+    color: #6a0dad;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    font-family: "Poppins", Arial, sans-serif;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.page-btn:hover {
+    background: #f3e8ff;
+    border-color: #c084fc;
+    color: #6a0dad;
+}
+
+.page-btn.active {
+    background: #6a0dad;
+    border-color: #6a0dad;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(106, 13, 173, 0.3);
+    cursor: default;
+    pointer-events: none;
+}
+
+.page-btn.disabled {
+    color: #d1d5db;
+    border-color: #f3f4f6;
+    background: #f9fafb;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.page-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    font-size: 13px;
+    color: #9ca3af;
 }
 
 /* ================= MODAL OVERLAY ================= */
@@ -198,12 +385,20 @@
     flex-shrink: 0;
     width: 42px;
     height: 42px;
-    background: #fef3c7;
-    color: #d97706;
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.modal-icon.icon-reschedule {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.modal-icon.icon-no-show {
+    background: #fee2e2;
+    color: #dc2626;
 }
 
 .modal-title {
@@ -289,18 +484,13 @@
     outline: none;
     width: 100%;
     box-sizing: border-box;
+    font-family: "Poppins", Arial, sans-serif;
 }
 
 .form-input:focus {
-    border-color: #f59e0b;
+    border-color: #6a0dad;
     background: #fff;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
-}
-
-.form-hint {
-    font-size: 11.5px;
-    color: #9ca3af;
-    margin-top: 2px;
+    box-shadow: 0 0 0 3px rgba(106, 13, 173, 0.12);
 }
 
 /* ================= MODAL FOOTER ================= */
@@ -322,6 +512,7 @@
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
+    font-family: "Poppins", Arial, sans-serif;
     transition: background-color 0.15s, border-color 0.15s;
 }
 
@@ -339,6 +530,7 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
+    font-family: "Poppins", Arial, sans-serif;
     display: inline-flex;
     align-items: center;
     gap: 7px;
@@ -351,27 +543,58 @@
     box-shadow: 0 4px 12px rgba(217, 119, 6, 0.4);
 }
 
-/* ================= RESPONSIVE ================= */
-@media screen and (max-width: 700px) {
-    .page-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
+.btn-confirm-danger {
+    background: #ef4444;
+    color: #fff;
+    border: none;
+    padding: 9px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: "Poppins", Arial, sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: background-color 0.15s, box-shadow 0.15s;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
 
+.btn-confirm-danger:hover {
+    background: #dc2626;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+/* ================= RESPONSIVE ================= */
+@media screen and (max-width: 900px) {
     .appointments-table th,
     .appointments-table td {
-        padding: 8px;
+        padding: 10px 12px;
         font-size: 13px;
     }
+}
 
-    .btn-view, .btn-report, .btn-reschedule {
+@media screen and (max-width: 600px) {
+    .appointments-table th,
+    .appointments-table td {
+        padding: 9px 10px;
         font-size: 12px;
-        padding: 5px 10px;
     }
 
-    .appointments-table td:nth-child(5) {
-        flex-wrap: nowrap;
-        overflow-x: auto;
+    .btn-view,
+    .btn-reschedule,
+    .btn-no-show {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+
+    .action-buttons {
+        flex-wrap: wrap;
+    }
+
+    .pagination-wrapper {
+        flex-direction: column;
+        align-items: center;
     }
 
     .form-row {
@@ -392,7 +615,8 @@
     }
 
     .btn-cancel,
-    .btn-confirm {
+    .btn-confirm,
+    .btn-confirm-danger {
         width: 100%;
         justify-content: center;
     }

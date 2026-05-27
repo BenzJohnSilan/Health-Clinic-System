@@ -9,6 +9,182 @@
 <!-- Font Awesome -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+<style>
+/* ============================================================
+   CHARTS — Improved Styles
+   ============================================================ */
+.charts-wrapper {
+    margin-top: 40px;
+    margin-bottom: 40px;
+}
+
+.charts-section-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: -0.2px;
+}
+
+.charts-section-title i {
+    font-size: 18px;
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 10px;
+    background: var(--primary-soft);
+    color: var(--primary);
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 20px;
+}
+
+.chart-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-card-header {
+    padding: 18px 20px 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.chart-card-header .chart-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin: 0;
+    letter-spacing: -0.2px;
+}
+
+.chart-card-header .chart-subtitle {
+    font-size: 11.5px;
+    color: var(--text-light);
+    margin: 3px 0 0;
+    font-weight: 500;
+}
+
+.chart-legend-pills {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.legend-pill {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-mid);
+}
+
+.legend-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.chart-body {
+    padding: 14px 20px 20px;
+    flex: 1;
+    position: relative;
+    min-height: 270px;
+}
+
+/* Donut center overlay */
+.donut-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.donut-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -56%);
+    text-align: center;
+    pointer-events: none;
+}
+
+.donut-center .dc-value {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--text-dark);
+    line-height: 1;
+    transition: all 0.2s ease;
+}
+
+.donut-center .dc-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-light);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-top: 4px;
+    transition: all 0.2s ease;
+}
+
+/* Footer totals row */
+.bar-totals {
+    display: flex;
+    gap: 16px;
+    padding: 12px 20px 18px;
+    flex-wrap: wrap;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+}
+
+.bar-total-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-mid);
+}
+
+.bar-total-item strong {
+    font-weight: 800;
+    color: var(--text-dark);
+}
+
+.bar-total-badge {
+    width: 10px; height: 10px;
+    border-radius: 3px;
+}
+
+@media (max-width: 768px) {
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+    .chart-body {
+        min-height: 220px;
+    }
+    .chart-legend-pills {
+        display: none;
+    }
+}
+</style>
+@endsection
+
 @section('content')
 
 <!-- ===== PAGE HEADER ===== -->
@@ -36,6 +212,15 @@
             <h2>{{ $totalDoctors }}</h2>
         </div>
         <div class="card-icon"><i class="fas fa-user-md"></i></div>
+    </div>
+
+    {{-- ✅ ADDED: Staff summary card --}}
+    <div class="dashboard-card staff-card">
+        <div class="card-info">
+            <p>TOTAL STAFF</p>
+            <h2>{{ $totalStaff }}</h2>
+        </div>
+        <div class="card-icon"><i class="fas fa-id-badge"></i></div>
     </div>
 
     <div class="dashboard-card patients-card">
@@ -176,7 +361,7 @@
     <div class="alert-box">
         <div class="alert-box-header amber">
             <span><i class="fas fa-calendar-exclamation" style="margin-right:8px;"></i>Pending Appointments ({{ $pendingAppointments }})</span>
-            <a href="{{ route('admin.appointments.index') }}">View All →</a>
+            <a href="{{ route('admin.pending-appointments') }}">View All →</a>
         </div>
         <div class="alert-box-body">
             @if($pendingAppointments > 0)
@@ -184,7 +369,7 @@
                     <span class="alert-dot amber"></span>
                     <span>{{ $pendingAppointments }} appointment{{ $pendingAppointments > 1 ? 's' : '' }} need{{ $pendingAppointments == 1 ? 's' : '' }} approval</span>
                     <span class="alert-meta">
-                        <a href="{{ route('admin.appointments.index') }}" style="color:#d97706; font-weight:600; text-decoration:none;">Review →</a>
+                        <a href="{{ route('admin.pending-appointments') }}" style="color:#d97706; font-weight:600; text-decoration:none;">Review →</a>
                     </span>
                 </div>
             @else
@@ -292,107 +477,290 @@
 </div>
 
 <!-- ================================================================
-     CHARTS
+     CHARTS — with Staff included
      ================================================================ -->
-<div class="charts-container">
-
-    <div class="chart-container">
-        <canvas id="dashboardBarChart"></canvas>
+<div class="charts-wrapper">
+    <div class="charts-section-title">
+        <i class="fas fa-chart-bar"></i>
+        Analytics Overview
     </div>
 
-    <div class="chart-container">
-        <canvas id="dashboardPieChart"></canvas>
-    </div>
+    <div class="charts-grid">
 
+        {{-- BAR CHART --}}
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <div>
+                    <p class="chart-title">Clinic System Overview</p>
+                    <p class="chart-subtitle">Total active users by role</p>
+                </div>
+                <div class="chart-legend-pills">
+                    <span class="legend-pill"><span class="legend-dot" style="background:#4f46e5;"></span>Users</span>
+                    <span class="legend-pill"><span class="legend-dot" style="background:#10b981;"></span>Doctors</span>
+                    <span class="legend-pill"><span class="legend-dot" style="background:#f59e0b;"></span>Staff</span>
+                    <span class="legend-pill"><span class="legend-dot" style="background:#ef4444;"></span>Patients</span>
+                </div>
+            </div>
+            <div class="chart-body">
+                <canvas id="dashboardBarChart"></canvas>
+            </div>
+            <div class="bar-totals">
+                <span class="bar-total-item">
+                    <span class="bar-total-badge" style="background:#4f46e5;"></span>
+                    Users: <strong>{{ $totalUsers }}</strong>
+                </span>
+                <span class="bar-total-item">
+                    <span class="bar-total-badge" style="background:#10b981;"></span>
+                    Doctors: <strong>{{ $totalDoctors }}</strong>
+                </span>
+                <span class="bar-total-item">
+                    <span class="bar-total-badge" style="background:#f59e0b;"></span>
+                    Staff: <strong>{{ $totalStaff }}</strong>
+                </span>
+                <span class="bar-total-item">
+                    <span class="bar-total-badge" style="background:#ef4444;"></span>
+                    Patients: <strong>{{ $totalPatients }}</strong>
+                </span>
+            </div>
+        </div>
+
+        {{-- DONUT CHART --}}
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <div>
+                    <p class="chart-title">User Distribution</p>
+                    <p class="chart-subtitle">I-hover ang slice para makita ang breakdown</p>
+                </div>
+            </div>
+            <div class="chart-body">
+                <div class="donut-wrap">
+                    <canvas id="dashboardPieChart"></canvas>
+                    <div class="donut-center">
+                        <div class="dc-value" id="donutTotal">{{ $totalUsers + $totalDoctors + $totalStaff + $totalPatients }}</div>
+                        <div class="dc-label" id="donutLabel">Total</div>
+                    </div>
+                </div>
+            </div>
+            <div class="bar-totals">
+                <span class="legend-pill"><span class="legend-dot" style="background:#4f46e5;"></span>Users</span>
+                <span class="legend-pill"><span class="legend-dot" style="background:#10b981;"></span>Doctors</span>
+                <span class="legend-pill"><span class="legend-dot" style="background:#f59e0b;"></span>Staff</span>
+                <span class="legend-pill"><span class="legend-dot" style="background:#ef4444;"></span>Patients</span>
+            </div>
+        </div>
+
+    </div>
 </div>
 
 <!-- ================================================================
      SCRIPTS
      ================================================================ -->
 <script>
-    // Date & Time
-    const datetimeElement = document.getElementById('datetime');
-    function updateDateTime() {
-        const now = new Date();
-        const options = {
+(function () {
+    // ─── Shared palette ───────────────────────────────────────────
+    const COLORS = {
+        indigo : { solid: '#4f46e5', light: 'rgba(79,70,229,0.13)',  hover: 'rgba(79,70,229,0.85)'  },
+        green  : { solid: '#10b981', light: 'rgba(16,185,129,0.13)', hover: 'rgba(16,185,129,0.85)' },
+        amber  : { solid: '#f59e0b', light: 'rgba(245,158,11,0.13)', hover: 'rgba(245,158,11,0.85)' },
+        red    : { solid: '#ef4444', light: 'rgba(239,68,68,0.13)',  hover: 'rgba(239,68,68,0.85)'  },
+    };
+
+    // ─── Date & Time ──────────────────────────────────────────────
+    const dtEl = document.getElementById('datetime');
+    function tick() {
+        if (!dtEl) return;
+        dtEl.textContent = new Date().toLocaleDateString('en-US', {
             weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
             hour: '2-digit', minute: '2-digit', second: '2-digit'
-        };
-        datetimeElement.textContent = now.toLocaleDateString('en-US', options);
+        });
     }
-    updateDateTime();
-    setInterval(updateDateTime, 1000);
-</script>
+    tick();
+    setInterval(tick, 1000);
 
-<script>
-    // Bar Chart
-    const ctxBar = document.getElementById('dashboardBarChart').getContext('2d');
+    // ─── BAR CHART ────────────────────────────────────────────────
+    const ctxBar = document.getElementById('dashboardBarChart');
+    if (ctxBar) {
+        const barValues = [{{ $totalUsers }}, {{ $totalDoctors }}, {{ $totalStaff }}, {{ $totalPatients }}];
+        const barMax    = Math.max(...barValues);
 
-    const gradientUsers = ctxBar.createLinearGradient(0, 0, 0, 350);
-    gradientUsers.addColorStop(0, 'rgba(52, 152, 219, 0.8)');
-    gradientUsers.addColorStop(1, 'rgba(52, 152, 219, 0.4)');
-
-    const gradientDoctors = ctxBar.createLinearGradient(0, 0, 0, 350);
-    gradientDoctors.addColorStop(0, 'rgba(46, 204, 113, 0.8)');
-    gradientDoctors.addColorStop(1, 'rgba(46, 204, 113, 0.4)');
-
-    const gradientPatients = ctxBar.createLinearGradient(0, 0, 0, 350);
-    gradientPatients.addColorStop(0, 'rgba(231, 76, 60, 0.8)');
-    gradientPatients.addColorStop(1, 'rgba(231, 76, 60, 0.4)');
-
-    new Chart(ctxBar, {
-        type: 'bar',
-        data: {
-            labels: ['Users', 'Doctors', 'Patients'],
-            datasets: [{
-                label: 'Total Count',
-                data: [{{ $totalUsers }}, {{ $totalDoctors }}, {{ $totalPatients }}],
-                backgroundColor: [gradientUsers, gradientDoctors, gradientPatients],
-                borderColor: ['rgba(52,152,219,1)', 'rgba(46,204,113,1)', 'rgba(231,76,60,1)'],
-                borderWidth: 1,
-                borderRadius: 8,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                title: { display: true, text: 'Clinic System Overview', font: { size: 16 } }
+        new Chart(ctxBar.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Users', 'Doctors', 'Staff', 'Patients'],
+                datasets: [{
+                    label: 'Total',
+                    data: barValues,
+                    backgroundColor: [
+                        COLORS.indigo.light,
+                        COLORS.green.light,
+                        COLORS.amber.light,
+                        COLORS.red.light,
+                    ],
+                    hoverBackgroundColor: [
+                        COLORS.indigo.hover,
+                        COLORS.green.hover,
+                        COLORS.amber.hover,
+                        COLORS.red.hover,
+                    ],
+                    borderColor: [
+                        COLORS.indigo.solid,
+                        COLORS.green.solid,
+                        COLORS.amber.solid,
+                        COLORS.red.solid,
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 10,
+                    borderSkipped: false,
+                }]
             },
-            scales: {
-                y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } },
-                x: { grid: { color: 'rgba(0,0,0,0.05)' } }
-            }
-        }
-    });
-
-    // Pie Chart
-    const ctxPie = document.getElementById('dashboardPieChart').getContext('2d');
-    new Chart(ctxPie, {
-        type: 'pie',
-        data: {
-            labels: ['Users', 'Doctors', 'Patients'],
-            datasets: [{
-                data: [{{ $totalUsers }}, {{ $totalDoctors }}, {{ $totalPatients }}],
-                backgroundColor: [
-                    'rgba(52, 152, 219, 0.8)',
-                    'rgba(46, 204, 113, 0.8)',
-                    'rgba(231, 76, 60, 0.8)'
-                ],
-                borderColor: ['#fff', '#fff', '#fff'],
-                borderWidth: 2
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 900,
+                    easing: 'easeOutQuart',
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1a1a2e',
+                        titleColor: '#fff',
+                        bodyColor: 'rgba(255,255,255,0.75)',
+                        padding: 12,
+                        cornerRadius: 10,
+                        displayColors: true,
+                        boxWidth: 10,
+                        boxHeight: 10,
+                        callbacks: {
+                            label: ctx => ` ${ctx.parsed.y} active`,
+                        }
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        suggestedMax: barMax + Math.ceil(barMax * 0.25) + 1,
+                        ticks: {
+                            stepSize: 1,
+                            color: '#888',
+                            font: { size: 11, weight: '600' },
+                            callback: v => (Number.isInteger(v) ? v : ''),
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.04)',
+                            drawBorder: false,
+                        },
+                        border: { display: false },
+                    },
+                    x: {
+                        ticks: {
+                            color: '#555',
+                            font: { size: 12, weight: '700' },
+                        },
+                        grid: { display: false },
+                        border: { display: false },
+                    }
+                },
+                layout: { padding: { top: 24 } },
+            },
+            plugins: [{
+                id: 'barValueLabels',
+                afterDatasetsDraw(chart) {
+                    const { ctx, data } = chart;
+                    const clrs = [
+                        COLORS.indigo.solid,
+                        COLORS.green.solid,
+                        COLORS.amber.solid,
+                        COLORS.red.solid,
+                    ];
+                    chart.getDatasetMeta(0).data.forEach((bar, i) => {
+                        const val = data.datasets[0].data[i];
+                        ctx.save();
+                        ctx.fillStyle = clrs[i];
+                        ctx.font = 'bold 13px sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'bottom';
+                        ctx.fillText(val, bar.x, bar.y - 4);
+                        ctx.restore();
+                    });
+                }
             }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'bottom', labels: { font: { size: 13 } } },
-                title: { display: true, text: 'User Distribution', font: { size: 16 } }
-            }
-        }
-    });
+        });
+    }
+
+    // ─── DONUT CHART ──────────────────────────────────────────────
+    const ctxPie = document.getElementById('dashboardPieChart');
+    if (ctxPie) {
+        const pieValues  = [{{ $totalUsers }}, {{ $totalDoctors }}, {{ $totalStaff }}, {{ $totalPatients }}];
+        const pieLabels  = ['Users', 'Doctors', 'Staff', 'Patients'];
+        const total      = pieValues.reduce((a, b) => a + b, 0);
+        const donutValEl = document.getElementById('donutTotal');
+        const donutLblEl = document.getElementById('donutLabel');
+
+        new Chart(ctxPie.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: pieLabels,
+                datasets: [{
+                    data: pieValues,
+                    backgroundColor: [
+                        COLORS.indigo.solid,
+                        COLORS.green.solid,
+                        COLORS.amber.solid,
+                        COLORS.red.solid,
+                    ],
+                    hoverBackgroundColor: [
+                        COLORS.indigo.hover,
+                        COLORS.green.hover,
+                        COLORS.amber.hover,
+                        COLORS.red.hover,
+                    ],
+                    borderColor: '#fff',
+                    borderWidth: 3,
+                    hoverBorderWidth: 4,
+                    hoverOffset: 10,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '68%',
+                animation: {
+                    animateRotate: true,
+                    duration: 1000,
+                    easing: 'easeOutQuart',
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1a1a2e',
+                        titleColor: '#fff',
+                        bodyColor: 'rgba(255,255,255,0.75)',
+                        padding: 12,
+                        cornerRadius: 10,
+                        callbacks: {
+                            label: ctx => {
+                                const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
+                                return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
+                            }
+                        }
+                    },
+                },
+                onHover: (_, els) => {
+                    if (!donutValEl || !donutLblEl) return;
+                    if (els.length) {
+                        const idx = els[0].index;
+                        donutValEl.textContent = pieValues[idx];
+                        donutLblEl.textContent = pieLabels[idx];
+                    } else {
+                        donutValEl.textContent = total;
+                        donutLblEl.textContent = 'Total';
+                    }
+                }
+            },
+        });
+    }
+})();
 </script>
 
 @endsection

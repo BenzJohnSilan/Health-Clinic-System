@@ -42,7 +42,7 @@ class RegisterController extends Controller
             'valid_id' => 'required|image|mimes:jpg,jpeg,png|max:2048',
 
             // REASON
-            'reason' => 'required|in:Check-up / Consultation,Appointment Booking,Medical Record Access,Others',
+            'reason' => 'required|in:To Book Appointments Online,To Access Clinic Services,To Manage Personal Health Records,For Easier Communication with the Clinic,Others',
 
             // MEDICAL INFO
             'blood_type' => 'required|string',

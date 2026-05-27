@@ -1,0 +1,399 @@
+/* ================= RESET ================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+body {
+    background: #f4f6f8;
+    color: #333;
+}
+
+/* ================= PAGE HEADER ================= */
+.page-header {
+    margin-bottom: 25px;
+}
+
+.page-header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.page-header p {
+    color: #6b7280;
+    margin-top: 4px;
+    font-size: 14px;
+}
+
+/* ================= FILTER BAR ================= */
+.filter-bar {
+    background: #fff;
+    border: 1px solid #f0e6ff;
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.filter-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.filter-group input,
+.filter-group select {
+    height: 38px;
+    padding: 0 12px;
+    border: 1.5px solid #e9d5ff;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: "Poppins", Arial, sans-serif;
+    color: #374151;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+    border-color: #6a0dad;
+    box-shadow: 0 0 0 3px rgba(106, 13, 173, 0.08);
+}
+
+.filter-group select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236a0dad' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+    cursor: pointer;
+}
+
+/* ================= FILTER ACTIONS (bottom row) ================= */
+.filter-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 4px;
+    border-top: 1px solid #f3e8ff;
+    margin-top: 2px;
+}
+
+.btn-filter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 38px;
+    padding: 0 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: "Poppins", Arial, sans-serif;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    text-decoration: none;
+    gap: 6px;
+}
+
+.btn-filter-apply {
+    background-color: #6a0dad;
+    color: #fff;
+    border: none;
+}
+
+.btn-filter-apply:hover {
+    background-color: #560aaf;
+    box-shadow: 0 4px 10px rgba(106, 13, 173, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-filter-reset {
+    background-color: #fff;
+    color: #6b7280;
+    border: 1.5px solid #e5e7eb;
+}
+
+.btn-filter-reset:hover {
+    background-color: #f3f4f6;
+    color: #374151;
+    border-color: #d1d5db;
+}
+
+/* ================= ACTIVE FILTER TAGS ================= */
+.active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+    align-items: center;
+}
+
+.active-filters-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.filter-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: #f3e8ff;
+    border: 1px solid #e9d5ff;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6a0dad;
+}
+
+.filter-tag a {
+    color: #9333ea;
+    text-decoration: none;
+    font-size: 14px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+}
+
+.filter-tag a:hover {
+    color: #6a0dad;
+}
+
+/* ================= TABLE WRAPPER ================= */
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+/* ================= TABLE ================= */
+.medical-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 12px 12px 0 0;
+    overflow: hidden;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+}
+
+.medical-table th {
+    background-color: #6a0dad;
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 13px 16px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.medical-table td {
+    padding: 13px 16px;
+    font-size: 14px;
+    color: #374151;
+    border-bottom: 1px solid #f0e6ff;
+    vertical-align: middle;
+}
+
+.medical-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.medical-table tbody tr:nth-child(even) td {
+    background-color: #f9f5ff;
+}
+
+.medical-table tbody tr:nth-child(odd) td {
+    background-color: #ffffff;
+}
+
+.medical-table tbody tr:hover td {
+    background-color: #ede9f7;
+    transition: background-color 0.2s ease;
+}
+
+/* ================= EMPTY ================= */
+.no-data {
+    text-align: center !important;
+    font-style: italic;
+    color: #9ca3af;
+    padding: 32px 0 !important;
+    background-color: #fff !important;
+}
+
+/* ================= ACTION BADGE ================= */
+.log-action-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    background: #e0f2fe;
+    color: #0284c7;
+}
+
+.log-action-badge i {
+    font-size: 14px;
+}
+
+.log-action-badge.created-appointment   { background: #dcfce7; color: #16a34a; }
+.log-action-badge.cancelled-appointment { background: #fee2e2; color: #dc2626; }
+.log-action-badge.updated-profile       { background: #fef9c3; color: #ca8a04; }
+.log-action-badge.changed-password      { background: #f3e8ff; color: #9333ea; }
+.log-action-badge.login                 { background: #f0fdf4; color: #15803d; }
+.log-action-badge.logout                { background: #f3f4f6; color: #6b7280; }
+
+.log-action-badge.viewed-medical-report,
+.log-action-badge.viewed-prescription,
+.log-action-badge.viewed-medical-certificate {
+    background: #e0f2fe;
+    color: #0284c7;
+}
+
+/* ================= PAGINATION ================= */
+.pagination-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #fff;
+    border: 1px solid #f0e6ff;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+    margin-bottom: 30px;
+}
+
+.pagination-info {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.pagination-info strong {
+    color: #374151;
+    font-weight: 600;
+}
+
+.pagination-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 8px;
+    border: 1.5px solid #e9d5ff;
+    background: #fff;
+    color: #6a0dad;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    font-family: "Poppins", Arial, sans-serif;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.page-btn:hover {
+    background: #f3e8ff;
+    border-color: #c084fc;
+    color: #6a0dad;
+}
+
+.page-btn.active {
+    background: #6a0dad;
+    border-color: #6a0dad;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(106, 13, 173, 0.3);
+    cursor: default;
+    pointer-events: none;
+}
+
+.page-btn.disabled {
+    color: #d1d5db;
+    border-color: #f3f4f6;
+    background: #f9fafb;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.page-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    font-size: 13px;
+    color: #9ca3af;
+}
+
+/* ================= RESPONSIVE ================= */
+@media screen and (max-width: 900px) {
+    .filter-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .medical-table th,
+    .medical-table td {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-actions {
+        justify-content: stretch;
+    }
+
+    .btn-filter {
+        flex: 1;
+    }
+
+    .medical-table th,
+    .medical-table td {
+        padding: 9px 10px;
+        font-size: 12px;
+    }
+
+    .pagination-wrapper {
+        flex-direction: column;
+        align-items: center;
+    }
+}
