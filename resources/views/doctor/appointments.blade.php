@@ -20,6 +20,52 @@
         <div class="alert-error">{{ session('error') }}</div>
     @endif
 
+    <!-- ================= SEARCH & FILTERS ================= -->
+    <form method="GET" action="{{ route('doctor.appointments.index') }}" class="filters-bar">
+
+        <div class="filter-field filter-field-search">
+            <i class="fa-solid fa-magnifying-glass filter-search-icon"></i>
+            <input
+                type="text"
+                name="search"
+                value="{{ $search }}"
+                placeholder="Search patient name or reference no."
+                class="filter-input filter-search-input"
+            >
+        </div>
+
+        <div class="filter-field">
+            <select name="status" class="filter-input filter-select">
+                <option value="All Active" @selected($statusFilter === 'All Active')>All Active</option>
+                <option value="Approved" @selected($statusFilter === 'Approved')>Approved</option>
+                <option value="Rescheduled" @selected($statusFilter === 'Rescheduled')>Rescheduled</option>
+                <option value="Checked In" @selected($statusFilter === 'Checked In')>Checked In</option>
+                <option value="In Progress" @selected($statusFilter === 'In Progress')>In Progress</option>
+            </select>
+        </div>
+
+        <div class="filter-field">
+            <select name="date_filter" class="filter-input filter-select">
+                <option value="All Dates" @selected($dateFilter === 'All Dates')>All Dates</option>
+                <option value="Today" @selected($dateFilter === 'Today')>Today</option>
+                <option value="Upcoming" @selected($dateFilter === 'Upcoming')>Upcoming</option>
+            </select>
+        </div>
+
+        <div class="filter-actions">
+            <button type="submit" class="btn-filter-apply">
+                <i class="fa-solid fa-filter"></i>
+                Filter
+            </button>
+            @if($search !== '' || $statusFilter !== 'All Active' || $dateFilter !== 'All Dates')
+                <a href="{{ route('doctor.appointments.index') }}" class="btn-filter-clear">
+                    Clear Filters
+                </a>
+            @endif
+        </div>
+
+    </form>
+
     <!-- ================= TABLE ================= -->
     <div class="table-container">
 
@@ -27,6 +73,7 @@
 
             <thead>
                 <tr>
+                    <th>Reference No.</th>
                     <th>Patient Name</th>
                     <th>Appointment Schedule</th>
                     <th>Reason</th>
@@ -39,12 +86,45 @@
                 @forelse($appointments as $appointment)
 
                 @php
-                    $date    = \Carbon\Carbon::parse($appointment->appointment_date);
-                    $time    = \Carbon\Carbon::parse($appointment->appointment_time);
-                    $isToday = $date->isToday();
+                    $date          = \Carbon\Carbon::parse($appointment->appointment_date);
+                    $time          = \Carbon\Carbon::parse($appointment->appointment_time);
+                    $isToday       = $date->isToday();
+                    $appointmentEnd = $time->copy()->addMinutes(30);
+
+                    $appointmentEndDateTime = \Carbon\Carbon::parse(
+                        $date->format('Y-m-d') . ' ' . $appointmentEnd->format('H:i:s')
+                    );
+
+                    // The 30-minute slot has ended.
+                    $isNoShowEligible = \Carbon\Carbon::now()->gte($appointmentEndDateTime)
+                        && in_array($appointment->status, ['Approved', 'Rescheduled'], true);
+
+                    // Same eligibility rule enforced server-side in
+                    // StaffAppointmentController::reschedule() /
+                    // DoctorAppointmentController::reschedule().
+                    $isReschedulable = in_array($appointment->status, ['Approved', 'Rescheduled'], true);
+
+                    // ── Consult button state, per Appointment status ──────
+                    // Approved/Rescheduled : waiting for Staff Check-In, no
+                    //                        consultation access yet.
+                    // Checked In           : Staff confirmed arrival — Doctor
+                    //                        can open the page (still
+                    //                        read-only there until Start
+                    //                        Consultation is clicked).
+                    // In Progress          : consultation already started.
+                    $consultLabel = match ($appointment->status) {
+                        'Checked In'  => 'Start Consultation',
+                        'In Progress' => 'Continue Consultation',
+                        default       => 'Waiting for Check In',
+                    };
+                    $consultEnabled = $isToday
+                        && in_array($appointment->status, ['Checked In', 'In Progress'], true);
                 @endphp
 
                 <tr>
+
+                    <!-- Reference No. -->
+                    <td class="ref-no-cell">{{ $appointment->reference_no ?? 'N/A' }}</td>
 
                     <!-- Patient Name -->
                     <td>
@@ -61,7 +141,7 @@
                     <td>
                         {{ $date->format('M d, Y') }}
                         <span style="margin-left:6px; color:#6b7280; font-size:13px;">
-                            {{ $time->format('h:i A') }}
+                            {{ $time->format('h:i A') }} – {{ $appointmentEnd->format('h:i A') }}
                         </span>
                     </td>
 
@@ -70,8 +150,16 @@
 
                     <!-- Status -->
                     <td>
-                        @if($appointment->status === 'Approved')
+                        @if($isNoShowEligible)
+                            <span class="status eligible-no-show">Eligible for No Show</span>
+                        @elseif($appointment->status === 'Approved')
                             <span class="status approved">Approved</span>
+
+                        @elseif($appointment->status === 'Checked In')
+                            <span class="status checked-in">Checked In</span>
+
+                        @elseif($appointment->status === 'In Progress')
+                            <span class="status in-progress">In Progress</span>
 
                         @elseif($appointment->status === 'Rescheduled')
                             <span class="status rescheduled">Rescheduled</span>
@@ -90,38 +178,89 @@
                     <td>
                         <div class="action-buttons">
 
-                            {{-- Consult Button --}}
-                            @if($isToday)
+                            {{-- Main action: Consult — label/state depends on
+                                 status (see $consultLabel/$consultEnabled
+                                 above). Always just navigates to the show
+                                 page; the actual Start Consultation status
+                                 transition happens on that page itself. --}}
+                            @if($consultEnabled)
                                 <a href="{{ route('doctor.appointments.show', $appointment->id) }}"
                                    class="btn-view">
-                                    Consult
+                                    {{ $consultLabel }}
                                 </a>
                             @else
                                 <span class="btn-wrapper">
-                                    <span class="btn-view-disabled" aria-disabled="true">Consult</span>
-                                    <span class="tooltip">Available on {{ $date->format('M d, Y') }}</span>
+                                    <span class="btn-view-disabled" aria-disabled="true">{{ $consultLabel }}</span>
+                                    <span class="tooltip">
+                                        @if(!$isToday)
+                                            Available on {{ $date->format('M d, Y') }}
+                                        @else
+                                            Waiting for Staff to check in the patient
+                                        @endif
+                                    </span>
                                 </span>
                             @endif
 
-                            {{-- Reschedule Button --}}
-                            <button
-                                class="btn-reschedule"
-                                onclick="openReschedule(
-                                    {{ $appointment->id }},
-                                    '{{ $date->format('Y-m-d') }}',
-                                    '{{ $time->format('H:i') }}'
-                                )">
-                                Reschedule
-                            </button>
-
-                            {{-- No Show Button — only today's approved/rescheduled --}}
-                            @if(in_array($appointment->status, ['Approved', 'Rescheduled']) && $isToday)
+                            {{-- Secondary actions: three-dot menu --}}
+                            <div class="action-menu">
                                 <button
-                                    class="btn-no-show"
-                                    onclick="openNoShow({{ $appointment->id }})">
-                                    No Show
+                                    type="button"
+                                    class="action-menu-toggle"
+                                    aria-label="More appointment actions"
+                                    aria-expanded="false"
+                                    onclick="toggleActionMenu(this)">
+                                    <i class="fa-solid fa-ellipsis-vertical"></i>
                                 </button>
-                            @endif
+
+                                <div class="action-menu-dropdown">
+
+    {{-- Reschedule --}}
+    @if($isReschedulable)
+        <button
+            type="button"
+            class="action-menu-item reschedule-item"
+            onclick="closeActionMenus(); openReschedule(
+                {{ $appointment->id }},
+                '{{ $date->format('Y-m-d') }}',
+                '{{ $time->format('H:i') }}'
+            )">
+            <i class="fa-solid fa-calendar-days"></i>
+            <span>Reschedule</span>
+        </button>
+    @else
+        <button
+            type="button"
+            class="action-menu-item disabled-item"
+            disabled
+            title="This appointment can no longer be rescheduled">
+            <i class="fa-solid fa-lock"></i>
+            <span>Reschedule</span>
+        </button>
+    @endif
+
+
+    {{-- No Show --}}
+    @if($isNoShowEligible)
+        <button
+            type="button"
+            class="action-menu-item no-show-item"
+            onclick="closeActionMenus(); openNoShow({{ $appointment->id }})">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>No Show</span>
+        </button>
+    @else
+        <button
+            type="button"
+            class="action-menu-item disabled-item"
+            disabled
+            title="No Show is only available after the scheduled time ends">
+            <i class="fa-solid fa-lock"></i>
+            <span>No Show</span>
+        </button>
+    @endif
+
+</div>
+                            </div>
 
                         </div>
                     </td>
@@ -130,8 +269,8 @@
 
                 @empty
                 <tr>
-                    <td colspan="5" class="no-data">
-                        No approved or rescheduled appointments found.
+                    <td colspan="6" class="no-data">
+                        No appointments found.
                     </td>
                 </tr>
                 @endforelse
@@ -284,6 +423,24 @@
                         >
                     </div>
                 </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="rescheduleReason">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                        </svg>
+                        Reason for Rescheduling
+                    </label>
+                    <textarea
+                        name="reschedule_reason"
+                        id="rescheduleReason"
+                        rows="3"
+                        required
+                        placeholder="Enter reason for rescheduling..."
+                        class="form-input"
+                    ></textarea>
+                </div>
             </div>
 
             <div class="modal-divider"></div>
@@ -337,8 +494,8 @@
 
             <div class="modal-body">
                 <p style="font-size:14px; color:#374151; margin:0;">
-                    This action will update the appointment status to <strong>No Show</strong>.
-                    This cannot be undone.
+                    The scheduled appointment time has ended. Please confirm that the patient did not arrive.
+                    The appointment will be marked as <strong>No Show</strong>.
                 </p>
             </div>
 
@@ -362,10 +519,79 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <script>
+/* ===== Three-Dot Action Menu ===== */
+function toggleActionMenu(button) {
+    const menu = button.closest('.action-menu');
+    const dropdown = menu.querySelector('.action-menu-dropdown');
+    const isOpen = menu.classList.contains('open');
+
+    closeActionMenus();
+
+    if (!isOpen) {
+        menu.classList.add('open');
+        button.setAttribute('aria-expanded', 'true');
+        dropdown.style.display = 'block';
+
+        // Position the dropdown using viewport coordinates so it is not
+        // clipped by the table's horizontal scroll container.
+        const rect = button.getBoundingClientRect();
+        const menuWidth = dropdown.offsetWidth;
+        const menuHeight = dropdown.offsetHeight;
+        const gap = 6;
+        const viewportPadding = 8;
+
+        let left = rect.right - menuWidth;
+        let top = rect.bottom + gap;
+
+        if (left < viewportPadding) {
+            left = viewportPadding;
+        }
+        if (left + menuWidth > window.innerWidth - viewportPadding) {
+            left = window.innerWidth - menuWidth - viewportPadding;
+        }
+
+        // Open upward when there is not enough room below the button.
+        if (top + menuHeight > window.innerHeight - viewportPadding) {
+            top = rect.top - menuHeight - gap;
+        }
+        if (top < viewportPadding) {
+            top = viewportPadding;
+        }
+
+        dropdown.style.left = `${left}px`;
+        dropdown.style.top = `${top}px`;
+    }
+}
+
+function closeActionMenus() {
+    document.querySelectorAll('.action-menu.open').forEach(menu => {
+        menu.classList.remove('open');
+        const toggle = menu.querySelector('.action-menu-toggle');
+        const dropdown = menu.querySelector('.action-menu-dropdown');
+
+        if (toggle) toggle.setAttribute('aria-expanded', 'false');
+        if (dropdown) {
+            dropdown.style.display = '';
+            dropdown.style.left = '';
+            dropdown.style.top = '';
+        }
+    });
+}
+
+document.addEventListener('click', function (event) {
+    if (!event.target.closest('.action-menu')) {
+        closeActionMenus();
+    }
+});
+
+window.addEventListener('scroll', closeActionMenus, true);
+window.addEventListener('resize', closeActionMenus);
+
 /* ===== Reschedule Modal ===== */
 function openReschedule(id, date, time) {
     document.getElementById('rescheduleDate').value = date;
     document.getElementById('rescheduleTime').value = time;
+    document.getElementById('rescheduleReason').value = '';
     document.getElementById('rescheduleForm').action = `/doctor/appointments/${id}/reschedule`;
 
     const modal = document.getElementById('rescheduleModal');

@@ -50,6 +50,24 @@ class PatientController extends Controller
         $bookedSlots = Appointment::where('status', '!=', 'Rejected')
             ->get(['doctor_id', 'appointment_date', 'appointment_time']);
 
+        $profileComplete      = $patient->computeProfileComplete();
+        $missingProfileFields = $patient->getMissingProfileFields();
+
+        $totalRequiredFields     = count(User::requiredProfileFields());
+        $completedRequiredFields = $totalRequiredFields - count($missingProfileFields);
+        $profileCompletionPercent = $totalRequiredFields > 0
+            ? (int) round(($completedRequiredFields / $totalRequiredFields) * 100)
+            : 100;
+
+        $hour = Carbon::now()->hour;
+        if ($hour >= 5 && $hour < 12) {
+            $greeting = 'Good Morning';
+        } elseif ($hour >= 12 && $hour < 18) {
+            $greeting = 'Good Afternoon';
+        } else {
+            $greeting = 'Good Evening';
+        }
+
         return view('patient.dashboard', compact(
             'patient',
             'totalAppointments',
@@ -59,7 +77,13 @@ class PatientController extends Controller
             'upcomingCount',
             'thisMonthCount',
             'doctors',
-            'bookedSlots'
+            'bookedSlots',
+            'profileComplete',
+            'missingProfileFields',
+            'totalRequiredFields',
+            'completedRequiredFields',
+            'profileCompletionPercent',
+            'greeting'
         ));
     }
 
@@ -73,11 +97,19 @@ class PatientController extends Controller
     public function settings()
     {
         $patient = auth()->user();
-        return view('patient.account-settings', compact('patient'));
+
+        $profileComplete      = $patient->computeProfileComplete();
+        $missingProfileFields = $patient->getMissingProfileFields();
+
+        return view('patient.account-settings', compact(
+            'patient',
+            'profileComplete',
+            'missingProfileFields'
+        ));
     }
 
     // =========================
-    // PROFILE UPDATE (ACCOUNT SETTINGS)
+    // PROFILE UPDATE (ACCOUNT SETTINGS) — avatar logic REMOVED
     // =========================
     public function updateProfile(Request $request)
     {
@@ -94,18 +126,28 @@ class PatientController extends Controller
             'contact_number'           => 'required|string|max:20',
             'username'                 => ['required', 'string', 'max:255', Rule::unique('users')->ignore($patient->id)],
             'email'                    => ['required', 'email', Rule::unique('users')->ignore($patient->id)],
-            'avatar'                   => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
 
-            // Medical Information
-            'blood_type'               => 'nullable|string|max:10',
-            'allergies'                => 'nullable|string|max:1000',
+            // Medical Information — required for profile completion, but
+            // "Unknown / Not Sure" is an accepted answer for blood type so
+            // patients are never blocked just because they don't know it.
+            'blood_type'               => 'required|in:A+,A-,B+,B-,AB+,AB-,O+,O-,Unknown',
 
-            // Emergency Contact
-            'emergency_name'           => 'nullable|string|max:100',
-            'relationship'             => 'nullable|string|max:50',
-            'emergency_contact_number' => 'nullable|string|max:20',
-            'emergency_address'        => 'nullable|string|max:100',
+            // Patient must answer whether they have allergies. If they do,
+            // they must describe them; "No Known Allergies" is otherwise
+            // stored automatically as a valid, complete answer.
+            'allergy_status'           => 'required|in:none,has',
+            'allergies_detail'         => 'required_if:allergy_status,has|nullable|string|max:1000',
+
+            // Emergency Contact — required for profile completion
+            'emergency_name'           => 'required|string|max:100',
+            'relationship'             => 'required|string|max:50',
+            'emergency_contact_number' => 'required|string|max:20',
+            'emergency_address'        => 'required|string|max:100',
         ]);
+
+        $allergies = $validated['allergy_status'] === 'has'
+            ? $validated['allergies_detail']
+            : 'No Known Allergies';
 
         $patient->update([
             'first_name'               => $validated['first_name'],
@@ -120,30 +162,70 @@ class PatientController extends Controller
             'email'                    => $validated['email'],
 
             // Medical Information
-            'blood_type'               => $validated['blood_type'] ?? null,
-            'allergies'                => $validated['allergies'] ?? null,
+            'blood_type'               => $validated['blood_type'],
+            'allergies'                => $allergies,
 
             // Emergency Contact
-            'emergency_name'           => $validated['emergency_name'] ?? null,
-            'relationship'             => $validated['relationship'] ?? null,
-            'emergency_contact_number' => $validated['emergency_contact_number'] ?? null,
-            'emergency_address'        => $validated['emergency_address'] ?? null,
+            'emergency_name'           => $validated['emergency_name'],
+            'relationship'             => $validated['relationship'],
+            'emergency_contact_number' => $validated['emergency_contact_number'],
+            'emergency_address'        => $validated['emergency_address'],
         ]);
-
-        // Avatar upload
-        if ($request->hasFile('avatar')) {
-            if ($patient->avatar && Storage::disk('public')->exists($patient->avatar)) {
-                Storage::disk('public')->delete($patient->avatar);
-            }
-            $path = $request->file('avatar')->store('avatars', 'public');
-            $patient->avatar = $path;
-            $patient->save();
-        }
 
         $this->logActivity('Updated Profile', 'Updated profile information.');
 
         return redirect()->route('patient.settings')
             ->with('success', 'Profile updated successfully!');
+    }
+
+    // =========================
+    // PROFILE PICTURE — SAVE (independent from profile form)
+    // =========================
+    public function updateAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        $patient = auth()->user();
+
+        // Delete old avatar if it exists on disk
+        if ($patient->avatar && Storage::disk('public')->exists($patient->avatar)) {
+            Storage::disk('public')->delete($patient->avatar);
+        }
+
+        $path = $request->file('avatar')->store('avatars', 'public');
+
+        $patient->avatar = $path;
+        $patient->save();
+
+        $this->logActivity('Updated Profile Picture', 'Updated profile picture.');
+
+        return redirect()->route('patient.settings')
+            ->with('success', 'Profile picture updated successfully!');
+    }
+
+    // =========================
+    // PROFILE PICTURE — REMOVE (independent from profile form)
+    // =========================
+    public function removeAvatar()
+    {
+        $patient = auth()->user();
+
+        if ($patient->avatar) {
+            // Safely handle case where DB has a path but file is missing
+            if (Storage::disk('public')->exists($patient->avatar)) {
+                Storage::disk('public')->delete($patient->avatar);
+            }
+
+            $patient->avatar = null;
+            $patient->save();
+
+            $this->logActivity('Removed Profile Picture', 'Removed profile picture.');
+        }
+
+        return redirect()->route('patient.settings')
+            ->with('success', 'Profile picture removed successfully!');
     }
 
     // =========================
@@ -183,7 +265,7 @@ class PatientController extends Controller
         $appointments = Appointment::with([
                 'doctor',
                 'prescriptions.medicine',
-                'review'
+                'review',
             ])
             ->where('patient_id', $patient->id)
             ->whereIn('status', ['Completed', 'Cancelled', 'Rejected', 'No Show'])
@@ -212,11 +294,11 @@ class PatientController extends Controller
         $review        = $appointment->review;
         $medicalRecord = MedicalRecord::where('appointment_id', $id)->first();
 
-        // ACTIVITY LOG
         $this->logActivity(
             'Viewed Medical Report',
             'Viewed medical report from Dr. ' . $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name .
-            ' on ' . Carbon::parse($appointment->appointment_date)->format('F d, Y')
+            ' on ' . Carbon::parse($appointment->appointment_date)->format('F d, Y'),
+            'Medical Records'
         );
 
         return view('patient.view-medical-report', compact(
@@ -227,7 +309,7 @@ class PatientController extends Controller
         ));
     }
 
-    public function showPrescription($id)
+    public function showPrescription($id, Request $request)
     {
         $appointment = Appointment::with(['doctor', 'patient', 'review'])
             ->where('id', $id)
@@ -237,48 +319,22 @@ class PatientController extends Controller
         $prescriptions = $appointment->prescriptions;
         $review        = $appointment->review;
 
-        // ACTIVITY LOG
+        // Set when navigating here from the Medical Report's "Print Prescription"
+        // button so the print dialog opens automatically.
+        $autoprint = $request->query('autoprint') === '1';
+
         $this->logActivity(
             'Viewed Prescription',
             'Viewed prescription from Dr. ' . $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name .
-            ' on ' . Carbon::parse($appointment->appointment_date)->format('F d, Y')
+            ' on ' . Carbon::parse($appointment->appointment_date)->format('F d, Y'),
+            'Medical Records'
         );
 
         return view('patient.prescription', compact(
             'appointment',
             'prescriptions',
-            'review'
-        ));
-    }
-
-    public function showMedicalCertificate($id)
-    {
-        $appointment = Appointment::with([
-                'doctor',
-                'patient',
-                'prescriptions.medicine',
-                'review'
-            ])
-            ->where('id', $id)
-            ->where('patient_id', auth()->id())
-            ->firstOrFail();
-
-        $medicalRecord = MedicalRecord::where('appointment_id', $id)->first();
-        $prescriptions = $appointment->prescriptions;
-        $review        = $appointment->review;
-
-        // ACTIVITY LOG
-        $this->logActivity(
-            'Viewed Medical Certificate',
-            'Viewed medical certificate from Dr. ' . $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name .
-            ' on ' . Carbon::parse($appointment->appointment_date)->format('F d, Y')
-        );
-
-        return view('patient.medical-certificate', compact(
-            'appointment',
-            'medicalRecord',
-            'prescriptions',
-            'review'
+            'review',
+            'autoprint'
         ));
     }
 
@@ -289,27 +345,22 @@ class PatientController extends Controller
         $query = UserLog::where('user_id', $user->id)
             ->orderBy('created_at', 'desc');
 
-        // Search by keyword (details)
         if ($request->filled('search')) {
             $query->where('details', 'like', '%' . $request->search . '%');
         }
 
-        // Filter by action
         if ($request->filled('action')) {
             $query->where('action', $request->action);
         }
 
-        // Filter by month
         if ($request->filled('month')) {
             $query->whereMonth('created_at', $request->month);
         }
 
-        // Filter by year
         if ($request->filled('year')) {
             $query->whereYear('created_at', $request->year);
         }
 
-        // Filter by date range
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }
@@ -320,13 +371,11 @@ class PatientController extends Controller
 
         $logs = $query->paginate(10)->withQueryString();
 
-        // Distinct actions para sa dropdown
         $actions = UserLog::where('user_id', $user->id)
             ->distinct()
             ->orderBy('action')
             ->pluck('action');
 
-        // Available years para sa dropdown
         $years = UserLog::where('user_id', $user->id)
             ->selectRaw('YEAR(created_at) as year')
             ->distinct()
@@ -339,11 +388,12 @@ class PatientController extends Controller
     // =========================
     // ACTIVITY LOGGER
     // =========================
-    private function logActivity($action, $details = null)
+    private function logActivity($action, $details = null, $module = 'Account')
     {
         UserLog::create([
             'user_id' => auth()->id(),
             'action'  => $action,
+            'module'  => $module,
             'details' => $details,
         ]);
     }

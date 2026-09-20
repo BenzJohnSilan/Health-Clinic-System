@@ -12,12 +12,12 @@ class MedicineSeeder extends Seeder
         $medicines = [
             [
                 'medicine_name' => 'Paracetamol',
-                'brand' => 'Biogesic', // ✅ ADD
+                'brand' => 'Biogesic',
                 'category' => 'Painkiller',
-                'dosage' => '500mg', // ✅ ADD
+                'dosage' => '500mg',
                 'quantity' => 100,
                 'unit' => 'tablets',
-                'price' => 5.00, // ✅ ADD
+                'price' => 5.00,
                 'expiration_date' => '2026-12-31',
             ],
             [

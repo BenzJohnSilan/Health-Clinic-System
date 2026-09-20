@@ -1,10 +1,11 @@
 /* ==========================================================
    STAFF DASHBOARD — staff-dashboard.css
-   Matches admin-dashboard.css design system (purple theme)
+   Visually matches patient-dashboard.css (same purple design
+   system + page background) while keeping Staff-specific content.
    ========================================================== */
 
 /* ============================================================
-   CSS VARIABLES
+   CSS VARIABLES  (mirrors patient/admin palette)
    ============================================================ */
 :root {
     --primary:        #6a0dad;
@@ -36,46 +37,105 @@
 }
 
 /* ============================================================
-   PAGE HEADER
+   PAGE BACKGROUND — matches Patient Dashboard exactly.
+   staff-layout.css sets the shared body background (#f4f6f8) for
+   every Staff page; this stylesheet loads after it (via @yield
+   in layouts.staff) and only applies to the Dashboard route, so
+   overriding it here brings just this page in line with the
+   Patient Dashboard without touching other Staff pages.
    ============================================================ */
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    margin-bottom: 28px;
-    gap: 12px;
-}
-
-.page-header h1 {
-    font-size: 28px;
-    font-weight: 800;
+body {
+    background: var(--bg-page);
     color: var(--text-dark);
-    letter-spacing: -0.5px;
-    margin: 0;
-}
-
-#datetime-container {
-    background: linear-gradient(135deg, var(--primary), var(--primary-light));
-    color: #fff;
-    padding: 9px 18px;
-    border-radius: 999px;
-    font-weight: 700;
-    font-size: 0.85rem;
-    box-shadow: 0 4px 14px rgba(106,13,173,0.28);
-    min-width: 240px;
-    text-align: center;
-    letter-spacing: 0.2px;
 }
 
 /* ============================================================
-   APPOINTMENT STAT CARDS
+   HERO — Dynamic Greeting Card
+   Same grid-stacking crossfade mechanic as the stat/today/side
+   sections below: skeleton and real content share the exact same
+   grid cell so revealing never shifts the layout.
    ============================================================ */
-.appt-cards {
+.hero-wrapper {
+    display: grid;
+    margin-bottom: 24px;
+}
+
+.hero-wrapper .hero-section {
+    grid-row: 1;
+    grid-column: 1;
+    transition: opacity 0.3s ease;
+}
+
+.skeleton-hero { opacity: 1; z-index: 2; }
+.skeleton-hero.fade-out { opacity: 0; pointer-events: none; z-index: 1; }
+.skeleton-hero.removed { display: none !important; }
+
+.real-hero { opacity: 0; z-index: 1; pointer-events: none; }
+.real-hero.fade-in { opacity: 1; z-index: 2; pointer-events: auto; }
+
+.dashboard-hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 26px 28px;
+    transition: box-shadow var(--transition);
+}
+
+.dashboard-hero:hover { box-shadow: var(--shadow-md); }
+
+.greeting-text {
+    font-size: 23px;
+    font-weight: 800;
+    color: var(--text-dark);
+    letter-spacing: -0.4px;
+    margin: 0 0 4px;
+}
+
+.greeting-subtitle {
+    font-size: 14px;
+    color: var(--text-light);
+    margin: 0;
+}
+
+.skeleton-greeting-title {
+    width: 280px;
+    max-width: 60%;
+    height: 24px;
+    margin-bottom: 10px;
+}
+
+.skeleton-greeting-subtitle {
+    width: 340px;
+    max-width: 80%;
+    height: 14px;
+}
+
+/* ============================================================
+   APPOINTMENT SUMMARY — 5 clickable filter cards
+   ============================================================ */
+.stats-wrapper {
+    display: grid;
+    margin-bottom: 24px;
+}
+
+.stats-wrapper .stats-section {
+    grid-row: 1;
+    grid-column: 1;
+    transition: opacity 0.3s ease;
+}
+
+.skeleton-stats { opacity: 1; z-index: 2; }
+.skeleton-stats.fade-out { opacity: 0; pointer-events: none; z-index: 1; }
+.skeleton-stats.removed { display: none !important; }
+
+.real-stats { opacity: 0; z-index: 1; pointer-events: none; }
+.real-stats.fade-in { opacity: 1; z-index: 2; pointer-events: auto; }
+
+.stats-section {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 14px;
-    margin-bottom: 24px;
 }
 
 .appt-card {
@@ -91,11 +151,19 @@
     transition: transform var(--transition), box-shadow var(--transition);
     position: relative;
     overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
 }
 
 .appt-card:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-md);
+}
+
+.appt-card:focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 2px;
 }
 
 .appt-card .appt-icon {
@@ -138,85 +206,69 @@
 .appt-cancelled { border-left-color: var(--accent-red); }
 .appt-cancelled .appt-icon { background: #fee2e2; color: var(--accent-red); }
 
-/* ============================================================
-   PENDING ALERT BANNER
-   ============================================================ */
-.pending-alert {
-    background: linear-gradient(135deg, #fffbeb, #fef3c7);
-    border: 1px solid #fcd34d;
-    border-left: 5px solid var(--accent-amber);
-    border-radius: var(--radius-md);
-    padding: 14px 20px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 28px;
-    font-size: 14px;
-    color: #92400e;
+/* Skeleton summary cards */
+.appt-card.skeleton-card {
+    background: #fdfcff;
+    border-left-color: transparent;
+    cursor: default;
 }
 
-.pending-alert i {
-    font-size: 20px;
-    color: var(--accent-amber);
+.appt-card.skeleton-card .skeleton-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
     flex-shrink: 0;
 }
 
-.pending-alert a {
-    margin-left: auto;
-    background: var(--accent-amber);
-    color: #fff;
-    padding: 7px 16px;
-    border-radius: 999px;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 12px;
-    white-space: nowrap;
-    transition: background var(--transition);
-}
-
-.pending-alert a:hover {
-    background: var(--accent-amber-d);
-}
-
 /* ============================================================
-   SECTION TITLE
+   DASHBOARD GRID — Today's Appointments (main) + right column
    ============================================================ */
-.section-title {
-    font-size: 16px;
-    font-weight: 800;
-    color: var(--text-dark);
-    margin: 40px 0 16px;
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+.grid-main { min-width: 0; }
+
+.grid-side {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    letter-spacing: -0.2px;
-}
-
-.section-title i {
-    font-size: 18px;
-    width: 36px; height: 36px;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 10px;
-    background: var(--primary-soft);
-    color: var(--primary);
+    flex-direction: column;
+    gap: 20px;
 }
 
 /* ============================================================
-   APPOINTMENTS TABLE
+   TODAY'S APPOINTMENTS
    ============================================================ */
+.today-wrapper {
+    display: grid;
+}
+
+.today-wrapper .today-section {
+    grid-row: 1;
+    grid-column: 1;
+    transition: opacity 0.3s ease;
+}
+
+.skeleton-today { opacity: 1; z-index: 2; }
+.skeleton-today.fade-out { opacity: 0; pointer-events: none; z-index: 1; }
+.skeleton-today.removed { display: none !important; }
+
+.real-today { opacity: 0; z-index: 1; pointer-events: none; }
+.real-today.fade-in { opacity: 1; z-index: 2; pointer-events: auto; }
+
 .appt-table-wrap {
     background: var(--bg-card);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     overflow: hidden;
-    margin-bottom: 8px;
     border: 1px solid var(--border);
 }
 
 .table-header-row {
-    padding: 15px 20px;
+    padding: 18px 22px;
     font-weight: 800;
-    font-size: 14px;
+    font-size: 15px;
     border-bottom: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
@@ -226,60 +278,66 @@
 }
 
 .table-header-row a {
-    font-size: 12px;
+    font-size: 12.5px;
     color: var(--primary);
     text-decoration: none;
     font-weight: 700;
     transition: opacity var(--transition);
 }
 
-.table-header-row a:hover { opacity: 0.7; }
+.table-header-row a:hover,
+.table-header-row a:focus-visible { opacity: 0.7; }
 
-.table-header-row.amber {
-    background: linear-gradient(135deg, var(--accent-amber-d), var(--accent-amber));
-    color: #fff;
+/* FIX: reserved min-height so the card doesn't collapse/shrink when
+   there are 0 appointments today — matches ~5 rows worth of space,
+   same height the skeleton reserves, so there's no layout jump
+   between skeleton → real, or between "has data" → "empty". */
+.today-list {
+    padding: 6px 0;
+    min-height: 336px;
+    display: flex;
+    flex-direction: column;
 }
 
-.table-header-row.amber a { color: rgba(255,255,255,0.9); }
-
-.appt-table-wrap table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13.5px;
-}
-
-.appt-table-wrap thead tr {
-    background: linear-gradient(135deg, var(--primary), var(--primary-light));
-}
-
-.appt-table-wrap thead th {
-    padding: 12px 16px;
-    text-align: left;
-    font-weight: 700;
-    font-size: 11px;
-    letter-spacing: 0.7px;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.9);
-}
-
-.appt-table-wrap tbody tr {
+.today-row {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 22px;
     border-bottom: 1px solid #f8f4fe;
     transition: background var(--transition);
 }
 
-.appt-table-wrap tbody tr:last-child { border-bottom: none; }
-.appt-table-wrap tbody tr:hover { background: #faf5ff; }
+.today-row:last-child { border-bottom: none; }
+.today-row:hover { background: #faf5ff; }
 
-.appt-table-wrap tbody td {
-    padding: 12px 16px;
-    color: var(--text-mid);
+.today-time {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--primary);
+    letter-spacing: -0.2px;
 }
 
-.no-records {
-    text-align: center;
-    padding: 32px;
-    color: var(--text-xlight);
-    font-size: 13px;
+.today-details { min-width: 0; }
+
+.today-patient {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.today-meta {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: var(--text-light);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Status badges */
@@ -291,150 +349,337 @@
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.4px;
+    white-space: nowrap;
 }
 
-.status-badge.Pending     { background: #fef3c7; color: #92400e; }
-.status-badge.Approved    { background: #d1fae5; color: #065f46; }
-.status-badge.Completed   { background: #dbeafe; color: #1e3a8a; }
-.status-badge.Cancelled   { background: #fee2e2; color: #b91c1c; }
-.status-badge.Rescheduled { background: #ede9fe; color: #5b21b6; }
+.status-badge.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
 
-/* Action buttons inside table */
-.btn-approve-sm {
+.status-badge.approved {
     background: #d1fae5;
     color: #065f46;
-    border: none;
-    padding: 5px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background var(--transition);
-    margin-right: 4px;
 }
 
-.btn-approve-sm:hover { background: #10b981; color: #fff; }
-
-.btn-view-sm {
-    background: var(--primary-soft);
-    color: var(--primary);
-    padding: 5px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 700;
-    text-decoration: none;
-    display: inline-block;
-    transition: background var(--transition);
+.status-badge.checked-in {
+    background: #ccfbf1;
+    color: #0f766e;
 }
 
-.btn-view-sm:hover { background: var(--primary); color: #fff; }
-
-/* ============================================================
-   CHARTS
-   ============================================================ */
-.charts-wrapper {
-    margin-top: 40px;
-    margin-bottom: 40px;
+.status-badge.in-progress {
+    background: #ffedd5;
+    color: #c2410c;
 }
 
-.charts-section-title {
-    font-size: 16px;
-    font-weight: 800;
-    color: var(--text-dark);
-    margin-bottom: 20px;
+.status-badge.completed {
+    background: #dbeafe;
+    color: #1e3a8a;
+}
+
+.status-badge.cancelled {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.status-badge.rescheduled {
+    background: #ede9fe;
+    color: #5b21b6;
+}
+
+.status-badge.rejected {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+/* Empty state — FIX: now flex-fills the reserved .today-list
+   min-height and centers vertically, instead of sitting cramped
+   at the top with a tiny 48px padding. */
+.empty-state {
+    flex: 1;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 10px;
-    letter-spacing: -0.2px;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    color: var(--text-xlight);
 }
 
-.charts-section-title i {
-    font-size: 18px;
-    width: 36px; height: 36px;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 10px;
-    background: var(--primary-soft);
-    color: var(--primary);
+.empty-state i {
+    font-size: 30px;
+    color: #d1d5db;
+    display: block;
+    margin-bottom: 10px;
 }
 
-.chart-card {
-    background: var(--bg-card);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border);
-    overflow: hidden;
-    max-width: 700px;
-}
-
-.chart-card-header {
-    padding: 18px 20px 0;
-}
-
-.chart-card-header .chart-title {
-    font-size: 14px;
-    font-weight: 800;
-    color: var(--text-dark);
+.empty-state p {
     margin: 0;
-    letter-spacing: -0.2px;
-}
-
-.chart-card-header .chart-subtitle {
-    font-size: 11.5px;
+    font-size: 13.5px;
     color: var(--text-light);
-    margin: 3px 0 0;
-    font-weight: 500;
+    font-weight: 600;
 }
 
-.chart-body {
-    padding: 14px 20px 20px;
-    position: relative;
-    min-height: 270px;
-}
-
-.bar-totals {
-    display: flex;
-    gap: 16px;
-    padding: 12px 20px 18px;
-    flex-wrap: wrap;
+/* "Showing X of Y appointments" — only rendered when today's
+   appointments exceed the 5 shown on the dashboard card. Sits
+   inside .appt-table-wrap, under the row list, so it never adds
+   height beyond one compact caption line. */
+.appointments-summary {
+    padding: 12px 22px;
+    font-size: 12px;
+    color: var(--text-xlight);
+    text-align: right;
     border-top: 1px solid var(--border);
 }
 
-.bar-total-item {
-    display: flex;
+/* Skeleton today rows — FIX: same row count (5) as the real max,
+   so skeleton height === real content height. */
+.today-row-skeleton {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
     align-items: center;
-    gap: 7px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-mid);
+    gap: 16px;
+    padding: 16px 22px;
+    border-bottom: 1px solid #f8f4fe;
 }
 
-.bar-total-item strong {
+.today-row-skeleton:last-child { border-bottom: none; }
+
+.skeleton-time { width: 60px; height: 16px; }
+.skeleton-name { width: 70%; height: 14px; }
+.skeleton-badge-sm { width: 60px; height: 18px; border-radius: 999px; justify-self: end; }
+.skeleton-th-title { width: 180px; height: 16px; }
+.skeleton-th-link { width: 70px; height: 12px; }
+
+/* ============================================================
+   SIDE COLUMN — Needs Attention & Quick Actions
+   ============================================================ */
+.side-wrapper {
+    display: grid;
+}
+
+.side-wrapper .side-section {
+    grid-row: 1;
+    grid-column: 1;
+    transition: opacity 0.3s ease;
+}
+
+.skeleton-attention,
+.skeleton-actions { opacity: 1; z-index: 2; }
+
+.skeleton-attention.fade-out,
+.skeleton-actions.fade-out { opacity: 0; pointer-events: none; z-index: 1; }
+
+.skeleton-attention.removed,
+.skeleton-actions.removed { display: none !important; }
+
+.real-attention,
+.real-actions { opacity: 0; z-index: 1; pointer-events: none; }
+
+.real-attention.fade-in,
+.real-actions.fade-in { opacity: 1; z-index: 2; pointer-events: auto; }
+
+.side-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    padding: 22px;
+    transition: box-shadow var(--transition);
+}
+
+.side-card:hover { box-shadow: var(--shadow-md); }
+
+.side-card-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin: 0 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.side-card-title i { color: var(--accent-amber); }
+
+.skeleton-side-title { width: 60%; height: 16px; margin-bottom: 14px; }
+.skeleton-side-body { width: 80%; height: 12px; margin-bottom: 16px; }
+.skeleton-side-btn { width: 100px; height: 34px; border-radius: var(--radius-sm); }
+
+/* ── Needs Attention content ── */
+.attention-count {
+    margin: 0 0 4px;
+    font-size: 17px;
     font-weight: 800;
     color: var(--text-dark);
 }
 
-.bar-total-badge {
-    width: 10px; height: 10px;
-    border-radius: 3px;
+.attention-count.ok {
+    color: var(--accent-green);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.attention-desc {
+    margin: 0 0 18px;
+    font-size: 13px;
+    color: var(--text-light);
+}
+
+.side-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 9px 18px;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition);
+}
+
+.side-btn.amber {
+    background: var(--accent-amber);
+    color: #fff;
+}
+
+.side-btn.amber:hover,
+.side-btn.amber:focus-visible {
+    background: var(--accent-amber-d);
+    transform: translateY(-1px);
+}
+
+.side-btn:focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* ── Quick Actions content ── */
+.quick-action-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 10px;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    color: var(--text-dark);
+    font-size: 13.5px;
+    font-weight: 700;
+    transition: background var(--transition);
+}
+
+.quick-action-item:not(:last-child) { margin-bottom: 4px; }
+
+.quick-action-item:hover,
+.quick-action-item:focus-visible {
+    background: var(--primary-soft);
+}
+
+.quick-action-item:focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: -1px;
+}
+
+.qa-icon {
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
     flex-shrink: 0;
 }
+
+.quick-action-item span:nth-child(2) { flex: 1; }
+
+.qa-arrow {
+    font-size: 11px;
+    color: var(--text-xlight);
+}
+
+.skeleton-action-row {
+    width: 100%;
+    height: 46px;
+    border-radius: var(--radius-sm);
+    margin-top: 8px;
+}
+
+/* ============================================================
+   SKELETON LOADING — shimmer animation
+   ============================================================ */
+@keyframes skeleton-shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+}
+
+.skeleton-line,
+.skeleton-icon {
+    background: linear-gradient(90deg, #eee 25%, #f5f5f5 37%, #eee 63%);
+    background-size: 800px 100%;
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+    border-radius: 6px;
+}
+
+.skeleton-label { width: 70%; height: 10px; margin-bottom: 6px; }
+.skeleton-value { width: 50%; height: 22px; }
 
 /* ============================================================
    RESPONSIVE
    ============================================================ */
+@media (max-width: 1100px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media (max-width: 900px) {
-    .appt-cards { grid-template-columns: repeat(3, 1fr); }
+    .stats-section { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 768px) {
-    .appt-cards { grid-template-columns: repeat(2, 1fr); }
-    .chart-card { max-width: 100%; }
+    .stats-section { grid-template-columns: repeat(2, 1fr); }
+
+    .today-row,
+    .today-row-skeleton {
+        grid-template-columns: 70px 1fr auto;
+        gap: 10px;
+        padding: 14px 16px;
+    }
+
+    .table-header-row { padding: 14px 16px; }
 }
 
 @media (max-width: 600px) {
-    .page-header { flex-direction: column; align-items: flex-start; }
-    #datetime-container { min-width: 100%; }
-    .appt-cards { grid-template-columns: 1fr; }
-    .pending-alert { flex-wrap: wrap; }
-    .pending-alert a { margin-left: 0; }
+    .stats-section { grid-template-columns: 1fr; }
+
+    .dashboard-hero { padding: 18px; }
+    .greeting-text { font-size: 19px; }
+
+    .today-list { min-height: 260px; }
+
+    .today-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .today-time { font-size: 14px; }
+
+    .today-row-skeleton {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .skeleton-badge-sm { justify-self: start; }
+
+    .side-card { padding: 18px; }
+}
+
+@media (max-width: 480px) {
+    .greeting-text { font-size: 17px; }
+    .dashboard-hero { padding: 16px; }
+    .appt-card { padding: 16px 14px; }
+    .appt-card .appt-info h2 { font-size: 24px; }
 }

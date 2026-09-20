@@ -10,6 +10,10 @@
     --white: #ffffff;
 }
 
+html, body {
+    height: 100%;
+}
+
 body {
     font-family: 'DM Sans', sans-serif;
     background: var(--bg);
@@ -17,8 +21,9 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
+    overflow-x: hidden;
     position: relative;
+    padding: 16px;
 }
 
 /* ===== BACK TO HOME (top-left fixed) ===== */
@@ -99,6 +104,7 @@ body {
     z-index: 1;
     display: flex;
     width: 980px;
+    max-width: 100%;
     min-height: 560px;
     background: var(--white);
     border-radius: 28px;
@@ -146,7 +152,7 @@ body {
     bottom: -70px; left: -70px;
 }
 
-.left-inner { position: relative; z-index: 1; }
+.left-inner { position: relative; z-index: 1; width: 100%; }
 
 .left-icon {
     width: 72px; height: 72px;
@@ -245,6 +251,7 @@ body {
     font-weight: 500;
     display: flex; align-items: center; gap: 6px;
     animation: floatBadge 6s ease-in-out infinite;
+    white-space: nowrap;
 }
 
 .left-badge-1 { top: 18%; left: 10%; animation-delay: 0s; }
@@ -263,6 +270,7 @@ body {
     flex-direction: column;
     justify-content: center;
     background: var(--white);
+    min-width: 0;
 }
 
 .right-header { margin-bottom: 28px; }
@@ -331,6 +339,8 @@ body {
     color: var(--text-dark);
     outline: none;
     transition: 0.25s;
+    /* prevents iOS auto-zoom on focus (needs >=16px) while keeping visual size via transform-safe font */
+    font-size: 16px;
 }
 
 .input-wrap input:focus {
@@ -369,6 +379,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
     font-size: 13px;
     margin-bottom: 22px;
     color: var(--text-muted);
@@ -435,10 +447,12 @@ body {
 /* ===== SOCIAL ===== */
 .social-row {
     display: flex; gap: 12px; justify-content: center;
+    flex-wrap: wrap;
 }
 
 .social-btn {
     flex: 1;
+    min-width: 44px;
     padding: 10px;
     border-radius: 12px;
     border: 1.5px solid #e8e8e8;
@@ -457,27 +471,86 @@ body {
     transform: translateY(-2px);
 }
 
-/* ===== RESPONSIVE ===== */
+/* =========================================================
+   RESPONSIVE BREAKPOINTS
+   Desktop  : > 1024px  (default styles above)
+   Laptop   : 901px - 1024px  (slightly narrower wrapper)
+   Tablet   : 601px - 900px   (still 2-column but tighter)
+   Mobile   : <= 600px        (stacked layout)
+   Small    : <= 380px        (extra compact)
+   ========================================================= */
+
+/* ----- Laptop / small desktop ----- */
+@media (max-width: 1024px) {
+    .wrapper {
+        width: 92%;
+        min-height: 520px;
+    }
+
+    .left { padding: 50px 34px; }
+
+    .right { padding: 44px 40px; }
+
+    .left h1 { font-size: 23px; }
+}
+
+/* ----- Tablet ----- */
+@media (max-width: 900px) {
+    .wrapper {
+        width: 94%;
+    }
+
+    .left {
+        width: 42%;
+        padding: 40px 28px;
+    }
+
+    .right {
+        width: 58%;
+        padding: 40px 32px;
+    }
+
+    .left h1 { font-size: 21px; }
+    .left p { font-size: 13px; margin-bottom: 24px; }
+
+    .bg-blob-1, .bg-blob-2 {
+        opacity: 0.22;
+    }
+}
+
+/* ----- Mobile (stacked layout) ----- */
 @media (max-width: 768px) {
+    body {
+        padding: 12px;
+        align-items: flex-start;
+        overflow-y: auto;
+    }
+
     .wrapper {
         flex-direction: column;
         width: 100%;
-        margin: 16px;
+        max-width: 480px;
+        margin: 56px auto 16px;
         min-height: auto;
         border-radius: 20px;
     }
 
     .left {
         width: 100%;
-        padding: 44px 32px;
+        padding: 40px 28px 34px;
         border-radius: 0;
     }
 
+    .left::before { width: 220px; height: 220px; top: -80px; right: -80px; }
+    .left::after  { width: 160px; height: 160px; bottom: -50px; left: -50px; }
+
     .left-badge { display: none; }
+
+    .left h1 { font-size: 21px; }
 
     .right {
         width: 100%;
-        padding: 36px 28px;
+        padding: 32px 26px 36px;
     }
 
     .back-home {
@@ -486,4 +559,79 @@ body {
         padding: 8px 16px;
         font-size: 12px;
     }
+
+    .bg-blob { display: none; }
+}
+
+/* ----- Small phones ----- */
+@media (max-width: 480px) {
+    .wrapper {
+        margin-top: 50px;
+        border-radius: 16px;
+    }
+
+    .left {
+        padding: 34px 22px 28px;
+    }
+
+    .left-icon {
+        width: 60px; height: 60px;
+        font-size: 26px;
+        margin-bottom: 20px;
+    }
+
+    .left h1 { font-size: 19px; }
+    .left p { font-size: 12.5px; margin-bottom: 20px; }
+    .left-question { font-size: 12px; }
+
+    .btn-register {
+        padding: 10px 26px;
+        font-size: 13px;
+    }
+
+    .right { padding: 28px 20px 32px; }
+
+    .right-header h2 { font-size: 23px; }
+    .right-header p { font-size: 13px; }
+
+    .input-wrap input { padding: 12px 42px; }
+
+    .options {
+        font-size: 12.5px;
+    }
+
+    .login-btn { font-size: 14px; padding: 13px; }
+
+    .social-row { gap: 8px; }
+    .social-btn { font-size: 16px; padding: 9px; }
+}
+
+/* ----- Very small phones ----- */
+@media (max-width: 360px) {
+    .back-home {
+        font-size: 11px;
+        padding: 7px 12px;
+        gap: 5px;
+    }
+
+    .left { padding: 28px 16px 24px; }
+    .left h1 { font-size: 17px; }
+
+    .right { padding: 24px 16px 28px; }
+
+    .right-header h2 { font-size: 21px; }
+
+    .input-icon, .input-toggle { font-size: 15px; }
+
+    .options {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+
+/* ----- Short screens (landscape phones / small laptops) ----- */
+@media (max-height: 620px) and (min-width: 769px) {
+    .wrapper { min-height: auto; }
+    .left, .right { padding-top: 32px; padding-bottom: 32px; }
 }

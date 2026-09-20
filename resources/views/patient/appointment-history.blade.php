@@ -70,26 +70,10 @@
 
                                     <a href="{{ route('patient.medical-report.show', $appointment->id) }}"
                                     class="btn-view">
-                                        Medical Report
-                                    </a>
-
-                                    <a href="{{ route('patient.prescription.show', $appointment->id) }}"
-                                    class="btn-prescription">
-                                        Prescription
-                                    </a>
-
-                                    <a href="{{ route('patient.medical-certificate.show', $appointment->id) }}"
-                                    class="btn-certificate">
-                                        Medical Certificate
+                                        Report
                                     </a>
 
                                 </div>
-
-                            @elseif(in_array($appointment->status, ['Rejected', 'Cancelled']))
-
-                                <span class="btn-status-label unavailable">
-                                    No Available Documents
-                                </span>
 
                             @else
 

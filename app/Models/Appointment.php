@@ -24,7 +24,10 @@ class Appointment extends Model
         'appointment_time',
         'status',
         'reason',
+        'rejection_reason',
         'rescheduled_by',
+        'reschedule_reason',
+        'rescheduled_at',
         'diagnosis',
         'reference_no',
         'booked_by_staff',
@@ -34,6 +37,7 @@ class Appointment extends Model
         'appointment_date' => 'date:Y-m-d',
         'appointment_time' => 'string',
         'booked_by_staff'  => 'boolean',
+        'rescheduled_at'   => 'datetime',
     ];
 
     // ====================
@@ -47,6 +51,34 @@ class Appointment extends Model
         static::creating(function ($appointment) {
             if (empty($appointment->reference_no)) {
                 $appointment->reference_no = self::generateReferenceNo();
+            }
+        });
+
+        // ===================================================================
+        // NOTIFICATION HISTORY SUPPORT (additive only — does not change any
+        // existing appointment behavior). Every time an appointment is
+        // created or its status changes, snapshot that status into
+        // `appointment_status_events`. This is what lets the Patient
+        // notification feed keep an OLD status notification (e.g. Approved)
+        // correctly marked as read even after the appointment later moves to
+        // a new status (e.g. Cancelled) — the live `appointments.status`
+        // column alone can't represent that history since it's overwritten.
+        // ===================================================================
+        static::created(function ($appointment) {
+            \App\Models\AppointmentStatusEvent::create([
+                'appointment_id' => $appointment->id,
+                'status'         => $appointment->status,
+                'occurred_at'    => $appointment->created_at ?? now(),
+            ]);
+        });
+
+        static::updated(function ($appointment) {
+            if ($appointment->wasChanged('status')) {
+                \App\Models\AppointmentStatusEvent::create([
+                    'appointment_id' => $appointment->id,
+                    'status'         => $appointment->status,
+                    'occurred_at'    => $appointment->updated_at ?? now(),
+                ]);
             }
         });
     }
@@ -95,6 +127,17 @@ class Appointment extends Model
         return $this->belongsTo(User::class, 'doctor_id');
     }
 
+    /**
+     * The Staff or Doctor user who rescheduled this appointment.
+     * (Referenced by doctor/appointments.blade.php as
+     * $appointment->rescheduledBy — added here so that lookup actually
+     * resolves instead of silently returning null.)
+     */
+    public function rescheduledBy()
+    {
+        return $this->belongsTo(User::class, 'rescheduled_by');
+    }
+
     public function prescriptions()
     {
         return $this->hasMany(Prescription::class, 'appointment_id');
@@ -110,6 +153,76 @@ class Appointment extends Model
         return $this->hasOne(MedicalRecord::class, 'appointment_id');
     }
 
+    public function medicalCertificates()
+    {
+        return $this->hasMany(\App\Models\MedicalCertificate::class, 'appointment_id');
+    }
+
+    /**
+     * Billing invoice tied to this appointment (Billing & Payments module).
+     */
+    public function invoice()
+    {
+        return $this->hasOne(\App\Models\Invoice::class, 'appointment_id');
+    }
+
+    /**
+     * The latest medical certificate request tied to this appointment
+     * that is still pending review.
+     */
+    public function pendingMedicalCertificate()
+    {
+        return $this->hasOne(\App\Models\MedicalCertificate::class, 'appointment_id')
+            ->where('status', 'pending');
+    }
+
+    /**
+     * The most recent Medical Certificate request/record tied to this
+     * appointment, regardless of status. Used to decide which
+     * Request / Pending / Request Again / View + Request Correction
+     * action to show for this consultation.
+     */
+    public function latestMedicalCertificate()
+    {
+        return $this->hasOne(\App\Models\MedicalCertificate::class, 'appointment_id')
+            ->latestOfMany();
+    }
+
+    // ====================
+    // WORKFLOW HELPERS (Check-In -> Consultation -> Dispensing)
+    // ====================
+
+    /**
+     * Staff can Check In an appointment that is Approved OR Rescheduled —
+     * a Rescheduled appointment is still an approved booking that was
+     * just moved to a new date/time, so it must be able to continue
+     * through the same Check-In -> Consultation -> Dispensing workflow.
+     */
+    public function canBeCheckedIn(): bool
+    {
+        return in_array($this->status, ['Approved', 'Rescheduled'], true)
+            && $this->appointment_date
+            && $this->appointment_date->isToday();
+    }
+
+    /**
+     * Doctor can only Start Consultation on an appointment that has
+     * already been Checked In by Staff.
+     */
+    public function canStartConsultation(): bool
+    {
+        return $this->status === 'Checked In';
+    }
+
+    /**
+     * True once the consultation is finalized — nothing about the
+     * medical record, prescriptions, or review should be editable.
+     */
+    public function isConsultationLocked(): bool
+    {
+        return $this->status === 'Completed';
+    }
+
     // ====================
     // HELPERS
     // ====================
@@ -121,6 +234,25 @@ class Appointment extends Model
     public function resolvedPatient()
     {
         return $this->patient ?? $this->walkinPatient;
+    }
+
+    /**
+     * Human-readable Patient ID shown on the consultation header.
+     * There is no dedicated patient reference-number column, so this is
+     * derived from whichever patient record this appointment resolves
+     * to — REG- prefix for a registered user, WLK- for a walk-in.
+     */
+    public function patientDisplayId(): string
+    {
+        if ($this->walkin_patient_id) {
+            return 'WLK-' . str_pad((string) $this->walkin_patient_id, 5, '0', STR_PAD_LEFT);
+        }
+
+        if ($this->patient_id) {
+            return 'REG-' . str_pad((string) $this->patient_id, 5, '0', STR_PAD_LEFT);
+        }
+
+        return 'N/A';
     }
 
     /**

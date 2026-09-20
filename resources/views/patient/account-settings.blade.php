@@ -36,28 +36,93 @@
         </div>
     @endif
 
+    {{-- ===== PROFILE COMPLETION STATUS ===== --}}
+    <div class="profile-status-card {{ $profileComplete ? 'is-complete' : 'is-incomplete' }}">
+        @if($profileComplete)
+            <div class="profile-status-title">
+                <i class='bx bx-check-circle'></i>
+                <span>Profile Status: <strong>Complete</strong></span>
+            </div>
+        @else
+            <div class="profile-status-title">
+                <i class='bx bx-error'></i>
+                <span>Profile Status: <strong>Incomplete</strong></span>
+            </div>
+            <p class="profile-status-desc">
+                Please complete the following before you can book an appointment:
+            </p>
+            <ul class="profile-status-missing">
+                @foreach($missingProfileFields as $field)
+                    <li>{{ $field }}</li>
+                @endforeach
+            </ul>
+        @endif
+    </div>
+
     <div class="settings-container">
 
         {{-- ===== SIDEBAR ===== --}}
         <div class="settings-sidebar">
 
             <div class="profile-card">
-                <div class="avatar-wrapper" id="avatarPreviewWrapper">
-                    @if($patient->avatar)
-                        <img src="{{ asset('storage/'.$patient->avatar) }}" alt="Avatar" id="avatarPreview">
-                    @else
-                        <img src="https://via.placeholder.com/84" alt="Avatar" id="avatarPreview">
-                    @endif
-                    <div class="avatar-overlay" onclick="document.getElementById('avatarInput').click()">
-                        <i class='bx bx-camera'></i>
+
+                {{-- ===== AVATAR (independent form — Choose = click avatar) ===== --}}
+                <form action="{{ route('patient.profile.avatar.update') }}"
+                      method="POST"
+                      enctype="multipart/form-data"
+                      id="avatarForm">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="avatar-wrapper" id="avatarPreviewWrapper" onclick="document.getElementById('avatarInput').click()">
+                        @if($patient->avatar)
+                            <img src="{{ asset('storage/'.$patient->avatar) }}" alt="Avatar" id="avatarPreview">
+                        @else
+                            <img src="https://via.placeholder.com/84" alt="Avatar" id="avatarPreview">
+                        @endif
+                        <div class="avatar-overlay">
+                            <i class='bx bx-camera'></i>
+                        </div>
                     </div>
-                </div>
-                <div class="profile-card-info">
-                    <strong>{{ $patient->first_name }} {{ $patient->last_name }}</strong>
-                    <span>{{ $patient->email }}</span>
-                    <span class="role-badge">{{ $patient->role }}</span>
-                </div>
-            </div>
+
+                    <input type="file" id="avatarInput" name="avatar" accept="image/jpg,image/jpeg,image/png"
+                           style="display:none" onchange="previewAvatar(event)">
+
+                    <div class="profile-card-info">
+                        <strong>{{ $patient->first_name }} {{ $patient->last_name }}</strong>
+                        <span>{{ $patient->email }}</span>
+                        <span class="role-badge">{{ $patient->role }}</span>
+                    </div>
+
+                    {{-- ===== ONLY 2 BUTTONS: SAVE & REMOVE ===== --}}
+                    <div class="avatar-actions-sidebar">
+                        <button type="submit" class="btn-avatar-save" id="saveAvatarBtn" disabled>
+                            <i class='bx bx-save'></i> Save
+                        </button>
+
+                        @if($patient->avatar)
+                            <button type="button" class="btn-avatar-remove" onclick="confirmRemoveAvatar()">
+                                <i class='bx bx-trash'></i> Remove
+                            </button>
+                        @endif
+                    </div>
+
+                    @error('avatar')
+                        <span class="avatar-field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>
+                    @enderror
+                </form>
+
+                @if($patient->avatar)
+                <form action="{{ route('patient.profile.avatar.remove') }}"
+                      method="POST"
+                      id="removeAvatarForm"
+                      style="display:none;">
+                    @csrf
+                    @method('DELETE')
+                </form>
+                @endif
+
+            </div>{{-- end profile-card --}}
 
             <nav class="tab-nav">
                 <button class="tab-btn active" data-tab="profile">
@@ -77,7 +142,7 @@
         {{-- ===== MAIN PANEL ===== --}}
         <div class="settings-panel">
 
-            {{-- ===== TAB: PROFILE ===== --}}
+            {{-- ===== TAB: PROFILE (NO AVATAR HERE) ===== --}}
             <div class="tab-content active" id="tab-profile">
 
                 <div class="panel-header">
@@ -85,13 +150,9 @@
                     <p>Update your personal details and contact information</p>
                 </div>
 
-                <form action="{{ route('patient.profile.update') }}" method="POST" enctype="multipart/form-data">
+                <form id="patientProfileForm" action="{{ route('patient.profile.update') }}" method="POST" novalidate>
                     @csrf
                     @method('PUT')
-
-                    {{-- Hidden avatar input --}}
-                    <input type="file" id="avatarInput" name="avatar" accept="image/*"
-                           style="display:none" onchange="previewAvatar(event)">
 
                     {{-- ===== PERSONAL DETAILS ===== --}}
                     <div class="form-section">
@@ -200,10 +261,11 @@
                         <div class="form-grid">
 
                             <div class="form-group">
-                                <label>Blood Type</label>
+                                <label>Blood Type <span class="required">*</span></label>
                                 <select name="blood_type"
-                                        class="{{ $errors->has('blood_type') ? 'is-invalid' : '' }}">
+                                        class="{{ $errors->has('blood_type') ? 'is-invalid' : '' }}" required>
                                     <option value="">— Select blood type —</option>
+                                    <option value="Unknown" {{ old('blood_type', $patient->blood_type) == 'Unknown' ? 'selected' : '' }}>Unknown / Not Sure</option>
                                     @foreach(['A+','A-','B+','B-','AB+','AB-','O+','O-'] as $bt)
                                         <option value="{{ $bt }}"
                                             {{ old('blood_type', $patient->blood_type) == $bt ? 'selected' : '' }}>
@@ -212,14 +274,47 @@
                                     @endforeach
                                 </select>
                                 @error('blood_type')<span class="field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>@enderror
+                                <p class="field-hint">Not sure? You can select "Unknown / Not Sure" — this won't block you from booking.</p>
                             </div>
 
+                            {{-- ===== ALLERGIES (FIXED SYMMETRICAL TOGGLE) ===== --}}
                             <div class="form-group full-width">
-                                <label>Allergies</label>
-                                <textarea name="allergies" rows="2"
-                                          class="{{ $errors->has('allergies') ? 'is-invalid' : '' }}"
-                                          placeholder="e.g. Penicillin, Peanuts, Dust (leave blank if none)">{{ old('allergies', $patient->allergies) }}</textarea>
-                                @error('allergies')<span class="field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>@enderror
+                                @php
+                                    $currentAllergies = old('allergies_detail', ($patient->allergies && $patient->allergies !== 'No Known Allergies') ? $patient->allergies : '');
+                                    $currentStatus = old('allergy_status', ($patient->allergies && $patient->allergies !== 'No Known Allergies') ? 'has' : ($patient->allergies ? 'none' : ''));
+                                @endphp
+                                <label>Allergies <span class="required">*</span></label>
+
+                                <div class="allergy-toggle-group" id="allergyToggleGroup">
+                                    <label class="allergy-toggle {{ $currentStatus == 'none' ? 'is-active' : '' }}" id="allergyNoneLabel">
+                                        <input type="radio" name="allergy_status" value="none" id="allergyNone"
+                                               {{ $currentStatus == 'none' ? 'checked' : '' }} required>
+                                        <span class="allergy-toggle-check"><i class='bx bx-check'></i></span>
+                                        <span class="allergy-toggle-text">
+                                            <strong>No Known Allergies</strong>
+                                            <small>I have no allergies to report</small>
+                                        </span>
+                                    </label>
+
+                                    <label class="allergy-toggle {{ $currentStatus == 'has' ? 'is-active' : '' }}" id="allergyHasLabel">
+                                        <input type="radio" name="allergy_status" value="has" id="allergyHas"
+                                               {{ $currentStatus == 'has' ? 'checked' : '' }} required>
+                                        <span class="allergy-toggle-check"><i class='bx bx-check'></i></span>
+                                        <span class="allergy-toggle-text">
+                                            <strong>Has Allergies</strong>
+                                            <small>I have one or more allergies</small>
+                                        </span>
+                                    </label>
+                                </div>
+                                @error('allergy_status')<span class="field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>@enderror
+
+                                <div class="allergy-detail-wrap" id="allergyDetailWrap" style="{{ $currentStatus == 'has' ? '' : 'display:none;' }}">
+                                    <label for="allergiesDetail">Please specify</label>
+                                    <textarea name="allergies_detail" id="allergiesDetail" rows="2"
+                                              class="{{ $errors->has('allergies_detail') ? 'is-invalid' : '' }}"
+                                              placeholder="e.g. Penicillin, Peanuts, Dust">{{ $currentAllergies }}</textarea>
+                                    @error('allergies_detail')<span class="field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>@enderror
+                                </div>
                             </div>
 
                         </div>
@@ -233,18 +328,18 @@
                         <div class="form-grid">
 
                             <div class="form-group">
-                                <label>Contact Name</label>
+                                <label>Contact Name <span class="required">*</span></label>
                                 <input type="text" name="emergency_name"
                                        value="{{ old('emergency_name', $patient->emergency_name) }}"
                                        class="{{ $errors->has('emergency_name') ? 'is-invalid' : '' }}"
-                                       placeholder="Full name of emergency contact">
+                                       placeholder="Full name of emergency contact" required>
                                 @error('emergency_name')<span class="field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>@enderror
                             </div>
 
                             <div class="form-group">
-                                <label>Relationship</label>
+                                <label>Relationship <span class="required">*</span></label>
                                 <select name="relationship"
-                                        class="{{ $errors->has('relationship') ? 'is-invalid' : '' }}">
+                                        class="{{ $errors->has('relationship') ? 'is-invalid' : '' }}" required>
                                     <option value="">— Select relationship —</option>
                                     @foreach(['Parent','Spouse','Sibling','Child','Relative','Friend','Guardian','Other'] as $rel)
                                         <option value="{{ $rel }}"
@@ -257,19 +352,19 @@
                             </div>
 
                             <div class="form-group">
-                                <label>Contact Number</label>
+                                <label>Contact Number <span class="required">*</span></label>
                                 <input type="text" name="emergency_contact_number"
                                        value="{{ old('emergency_contact_number', $patient->emergency_contact_number) }}"
                                        class="{{ $errors->has('emergency_contact_number') ? 'is-invalid' : '' }}"
-                                       placeholder="e.g. 09XX-XXX-XXXX">
+                                       placeholder="e.g. 09XX-XXX-XXXX" required>
                                 @error('emergency_contact_number')<span class="field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>@enderror
                             </div>
 
                             <div class="form-group full-width">
-                                <label>Address</label>
+                                <label>Address <span class="required">*</span></label>
                                 <textarea name="emergency_address" rows="2"
                                           class="{{ $errors->has('emergency_address') ? 'is-invalid' : '' }}"
-                                          placeholder="Emergency contact's complete address">{{ old('emergency_address', $patient->emergency_address) }}</textarea>
+                                          placeholder="Emergency contact's complete address" required>{{ old('emergency_address', $patient->emergency_address) }}</textarea>
                                 @error('emergency_address')<span class="field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>@enderror
                             </div>
 
@@ -427,15 +522,127 @@ function switchTab(tabName) {
     if (panel) panel.classList.add('active');
 }
 
-/* ===== AVATAR PREVIEW ===== */
+/* ===== ALLERGY STATUS TOGGLE ===== */
+(function () {
+    const noneRadio  = document.getElementById('allergyNone');
+    const hasRadio   = document.getElementById('allergyHas');
+    const noneLabel  = document.getElementById('allergyNoneLabel');
+    const hasLabel   = document.getElementById('allergyHasLabel');
+    const detailWrap = document.getElementById('allergyDetailWrap');
+    const detail     = document.getElementById('allergiesDetail');
+    if (!noneRadio || !hasRadio || !detailWrap || !detail) return;
+
+    function syncAllergyDetail() {
+        const isHas = hasRadio.checked;
+
+        noneLabel.classList.toggle('is-active', !isHas && noneRadio.checked);
+        hasLabel.classList.toggle('is-active', isHas);
+
+        if (isHas) {
+            detailWrap.style.display = '';
+            detail.setAttribute('required', 'required');
+        } else {
+            detailWrap.style.display = 'none';
+            detail.removeAttribute('required');
+        }
+    }
+    noneRadio.addEventListener('change', syncAllergyDetail);
+    hasRadio.addEventListener('change', syncAllergyDetail);
+    syncAllergyDetail();
+})();
+
+/* ===== PROFILE PICTURE — PREVIEW + SAVE BUTTON STATE (sidebar) ===== */
+/* ===== PROFILE REQUIRED-FIELD VALIDATION =====
+   Report every blank required field in one submit instead of stopping at the
+   browser's first native validation message. */
+(function () {
+    const form = document.getElementById('patientProfileForm');
+    if (!form) return;
+
+    function groupFor(field) {
+        return field.closest('.form-group');
+    }
+
+    function clearClientError(group) {
+        if (!group) return;
+        group.querySelectorAll('.client-field-error').forEach(error => error.remove());
+        group.querySelectorAll('[aria-invalid="true"]').forEach(field => {
+            field.removeAttribute('aria-invalid');
+            field.classList.remove('is-invalid');
+        });
+    }
+
+    function showClientError(field) {
+        const group = groupFor(field);
+        if (!group) return;
+
+        group.querySelectorAll('input, select, textarea').forEach(control => {
+            control.classList.add('is-invalid');
+            control.setAttribute('aria-invalid', 'true');
+        });
+
+        if (!group.querySelector('.client-field-error')) {
+            const error = document.createElement('span');
+            error.className = 'field-error client-field-error';
+            error.innerHTML = "<i class='bx bx-error-circle'></i> This field is required.";
+            group.appendChild(error);
+        }
+    }
+
+    function isEmpty(field) {
+        if (field.type === 'radio') {
+            return !form.querySelector(`input[name="${field.name}"]:checked`);
+        }
+        return !field.value.trim();
+    }
+
+    form.addEventListener('submit', event => {
+        form.querySelectorAll('.client-field-error').forEach(error => error.remove());
+        form.querySelectorAll('[required]').forEach(field => {
+            field.removeAttribute('aria-invalid');
+            field.classList.remove('is-invalid');
+        });
+
+        const missing = [];
+        const checkedNames = new Set();
+        form.querySelectorAll('[required]').forEach(field => {
+            if (checkedNames.has(field.name)) return;
+            checkedNames.add(field.name);
+            if (isEmpty(field)) {
+                missing.push(field);
+                showClientError(field);
+            }
+        });
+
+        if (missing.length) {
+            event.preventDefault();
+            missing[0].focus();
+        }
+    });
+
+    form.addEventListener('input', event => clearClientError(groupFor(event.target)));
+    form.addEventListener('change', event => clearClientError(groupFor(event.target)));
+})();
+
 function previewAvatar(event) {
     const file = event.target.files[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onload = e => {
         document.getElementById('avatarPreview').src = e.target.result;
     };
     reader.readAsDataURL(file);
+
+    const saveBtn = document.getElementById('saveAvatarBtn');
+    if (saveBtn) saveBtn.disabled = false;
+}
+
+/* ===== PROFILE PICTURE — REMOVE CONFIRMATION ===== */
+function confirmRemoveAvatar() {
+    if (confirm('Are you sure you want to remove your profile picture?')) {
+        document.getElementById('removeAvatarForm').submit();
+    }
 }
 
 /* ===== TOGGLE PASSWORD VISIBILITY ===== */

@@ -1,9 +1,12 @@
 /* ==========================================================
    DOCTOR DASHBOARD — doctor-dashboard.css
+   Visually matches staff-dashboard.css (same purple design
+   system, hero/skeleton crossfade mechanic, card language)
+   while keeping the Doctor Dashboard's own content/features.
    ========================================================== */
 
 /* ============================================================
-   CSS VARIABLES
+   CSS VARIABLES  (mirrors Staff/Patient/Admin palette)
    ============================================================ */
 :root {
     --primary:        #6a0dad;
@@ -11,19 +14,20 @@
     --primary-soft:   #f3e8ff;
 
     --accent-blue:    #4f46e5;
-    --accent-blue-bg: #f0f2ff;
+    --accent-blue-bg: #eef0ff;
 
     --accent-green:   #10b981;
-    --accent-green-bg:#f0fbf6;
+    --accent-green-bg:#e7faf3;
 
     --accent-red:     #ef4444;
     --accent-red-bg:  #fff4f4;
 
     --accent-orange:  #f97316;
-    --accent-orange-bg:#fff7ed;
+    --accent-orange-bg:#fff2e6;
 
     --accent-amber:   #f59e0b;
-    --accent-amber-bg:#fffbeb;
+    --accent-amber-d: #d97706;
+    --accent-amber-bg:#fff6e0;
 
     --text-dark:   #1a1a2e;
     --text-mid:    #444;
@@ -45,45 +49,101 @@
 }
 
 /* ============================================================
-   RESET & BASE
+   BASE
    ============================================================ */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: "Poppins", Arial, sans-serif;
-}
-
 body {
     background: var(--bg-page);
     color: var(--text-dark);
 }
 
 /* ============================================================
-   PAGE HEADER
+   HERO — Dynamic Greeting Card
    ============================================================ */
-.page-header {
-    margin-bottom: 28px;
+.hero-wrapper {
+    display: grid;
+    margin-bottom: 24px;
 }
 
-.page-header h1 {
-    font-size: 28px;
+.hero-wrapper .hero-section {
+    grid-row: 1;
+    grid-column: 1;
+    transition: opacity 0.3s ease;
+}
+
+.skeleton-hero { opacity: 1; z-index: 2; }
+.skeleton-hero.fade-out { opacity: 0; pointer-events: none; z-index: 1; }
+.skeleton-hero.removed { display: none !important; }
+
+.real-hero { opacity: 0; z-index: 1; pointer-events: none; }
+.real-hero.fade-in { opacity: 1; z-index: 2; pointer-events: auto; }
+
+.dashboard-hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 26px 28px;
+    transition: box-shadow var(--transition);
+}
+
+.dashboard-hero:hover { box-shadow: var(--shadow-md); }
+
+.greeting-text {
+    font-size: 23px;
     font-weight: 800;
     color: var(--text-dark);
-    letter-spacing: -0.5px;
+    letter-spacing: -0.4px;
+    margin: 0 0 4px;
+}
+
+.greeting-subtitle {
+    font-size: 14px;
+    color: var(--text-light);
     margin: 0;
 }
 
+.skeleton-greeting-title {
+    width: 280px;
+    max-width: 60%;
+    height: 28px;
+    margin-bottom: 8px;
+}
+
+.skeleton-greeting-subtitle {
+    width: 340px;
+    max-width: 80%;
+    height: 18px;
+}
+
 /* ============================================================
-   STATISTICS SECTION
+   SUMMARY CARDS — colored (Total Appointments / Total Patients /
+   Upcoming / Completed — Pending removed)
    ============================================================ */
+.stats-wrapper {
+    display: grid;
+    margin-bottom: 24px;
+}
+
+.stats-wrapper .stats-section {
+    grid-row: 1;
+    grid-column: 1;
+    transition: opacity 0.3s ease;
+}
+
+.skeleton-stats { opacity: 1; z-index: 2; }
+.skeleton-stats.fade-out { opacity: 0; pointer-events: none; z-index: 1; }
+.skeleton-stats.removed { display: none !important; }
+
+.real-stats { opacity: 0; z-index: 1; pointer-events: none; }
+.real-stats.fade-in { opacity: 1; z-index: 2; pointer-events: auto; }
+
 .stats-section {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin-bottom: 32px;
+    gap: 16px;
 }
 
+/* Base card — same structure as the Patient Dashboard's .stat-card */
 .stat-card {
     padding: 22px 20px 22px 22px;
     border-radius: var(--radius-md);
@@ -100,6 +160,7 @@ body {
     gap: 0;
 }
 
+/* Left accent bar */
 .stat-card::before {
     content: "";
     position: absolute;
@@ -108,6 +169,7 @@ body {
     border-radius: var(--radius-md) 0 0 var(--radius-md);
 }
 
+/* Decorative circle (bottom-right) */
 .stat-card::after {
     content: "";
     position: absolute;
@@ -127,34 +189,40 @@ body {
     transform: scale(1.4);
 }
 
-/* Per-card colour themes */
+/* ── Per-card colour themes (same palette/pattern as Patient Dashboard) ── */
+
+/* Total Appointments → blue */
 #stat-total { background: var(--accent-blue-bg); }
-#stat-total::before, #stat-total::after { background: var(--accent-blue); }
+#stat-total::before,
+#stat-total::after { background: var(--accent-blue); }
 #stat-total .stat-icon { color: var(--accent-blue); }
 
+/* Total Patients → green */
 #stat-patients { background: var(--accent-green-bg); }
-#stat-patients::before, #stat-patients::after { background: var(--accent-green); }
+#stat-patients::before,
+#stat-patients::after { background: var(--accent-green); }
 #stat-patients .stat-icon { color: var(--accent-green); }
 
+/* Upcoming → primary purple */
 #stat-upcoming { background: var(--primary-soft); }
-#stat-upcoming::before, #stat-upcoming::after { background: var(--primary); }
+#stat-upcoming::before,
+#stat-upcoming::after { background: var(--primary); }
 #stat-upcoming .stat-icon { color: var(--primary); }
 
-#stat-pending { background: var(--accent-amber-bg); }
-#stat-pending::before, #stat-pending::after { background: var(--accent-amber); }
-#stat-pending .stat-icon { color: var(--accent-amber); }
+/* Completed → orange */
+#stat-completed { background: var(--accent-orange-bg); }
+#stat-completed::before,
+#stat-completed::after { background: var(--accent-orange); }
+#stat-completed .stat-icon { color: var(--accent-orange); }
 
-#stat-completed { background: var(--accent-green-bg); }
-#stat-completed::before, #stat-completed::after { background: var(--accent-green); }
-#stat-completed .stat-icon { color: var(--accent-green); }
-
-/* Inner layout */
+/* ── Inner layout (left = text, right = icon) ── */
 .stat-body {
     display: flex;
     flex-direction: column;
     gap: 4px;
     flex: 1;
     z-index: 1;
+    min-width: 0;
 }
 
 .stat-label {
@@ -175,6 +243,7 @@ body {
     margin: 6px 0 0;
 }
 
+/* Badge pill below the number */
 .stat-badge {
     display: inline-flex;
     align-items: center;
@@ -187,8 +256,11 @@ body {
     border-radius: 999px;
     letter-spacing: 0.4px;
     margin-top: 8px;
+    white-space: nowrap;
 }
 
+/* Icon — right side, plain colored icon like the Patient Dashboard
+   (no background chip, just the glyph itself) */
 .stat-icon {
     font-size: 32px;
     opacity: 0.85;
@@ -198,74 +270,359 @@ body {
     height: auto;
     background: none;
     border-radius: 0;
+    box-shadow: none;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* ============================================================
-   SECTION TITLES
-   ============================================================ */
-.section-title {
-    font-size: 22px;
-    font-weight: 800;
-    color: var(--text-dark);
-    letter-spacing: -0.3px;
-    grid-column: 1 / -1;
-    margin-bottom: 4px;
+/* Skeleton summary cards */
+.stat-card.skeleton-card {
+    background: #fdfcff;
+    border-color: var(--border);
+    cursor: default;
+}
+
+.stat-card.skeleton-card::before,
+.stat-card.skeleton-card::after {
+    background: transparent;
+}
+
+.stat-card.skeleton-card .skeleton-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    flex-shrink: 0;
 }
 
 /* ============================================================
-   TODAY QUEUE SECTION
+   DASHBOARD GRID — Today's Patients Queue (main) + Next Patient
+   Both columns stretched to the same height.
    ============================================================ */
-.today-section {
-    margin-bottom: 32px;
+.dashboard-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 2fr 1fr;
     gap: 20px;
     align-items: stretch;
+    margin-bottom: 24px;
 }
 
-/* Next Patient Card */
-.next-patient-card {
-    background: var(--bg-card);
-    padding: 24px;
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border);
-    transition: box-shadow var(--transition);
+.grid-main {
+    min-width: 0;
+    display: flex;
+}
+
+.grid-side {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 20px;
 }
 
-.next-patient-card:hover {
-    box-shadow: var(--shadow-md);
+/* Make every layer between the grid columns and the visible
+   cards stretch to fill the equalized column height. */
+.grid-main .today-wrapper,
+.grid-side .side-wrapper {
+    display: grid;
+    grid-template-rows: 1fr;
+    flex: 1;
+    width: 100%;
 }
 
-.next-patient-header {
+.today-wrapper .today-section,
+.side-wrapper .side-section {
+    grid-row: 1;
+    grid-column: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.today-section .appt-table-wrap,
+.side-section .side-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ============================================================
+   SHARED TABLE-STYLE CARD (Today's Queue / Recent Appointments)
+   ============================================================ */
+.appt-table-wrap {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    transition: box-shadow var(--transition);
+}
+
+.appt-table-wrap:hover { box-shadow: var(--shadow-md); }
+
+.table-header-row {
+    padding: 18px 22px;
+    font-weight: 800;
+    font-size: 15px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-card);
+    color: var(--text-dark);
+    flex-shrink: 0;
+}
+
+.table-header-row a {
+    font-size: 12.5px;
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 700;
+    transition: opacity var(--transition);
+}
+
+.table-header-row a:hover,
+.table-header-row a:focus-visible { opacity: 0.7; }
+
+/* ============================================================
+   TODAY'S PATIENTS QUEUE — crossfade wrapper + rows
+   ============================================================ */
+.skeleton-today { opacity: 1; z-index: 2; }
+.skeleton-today.fade-out { opacity: 0; pointer-events: none; z-index: 1; }
+.skeleton-today.removed { display: none !important; }
+
+.real-today { opacity: 0; z-index: 1; pointer-events: none; }
+.real-today.fade-in { opacity: 1; z-index: 2; pointer-events: auto; }
+
+.today-list {
+    padding: 6px 0;
+    flex: none;
+    height: 225px;
+    min-height: 225px;
+    max-height: 225px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+
+.today-list::-webkit-scrollbar { width: 5px; }
+.today-list::-webkit-scrollbar-track { background: transparent; }
+.today-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+
+.today-row {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 22px;
+    border-bottom: 1px solid #f8f4fe;
+    transition: background var(--transition);
+    flex-shrink: 0;
+}
+
+.today-row:last-child { border-bottom: none; }
+.today-row:hover { background: #faf5ff; }
+
+.today-time {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--primary);
+    letter-spacing: -0.2px;
+}
+
+.today-details { min-width: 0; }
+
+.today-patient {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-dark);
     display: flex;
     align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
-.next-badge {
-    background: linear-gradient(135deg, var(--primary), var(--primary-light));
-    color: #fff;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 4px 12px;
+.today-meta {
+    margin: 3px 0 0;
+    font-size: 12px;
+    color: var(--text-light);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Patient type badge — Registered / Walk-in */
+.patient-type-badge {
+    display: inline-block;
+    padding: 2px 8px;
     border-radius: 999px;
+    font-size: 9.5px;
+    font-weight: 800;
+    text-transform: uppercase;
     letter-spacing: 0.3px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+    white-space: nowrap;
 }
 
-.next-patient-name {
-    font-size: 20px;
+.type-registered {
+    background: var(--primary-soft);
+    color: var(--primary);
+}
+
+.type-walkin {
+    background: var(--accent-orange-bg);
+    color: var(--accent-orange);
+}
+
+/* Status badges — mirrors the appointment workflow statuses
+   already used across the Doctor panel. */
+.status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+}
+
+.status-badge.pending {
+    background: var(--accent-amber-bg);
+    color: var(--accent-amber-d);
+}
+
+.status-badge.approved {
+    background: var(--accent-green-bg);
+    color: var(--accent-green);
+}
+
+.status-badge.checked-in {
+    background: #ccfbf1;
+    color: #0f766e;
+}
+
+.status-badge.in-progress {
+    background: #ffedd5;
+    color: #c2410c;
+}
+
+.status-badge.completed {
+    background: var(--accent-blue-bg);
+    color: var(--accent-blue);
+}
+
+.status-badge.cancelled {
+    background: var(--accent-red-bg);
+    color: var(--accent-red);
+}
+
+.status-badge.rescheduled {
+    background: #ede9fe;
+    color: #5b21b6;
+}
+
+.status-badge.rejected {
+    background: var(--accent-red-bg);
+    color: var(--accent-red);
+}
+
+/* Empty state */
+.empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    color: var(--text-xlight);
+}
+
+.empty-state i {
+    font-size: 30px;
+    color: #d1d5db;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 13.5px;
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+/* Skeleton today rows */
+.today-row-skeleton {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 22px;
+    border-bottom: 1px solid #f8f4fe;
+}
+
+.today-row-skeleton:last-child { border-bottom: none; }
+
+.skeleton-time { width: 60px; height: 18px; }
+.skeleton-today-details { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.skeleton-name { width: 65%; height: 15px; }
+.skeleton-meta { width: 40%; height: 12px; }
+.skeleton-badge-sm { width: 64px; height: 20px; border-radius: 999px; justify-self: end; }
+.skeleton-th-title { width: 200px; height: 18px; }
+.skeleton-th-link { width: 70px; height: 14px; }
+
+/* ============================================================
+   NEXT PATIENT — side card, crossfade wrapper
+   ============================================================ */
+.skeleton-next { opacity: 1; z-index: 2; }
+.skeleton-next.fade-out { opacity: 0; pointer-events: none; z-index: 1; }
+.skeleton-next.removed { display: none !important; }
+
+.real-next { opacity: 0; z-index: 1; pointer-events: none; }
+.real-next.fade-in { opacity: 1; z-index: 2; pointer-events: auto; }
+
+.side-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    padding: 22px;
+    transition: box-shadow var(--transition);
+}
+
+.side-card:hover { box-shadow: var(--shadow-md); }
+
+.side-card-title {
+    font-size: 15px;
     font-weight: 800;
     color: var(--text-dark);
-    margin: 0;
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.side-card-title i { color: var(--primary); }
+
+.skeleton-side-title { width: 60%; height: 17px; margin-bottom: 16px; }
+.skeleton-side-name { width: 70%; height: 20px; margin-bottom: 8px; }
+.skeleton-side-time { width: 45%; height: 14px; margin-bottom: 10px; }
+.skeleton-side-desc { width: 90%; height: 13px; margin-bottom: 6px; }
+.skeleton-side-desc-short { width: 55%; height: 13px; margin-bottom: 16px; }
+.skeleton-side-badge { width: 80px; height: 20px; border-radius: 999px; margin-bottom: 16px; }
+.skeleton-side-btn { width: 150px; height: 38px; border-radius: var(--radius-sm); margin-top: auto; }
+
+.next-patient-name {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin: 0 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 .next-patient-time {
@@ -275,201 +632,95 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin: 0;
+    margin: 0 0 10px;
 }
 
-.empty-queue {
+.next-patient-status { margin: 4px 0 16px; }
+
+.attention-count {
+    margin: 0 0 4px;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text-dark);
+}
+
+.attention-count.ok {
+    color: var(--accent-green);
+    display: flex;
     align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: var(--text-light);
-    min-height: 120px;
+    gap: 8px;
 }
 
-.empty-icon {
-    font-size: 36px;
-    color: var(--accent-red);
-    opacity: 0.5;
-    margin-bottom: 8px;
+.attention-desc {
+    margin: 0 0 16px;
+    font-size: 13px;
+    color: var(--text-light);
+    line-height: 1.5;
 }
 
 /* Buttons */
-.btn {
+.side-btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 18px;
-    border-radius: var(--radius-sm);
+    text-decoration: none;
     font-weight: 700;
     font-size: 13px;
-    text-decoration: none;
+    padding: 10px 18px;
+    border-radius: var(--radius-sm);
     transition: all var(--transition);
-    cursor: pointer;
-    border: none;
     width: fit-content;
+    margin-top: auto;
 }
 
-.btn-primary {
+.side-btn.primary {
     background: linear-gradient(135deg, var(--primary), var(--primary-light));
     color: #fff;
     box-shadow: 0 4px 14px rgba(106,13,173,0.28);
 }
 
-.btn-primary:hover {
-    opacity: 0.88;
+.side-btn.primary:hover,
+.side-btn.primary:focus-visible {
+    opacity: 0.9;
     transform: translateY(-2px);
     box-shadow: 0 6px 18px rgba(106,13,173,0.35);
 }
 
-/* ============================================================
-   TODAY LIST — scrollable
-   ============================================================ */
-.today-list {
-    background: var(--bg-card);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border);
-    transition: box-shadow var(--transition);
-    display: flex;
-    flex-direction: column;
-    max-height: 400px;
+.side-btn.disabled {
+    background: #f1f1f6;
+    color: var(--text-xlight);
+    cursor: not-allowed;
 }
 
-.today-list:hover {
-    box-shadow: var(--shadow-md);
-}
-
-/* Header stays pinned at top */
-.today-list-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 24px 14px;
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-    gap: 10px;
-}
-
-.today-list-title {
-    font-size: 15px;
-    font-weight: 800;
-    color: var(--text-dark);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0;
-}
-
-.today-list-title i {
-    color: var(--primary);
-}
-
-/* Count badge next to the title */
-.today-count-badge {
-    background: linear-gradient(135deg, var(--primary), var(--primary-light));
-    color: #fff;
-    font-size: 11px;
-    font-weight: 800;
-    padding: 2px 10px;
-    border-radius: 999px;
-    letter-spacing: 0.3px;
-    flex-shrink: 0;
-}
-
-/* Scrollable list body */
-.today-list-scroll {
-    overflow-y: auto;
-    flex: 1;
-    padding: 0 24px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-}
-
-.today-list-scroll::-webkit-scrollbar { width: 5px; }
-.today-list-scroll::-webkit-scrollbar-track { background: transparent; }
-.today-list-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
-.today-list-scroll::-webkit-scrollbar-thumb:hover { background: #d8c8f0; }
-
-.today-list-scroll::after {
-    content: "";
-    display: block;
-    height: 1px;
-}
-
-/* Patient rows */
-.patient-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border);
-    transition: background var(--transition);
-    gap: 10px;
-}
-
-.patient-item:last-child {
-    border-bottom: none;
-}
-
-.patient-item-info {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
-}
-
-.patient-item strong {
-    font-size: 14px;
-    color: var(--text-dark);
-    font-weight: 700;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.patient-item small {
-    font-size: 12px;
-    color: var(--text-light);
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.open-link {
-    color: var(--primary);
-    font-weight: 700;
-    font-size: 13px;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    transition: color var(--transition);
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.open-link:hover {
-    color: var(--primary-light);
-}
-
-.empty-text {
-    color: var(--text-light);
-    font-size: 13px;
-    text-align: center;
-    padding: 28px 0;
+.side-btn:focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 2px;
 }
 
 /* ============================================================
-   CALENDAR SECTION
+   CALENDAR SECTION — with skeleton
    ============================================================ */
-.calendar-section {
-    width: 100%;
-    margin-bottom: 32px;
+.calendar-wrapper {
+    display: grid;
+    margin-bottom: 24px;
 }
+
+.calendar-wrapper .calendar-section {
+    grid-row: 1;
+    grid-column: 1;
+    transition: opacity 0.3s ease;
+}
+
+.skeleton-calendar { opacity: 1; z-index: 2; }
+.skeleton-calendar.fade-out { opacity: 0; pointer-events: none; z-index: 1; }
+.skeleton-calendar.removed { display: none !important; }
+
+.real-calendar { opacity: 0; z-index: 1; pointer-events: none; }
+.real-calendar.fade-in { opacity: 1; z-index: 2; pointer-events: auto; }
 
 .calendar-card {
     background: var(--bg-card);
-    padding: 30px;
+    padding: 28px;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border);
@@ -483,6 +734,31 @@ body {
 #calendar {
     max-width: 100%;
     margin: 0 auto;
+}
+
+/* Calendar skeleton */
+.skeleton-calendar-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 22px;
+}
+
+.skeleton-cal-btns { width: 120px; height: 30px; border-radius: 8px; }
+.skeleton-cal-title { width: 160px; height: 22px; }
+
+.skeleton-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+}
+
+.skeleton-cal-cell {
+    aspect-ratio: 1.15 / 1;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #eee 25%, #f5f5f5 37%, #eee 63%);
+    background-size: 800px 100%;
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
 }
 
 /* ============================================================
@@ -545,130 +821,194 @@ body {
 }
 
 /* ============================================================
-   RECENT SECTION
+   RECENT APPOINTMENTS — latest 5, fixed/compact height, skeleton
    ============================================================ */
-.recent-section {
-    background: var(--bg-card);
-    padding: 24px;
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border);
-    margin-bottom: 30px;
-    transition: box-shadow var(--transition);
+.recent-wrapper {
+    display: grid;
+    margin-bottom: 24px;
 }
 
-.recent-section:hover {
-    box-shadow: var(--shadow-md);
+.recent-wrapper .recent-section {
+    grid-row: 1;
+    grid-column: 1;
+    transition: opacity 0.3s ease;
 }
 
-.recent-item {
+.skeleton-recent { opacity: 1; z-index: 2; }
+.skeleton-recent.fade-out { opacity: 0; pointer-events: none; z-index: 1; }
+.skeleton-recent.removed { display: none !important; }
+
+.real-recent { opacity: 0; z-index: 1; pointer-events: none; }
+.real-recent.fade-in { opacity: 1; z-index: 2; pointer-events: auto; }
+
+.recent-list {
+    padding: 4px 0;
+}
+
+.recent-row,
+.recent-row-skeleton {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border);
+    gap: 14px;
+    padding: 14px 22px;
+    border-bottom: 1px solid #f8f4fe;
+    transition: background var(--transition);
+}
+
+.recent-row:last-child,
+.recent-row-skeleton:last-child { border-bottom: none; }
+.recent-row:hover { background: #faf5ff; }
+
+.recent-details { min-width: 0; }
+
+.recent-patient {
+    margin: 0;
     font-size: 14px;
+    font-weight: 700;
     color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
-.recent-item:last-child {
-    border-bottom: none;
+.recent-meta {
+    margin: 3px 0 0;
+    font-size: 12px;
+    color: var(--text-light);
 }
 
-.recent-item strong {
-    font-weight: 700;
+.skeleton-recent-details {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+    flex: 1;
 }
 
-/* Status Badges */
-.status-badge {
-    font-size: 11px;
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 999px;
-    letter-spacing: 0.3px;
+.skeleton-recent-meta { width: 45%; height: 12px; }
+
+/* ============================================================
+   SKELETON LOADING — shimmer animation
+   ============================================================ */
+@keyframes skeleton-shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
 }
 
-.status-completed {
-    background: var(--accent-green-bg);
-    color: var(--accent-green);
+.skeleton-line,
+.skeleton-icon {
+    background: linear-gradient(90deg, #eee 25%, #f5f5f5 37%, #eee 63%);
+    background-size: 800px 100%;
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+    border-radius: 6px;
 }
 
-.status-pending {
-    background: var(--accent-amber-bg);
-    color: var(--accent-amber);
-}
-
-.status-cancelled {
-    background: var(--accent-red-bg);
-    color: var(--accent-red);
-}
-
-.status-approved,
-.status-scheduled {
-    background: var(--accent-blue-bg);
-    color: var(--accent-blue);
-}
+.skeleton-label { width: 65%; height: 11px; margin-bottom: 6px; }
+.skeleton-value { width: 55%; height: 34px; margin-bottom: 6px; }
+.skeleton-badge { width: 72px; height: 18px; border-radius: 999px; margin-top: 6px; }
 
 /* ============================================================
    RESPONSIVE
    ============================================================ */
-@media (max-width: 1200px) {
-    .stats-section {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
-
-@media (max-width: 900px) {
-    .stats-section {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .today-section {
+@media (max-width: 1100px) {
+    .dashboard-grid {
         grid-template-columns: 1fr;
+    }
+
+    .grid-main .today-wrapper,
+    .grid-side .side-wrapper {
+        flex: none;
+    }
+
+    .today-section .appt-table-wrap,
+    .side-section .side-card {
+        height: auto;
     }
 
     .today-list {
-        max-height: 360px;
+        height: 225px;
+        min-height: 225px;
+        max-height: 225px;
     }
+}
+
+@media (max-width: 1024px) {
+    .stats-section { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 900px) {
+    .stats-section { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+    .stats-section { grid-template-columns: repeat(2, 1fr); }
+
+    .today-row,
+    .today-row-skeleton {
+        grid-template-columns: 70px 1fr auto;
+        gap: 10px;
+        padding: 14px 16px;
+    }
+
+    .table-header-row { padding: 14px 16px; }
+    .recent-row,
+    .recent-row-skeleton { padding: 12px 16px; }
+    .calendar-card { padding: 18px; }
 }
 
 @media (max-width: 600px) {
-    .page-header h1 {
-        font-size: 22px;
+    .stats-section { grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .dashboard-hero { padding: 18px; }
+    .greeting-text { font-size: 19px; }
+
+    .today-list {
+        height: 225px;
+        min-height: 225px;
+        max-height: 225px;
     }
 
-    .stats-section {
-        grid-template-columns: 1fr 1fr;
-        gap: 14px;
+    .today-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
     }
 
-    #stat-total {
-        grid-column: 1 / -1;
+    .today-time { font-size: 14px; }
+
+    .today-row-skeleton {
+        grid-template-columns: 1fr;
+        gap: 8px;
     }
 
-    .stat-value {
-        font-size: 26px;
+    .skeleton-badge-sm { justify-self: start; }
+
+    .side-card { padding: 18px; }
+
+    .recent-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
     }
 
-    .calendar-card {
-        padding: 16px;
-    }
-
-    .today-list-header {
-        padding: 16px 18px 12px;
-    }
-
-    .today-list-scroll {
-        padding: 0 18px;
-    }
+    .skeleton-calendar-grid { gap: 5px; }
 }
 
 @media (max-width: 480px) {
-    .stats-section {
-        grid-template-columns: 1fr;
-    }
+    .greeting-text { font-size: 17px; }
+    .dashboard-hero { padding: 16px; }
+    .stats-section { grid-template-columns: 1fr; }
+    .stat-card { padding: 16px 14px; }
+    .stat-value { font-size: 24px; }
+    .stat-icon { font-size: 22px; }
+    .calendar-card { padding: 14px; }
+}
 
-    #stat-total {
-        grid-column: unset;
+@media (max-width: 375px) {
+    .table-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
     }
 }

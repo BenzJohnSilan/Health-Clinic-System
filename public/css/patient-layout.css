@@ -11,7 +11,7 @@ html { scroll-behavior: smooth; }
 body {
     display: flex;
     min-height: 100vh;
-    background: #f4f6f8;
+    background: #f4f0fa;
 }
 
 /* ================= SIDEBAR ================= */
@@ -245,10 +245,16 @@ body {
 .sidebar.collapsed { width: 68px; }
 
 .sidebar.collapsed .brand-text,
-.sidebar.collapsed .nav-section-label,
 .sidebar.collapsed .sidebar-nav-wrapper a span,
 .sidebar.collapsed .logout-btn span,
 .sidebar.collapsed .user-info { display: none; }
+
+/* Keep the section label's box (height, padding, margin) exactly as it is
+   expanded — only hide the text itself. Using display:none here removed
+   the whole row and shifted every icon below it upward. */
+.sidebar.collapsed .nav-section-label {
+    color: transparent;
+}
 
 .sidebar.collapsed .sidebar-brand {
     justify-content: center;
@@ -558,15 +564,93 @@ body {
 .page-content {
     padding: 30px;
     flex: 1;
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
-/* ================= MOBILE ================= */
+/* ================= SIDEBAR BACKDROP (mobile drawer) ================= */
+.sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease;
+}
+
+.sidebar-backdrop.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Prevent background scroll while the mobile drawer is open */
+body.no-scroll {
+    overflow: hidden;
+}
+
+/* ================= TABLET ================= */
+@media screen and (max-width: 1024px) {
+    .page-content { padding: 24px; }
+}
+
+/* ================= MOBILE (drawer breakpoint) ================= */
 @media screen and (max-width: 900px) {
     .sidebar { left: -260px; transition: left 0.3s ease; }
     .sidebar.open { left: 0; }
+
+    /* True overlay drawer: the sidebar floats ABOVE the content (it's
+       already position:fixed with z-index:1000) instead of pushing the
+       page to the side. Pushing with margin-left caused the page to
+       overflow past the viewport edge on narrow screens — this avoids
+       that entirely, and matches how drawers behave on real devices. */
     .main-content { margin-left: 0; }
-    .main-content.shift { margin-left: 260px; }
+    .main-content.shift { margin-left: 0; }
+    .main-content.collapsed { margin-left: 0; }
+
     .header-date { display: none; }
+}
+
+/* Disables the width/margin transition for the first frame after a page
+   load, while JS applies the saved collapsed state. Without this, the
+   browser can render one frame at the default (expanded) width before the
+   'collapsed' class lands, and the transition below animates that brief
+   flash — it looks like the sidebar "opens" on every navigation. */
+.no-transition {
+    transition: none !important;
+}
+
+/* ================= REDUCED MOTION ================= */
+@media (prefers-reduced-motion: reduce) {
+    .sidebar,
+    .main-content {
+        transition: none;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .page-content { padding: 20px; }
+    .sidebar { width: 78vw; max-width: 260px; }
+}
+
+/* Narrower phones: keep the header row from overflowing/crowding */
+@media screen and (max-width: 560px) {
+    .admin-header { padding: 0 14px; gap: 8px; }
+    .admin-header .header-right { gap: 6px; }
+    .breadcrumb .bc-role span,
+    .breadcrumb .bc-role { font-size: 13px; }
+    .header-avatar-group { padding: 4px 8px 4px 4px; }
+    .header-avatar-group .h-name { display: none; }
+    .header-avatar-group .h-chevron { display: none; }
+    .page-content { padding: 16px; }
+}
+
+/* Very small phones */
+@media screen and (max-width: 360px) {
+    .breadcrumb .bc-role { display: none; }
+    .breadcrumb .bc-sep { display: none; }
+    .page-content { padding: 12px; }
+    .sidebar { width: 84vw; }
 }
 
 /* ================= LOGOUT MODAL ================= */
@@ -958,3 +1042,185 @@ body {
 }
 
 .notif-view-all i { font-size: 18px; }
+
+/* ================= NOTIFICATION — READ/UNREAD, TABS, MARK ALL ================= */
+
+/* ---- Read vs Unread text emphasis ---- */
+.notif-item--unread .notif-item-patient {
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.notif-item:not(.notif-item--unread) .notif-item-patient {
+    font-weight: 500;
+    color: #333;
+}
+
+.notif-item:not(.notif-item--unread) .notif-item-reason {
+    color: #8a8a8a;
+}
+
+.notif-item:not(.notif-item--unread) .notif-item-time {
+    color: #bbb;
+}
+
+.notif-item:not(.notif-item--unread) .notif-item-label {
+    opacity: 0.75;
+}
+
+/* ---- Status-specific icon colors (subtle, not overly saturated) ---- */
+.notif-item-icon--approved {
+    background: linear-gradient(135deg, #e6f7ec, #d1f2df);
+}
+.notif-item-icon--approved i { color: #2e7d32; }
+
+.notif-item-icon--rejected {
+    background: linear-gradient(135deg, #fdecea, #fbdcd9);
+}
+.notif-item-icon--rejected i { color: #c62828; }
+
+.notif-item-icon--cancelled {
+    background: linear-gradient(135deg, #f2f2f2, #e6e6e6);
+}
+.notif-item-icon--cancelled i { color: #757575; }
+
+.notif-item-icon--rescheduled {
+    background: linear-gradient(135deg, #e8f0fe, #d7e6fd);
+}
+.notif-item-icon--rescheduled i { color: #1a56db; }
+
+.notif-label--approved     { color: #2e7d32; }
+.notif-label--rejected     { color: #c62828; }
+.notif-label--cancelled    { color: #757575; }
+.notif-label--rescheduled  { color: #1a56db; }
+.notif-label--upcoming     { color: #7c3aed; }
+
+/* ---- Mark all as read ---- */
+.notif-panel-actions {
+    padding: 8px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: flex-end;
+    background: #fff;
+}
+
+.notif-mark-all-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6a0dad;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 8px;
+    transition: background 0.18s;
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+.notif-mark-all-btn:hover { background: #f0e6ff; }
+.notif-mark-all-btn:focus-visible { outline: 2px solid #6a0dad; outline-offset: 2px; }
+.notif-mark-all-btn i { font-size: 15px; }
+
+/* ---- Filter tabs ---- */
+.notif-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 10px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    overflow-x: auto;
+    background: #fff;
+    scrollbar-width: none;
+}
+
+.notif-tabs::-webkit-scrollbar { display: none; }
+
+.notif-tab {
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #777;
+    background: #f5f5f7;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+    font-family: "Poppins", Arial, sans-serif;
+    white-space: nowrap;
+}
+
+.notif-tab:hover { background: #f0e6ff; color: #6a0dad; }
+.notif-tab.active { background: #6a0dad; color: #fff; }
+.notif-tab:focus-visible { outline: 2px solid #6a0dad; outline-offset: 2px; }
+
+/* ---- Responsive: notification bell/panel across devices ---- */
+
+/* Tablet / small laptop */
+@media screen and (max-width: 768px) {
+    .notif-panel {
+        width: min(340px, calc(100vw - 32px));
+    }
+}
+
+/* Phone: turn the dropdown into a viewport-anchored overlay instead of
+   an absolutely-positioned dropdown off the bell — anchoring off the bell
+   on a narrow screen is what was pushing the panel past the edge. */
+@media screen and (max-width: 560px) {
+    .notif-panel {
+        position: fixed;
+        top: 72px;
+        left: 12px;
+        right: 12px;
+        width: auto;
+        max-width: none;
+        max-height: calc(100vh - 96px);
+    }
+
+    .notif-list {
+        max-height: calc(100vh - 280px);
+    }
+
+    .notif-tabs {
+        padding: 8px 12px;
+        gap: 8px;
+    }
+
+    .notif-tab {
+        font-size: 11.5px;
+        padding: 7px 12px;
+    }
+
+    .notif-panel-actions { padding: 8px 12px; }
+    .notif-mark-all-btn { padding: 7px 10px; }
+
+    .notif-item { padding: 14px; }
+
+    /* Truncated single-line text works in a 340px dropdown, but wastes
+       space (and hides content) in a full-width phone overlay — let
+       titles and messages wrap instead. */
+    .notif-item-patient {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+    }
+
+    .notif-item-reason {
+        white-space: normal;
+        text-overflow: unset;
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+}
+
+/* Small/compact phones */
+@media screen and (max-width: 360px) {
+    .notif-panel { left: 8px; right: 8px; top: 66px; }
+    .notif-tab { font-size: 11px; padding: 6px 10px; }
+    .notif-item-icon { width: 34px; height: 34px; }
+}

@@ -6,6 +6,26 @@
 
 @section('content')
 
+{{-- Print Button --}}
+    <div class="mc-actions no-print">
+    <a href="{{ url()->previous() }}" class="mc-back-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+             stroke="currentColor" stroke-width="2" width="15" height="15">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Back
+    </a>
+
+    <button onclick="window.print()" class="mc-print-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+             stroke="currentColor" stroke-width="2" width="15" height="15">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M9 16h6v5H9v-5z"/>
+        </svg>
+        Print Certificate
+    </button>
+</div>
+
 <div class="mc-wrapper">
     <div class="mc-document">
 
@@ -111,17 +131,6 @@
 
         <div class="mc-watermark" aria-hidden="true">OFFICIAL</div>
 
-    </div>
-
-    {{-- Print Button --}}
-    <div class="mc-actions no-print">
-        <button onclick="window.print()" class="mc-print-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
-                <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
-            </svg>
-            Print Certificate
-        </button>
     </div>
 
 </div>

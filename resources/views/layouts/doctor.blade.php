@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <title>Doctor Panel - Clinic Record System</title>
 
 <!-- Boxicons -->
@@ -26,8 +27,14 @@
         substr($doctor->last_name  ?? '', 0, 1)
     );
 
-    $pendingAppointments = \App\Models\Appointment::where('status', 'Pending')->latest()->take(5)->get();
-    $notificationCount   = $pendingAppointments->count();
+    // Eager-load both patient types to avoid null crash
+    $pendingAppointments = \App\Models\Appointment::with(['patient', 'walkinPatient'])
+                                ->where('status', 'Pending')
+                                ->latest()
+                                ->take(5)
+                                ->get();
+
+    $notificationCount = $pendingAppointments->count();
 @endphp
 
 <!-- ================= SIDEBAR ================= -->
@@ -58,6 +65,16 @@
             <i class='bx bx-calendar'></i>
             <span>Appointments</span>
         </a>
+        <a href="{{ route('doctor.medical-certificates.index') }}"
+           class="{{ request()->routeIs('doctor.medical-certificates.*') ? 'active' : '' }}">
+            <i class='bx bx-file-blank'></i>
+            <span>Medical Certificates</span>
+        </a>
+        <a href="{{ route('doctor.schedule.index') }}"
+           class="{{ request()->routeIs('doctor.schedule.*') ? 'active' : '' }}">
+            <i class='bx bx-calendar-check'></i>
+            <span>My Schedule</span>
+        </a>
 
         <span class="nav-section-label">Records</span>
         <a href="{{ route('doctor.patient') }}"
@@ -71,12 +88,22 @@
             <span>Medical Records</span>
         </a>
 
-        <span class="nav-section-label">Inventory</span>
-        <a href="{{ route('doctor.medicines.index') }}"
-           class="{{ request()->routeIs('doctor.medicines.*') ? 'active' : '' }}">
-            <i class='bx bx-capsule'></i>
-            <span>Medicine</span>
+        @if($doctor->hasPermission('view_billing'))
+        <a href="{{ route('doctor.billing.index') }}"
+           class="{{ request()->routeIs('doctor.billing.*') ? 'active' : '' }}">
+            <i class='bx bx-receipt'></i>
+            <span>Billing</span>
         </a>
+        @endif
+
+        @if($doctor->hasPermission('view_medicine_inventory'))
+            <span class="nav-section-label">Inventory</span>
+            <a href="{{ route('doctor.medicines.index') }}"
+               class="{{ request()->routeIs('doctor.medicines.*') ? 'active' : '' }}">
+                <i class='bx bx-capsule'></i>
+                <span>Medicine</span>
+            </a>
+        @endif
 
         <span class="nav-section-label">Account</span>
         <a href="{{ route('doctor.account-settings') }}"
@@ -109,6 +136,36 @@
 
 <!-- ================= MAIN CONTENT ================= -->
 <div class="main-content" id="mainContent">
+<script>
+// Apply the saved sidebar state immediately, before the rest of the page
+// renders, so there is no visible flash of the expanded sidebar first.
+(function () {
+    var sidebarEl = document.getElementById('sidebar');
+    var mainEl    = document.getElementById('mainContent');
+
+    // Disable the transition for this first frame — otherwise the browser
+    // can paint one frame at the default width before 'collapsed' lands,
+    // and the transition animates that brief flash into view.
+    sidebarEl.classList.add('no-transition');
+    mainEl.classList.add('no-transition');
+
+    try {
+        if (localStorage.getItem('clinicrms_sidebar_collapsed') === 'true' && window.innerWidth > 900) {
+            sidebarEl.classList.add('collapsed');
+            mainEl.classList.add('collapsed');
+        }
+    } catch (e) {}
+
+    // Re-enable transitions after the first paint so manual toggling still
+    // animates normally.
+    requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+            sidebarEl.classList.remove('no-transition');
+            mainEl.classList.remove('no-transition');
+        });
+    });
+})();
+</script>
 
     <!-- ================= HEADER ================= -->
     <div class="admin-header">
@@ -162,6 +219,12 @@
                         @if($pendingAppointments->count() > 0)
 
                             @foreach($pendingAppointments as $index => $app)
+
+                                @php
+                                    // Safe for both registered and walk-in patients
+                                    $patientName = $app->patientName();
+                                @endphp
+
                                 <a href="{{ route('doctor.appointments.index') }}"
                                    class="notif-item {{ $index === 0 ? 'notif-item--unread' : '' }}"
                                    data-index="{{ $index }}">
@@ -178,9 +241,9 @@
                                             @endif
                                         </div>
                                         <p class="notif-item-patient">
-                                            {{ $app->patient->first_name }} {{ $app->patient->last_name }}
+                                            {{ $patientName }}
                                         </p>
-                                        <p class="notif-item-reason">{{ $app->reason }}</p>
+                                        <p class="notif-item-reason">{{ $app->reason ?? 'No reason provided' }}</p>
                                         <span class="notif-item-time">
                                             <i class='bx bx-time-five'></i>
                                             {{ $app->created_at->format('M j, Y · g:i a') }}
@@ -303,22 +366,8 @@
 
 
 <!-- ================= SCRIPTS ================= -->
+<script src="{{ asset('js/sidebar-collapse.js') }}"></script>
 <script>
-/* ---- Sidebar toggle ---- */
-const sidebar     = document.getElementById('sidebar');
-const mainContent = document.getElementById('mainContent');
-const hamburger   = document.getElementById('hamburgerBtn');
-
-hamburger.addEventListener('click', () => {
-    if (window.innerWidth <= 900) {
-        sidebar.classList.toggle('open');
-        mainContent.classList.toggle('shift');
-    } else {
-        sidebar.classList.toggle('collapsed');
-        mainContent.classList.toggle('collapsed');
-    }
-});
-
 /* ---- Avatar dropdown ---- */
 const avatarGroup = document.getElementById('avatarGroup');
 const hDropdown   = document.getElementById('hDropdown');
@@ -385,6 +434,9 @@ setInterval(updateDateTime, 1000);
         'appointments':    'Appointments',
         'patient':         'Patient',
         'medical-records': 'Medical Records',
+        'medical-certificates': 'Medical Certificates',
+        'schedule':        'My Schedule',
+        'billing':         'Billing',
         'medicines':       'Medicine',
         'profile':         'Account Settings',
         'change-password': 'Change Password',

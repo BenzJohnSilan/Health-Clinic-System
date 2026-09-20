@@ -34,8 +34,23 @@
             </thead>
             <tbody>
                 @forelse($appointments as $appointment)
+
+                {{-- Resolve patient regardless of type --}}
+                @php
+                    $pat = $appointment->patient ?? $appointment->walkinPatient;
+                    $patName  = $pat ? $pat->first_name . ' ' . $pat->last_name : 'Unknown Patient';
+                    $patEmail = $pat->email ?? 'N/A';
+                    $patPhone = $pat->contact_number ?? 'N/A';
+                    $isWalkin = $appointment->patient === null;
+                @endphp
+
                 <tr>
-                    <td>{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}</td>
+                    <td>
+                        {{ $patName }}
+                        @if($isWalkin)
+                            <span class="badge-walkin">Walk-in</span>
+                        @endif
+                    </td>
                     <td>{{ $appointment->doctor->first_name }} {{ $appointment->doctor->last_name }}</td>
                     <td>
                         {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('F j, Y') }}
@@ -57,13 +72,14 @@
                         <button
                             class="btn-reject openRejectModal"
                             data-id="{{ $appointment->id }}"
-                            data-name="{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}"
-                            data-email="{{ $appointment->patient->email }}"
-                            data-phone="{{ $appointment->patient->contact_number ?? 'N/A' }}">
+                            data-name="{{ $patName }}"
+                            data-email="{{ $patEmail }}"
+                            data-phone="{{ $patPhone }}">
                             Reject
                         </button>
                     </td>
                 </tr>
+
                 @empty
                 <tr>
                     <td colspan="5" class="empty-row">

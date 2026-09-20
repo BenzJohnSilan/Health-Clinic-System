@@ -8,23 +8,36 @@ use App\Models\MedicalRecord;
 use App\Models\Patient;
 use App\Models\Prescription;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 class DoctorPatientController extends Controller
 {
     /**
-     * Show all patients (registered + walk-in merged) with pagination
+     * Show all patients (registered + walk-in merged), with search and
+     * Patient Type filtering, paginated.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $search     = trim((string) $request->query('search', ''));
+        $typeFilter = $request->query('type', 'all'); // all | registered | walkin
+
+        if (!in_array($typeFilter, ['all', 'registered', 'walkin'], true)) {
+            $typeFilter = 'all';
+        }
+
         $registeredPatients = User::where('role', 'Patient')
             ->get()
             ->map(fn($user) => [
                 'id'             => 'user_' . $user->id,
                 'raw_id'         => $user->id,
                 'type'           => 'user',
+                // Same REG-/WLK- convention used elsewhere (see
+                // Appointment::patientDisplayId()).
+                'patient_id'     => 'REG-' . str_pad((string) $user->id, 5, '0', STR_PAD_LEFT),
                 'first_name'     => $user->first_name,
+                'middle_name'    => $user->middle_name,
                 'last_name'      => $user->last_name,
                 'email'          => $user->email,
                 'contact_number' => $user->contact_number,
@@ -38,7 +51,9 @@ class DoctorPatientController extends Controller
                 'id'             => 'patient_' . $patient->id,
                 'raw_id'         => $patient->id,
                 'type'           => 'patient',
+                'patient_id'     => 'WLK-' . str_pad((string) $patient->id, 5, '0', STR_PAD_LEFT),
                 'first_name'     => $patient->first_name,
+                'middle_name'    => $patient->middle_name,
                 'last_name'      => $patient->last_name,
                 'email'          => 'No email',
                 'contact_number' => $patient->contact_number,
@@ -47,6 +62,37 @@ class DoctorPatientController extends Controller
             ]);
 
         $allPatients = $registeredPatients->concat($walkInPatients)->values();
+
+        // ── Patient Type filter ─────────────────────────────────────────
+        if ($typeFilter === 'registered') {
+            $allPatients = $allPatients->where('is_walk_in', false)->values();
+        } elseif ($typeFilter === 'walkin') {
+            $allPatients = $allPatients->where('is_walk_in', true)->values();
+        }
+
+        // ── Search filter (name, middle name, contact number, patient ID) ─
+        if ($search !== '') {
+            $needle = mb_strtolower($search);
+
+            $allPatients = $allPatients->filter(function ($p) use ($needle) {
+                $haystacks = [
+                    mb_strtolower(trim($p['first_name'] . ' ' . $p['last_name'])),
+                    mb_strtolower((string) $p['first_name']),
+                    mb_strtolower((string) ($p['middle_name'] ?? '')),
+                    mb_strtolower((string) $p['last_name']),
+                    mb_strtolower((string) ($p['contact_number'] ?? '')),
+                    mb_strtolower($p['patient_id']),
+                ];
+
+                foreach ($haystacks as $haystack) {
+                    if ($haystack !== '' && str_contains($haystack, $needle)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            })->values();
+        }
 
         // Manual pagination
         $perPage     = 10;
@@ -60,14 +106,21 @@ class DoctorPatientController extends Controller
             $currentPage,
             ['path' => LengthAwarePaginator::resolveCurrentPath()]
         );
+        $patients->appends($request->query());
 
-        return view('doctor.patient', compact('patients'));
+        return view('doctor.patient', [
+            'patients'   => $patients,
+            'search'     => $search,
+            'typeFilter' => $typeFilter,
+        ]);
     }
 
     /**
-     * Show patient medical records, appointments, and prescriptions
+     * Show patient information and appointment history (paginated,
+     * latest first), plus medical records / prescriptions for that
+     * patient's full history.
      */
-    public function showRecords(string $id)
+    public function showRecords(Request $request, string $id)
     {
         [$type, $rawId] = explode('_', $id, 2);
 
@@ -87,10 +140,10 @@ class DoctorPatientController extends Controller
                 'is_walk_in'     => false,
             ];
 
-            $appointments = Appointment::where('patient_id', $userModel->id)
-                ->where('doctor_id', $doctorId)
-                ->latest()
-                ->get();
+            $appointmentsQuery = Appointment::where('patient_id', $userModel->id)
+                ->where('doctor_id', $doctorId);
+
+            $allAppointmentIds = (clone $appointmentsQuery)->pluck('id');
 
             $records = MedicalRecord::where('patient_id', $userModel->id)
                 ->with('appointment')
@@ -111,23 +164,28 @@ class DoctorPatientController extends Controller
                 'is_walk_in'     => true,
             ];
 
-            $appointments = Appointment::where('walkin_patient_id', $walkIn->id)
-                ->where('doctor_id', $doctorId)
-                ->latest()
-                ->get();
+            $appointmentsQuery = Appointment::where('walkin_patient_id', $walkIn->id)
+                ->where('doctor_id', $doctorId);
 
-            $appointmentIds = $appointments->pluck('id');
+            $allAppointmentIds = (clone $appointmentsQuery)->pluck('id');
 
-            $records = MedicalRecord::whereIn('appointment_id', $appointmentIds)
+            $records = MedicalRecord::whereIn('appointment_id', $allAppointmentIds)
                 ->with('appointment')
                 ->latest()
                 ->get();
         }
 
-        // Collect all appointment IDs to fetch prescriptions in one query
-        $appointmentIds = $appointments->pluck('id');
+        // Latest first, 5 per page.
+        $appointments = (clone $appointmentsQuery)
+            ->orderByDesc('appointment_date')
+            ->orderByDesc('appointment_time')
+            ->paginate(5)
+            ->withQueryString();
 
-        $prescriptions = Prescription::whereIn('appointment_id', $appointmentIds)
+        // Prescriptions across the patient's full appointment history
+        // (not just the current page) — kept for parity with the
+        // existing data the view previously received.
+        $prescriptions = Prescription::whereIn('appointment_id', $allAppointmentIds)
             ->with('medicine')
             ->get()
             ->map(function ($prescription) {

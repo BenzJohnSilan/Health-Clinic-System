@@ -18,13 +18,36 @@ class UserController extends Controller
 {
     // =========================================================
     //  LIST  –  only approved users
+    //  Server-side search (name/username/email) + Role/Status
+    //  filters, combined with pagination — mirrors the pattern used
+    //  by Admin/StaffAppointmentController@index.
     // =========================================================
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::where('approval_status', 'Approved')
-                     ->orderBy('role')
-                     ->orderBy('first_name')
-                     ->get();
+        $query = User::where('approval_status', 'Approved');
+
+        if ($search = trim((string) $request->query('search'))) {
+            $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"])
+                    ->orWhere('username', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        if ($role = $request->query('role')) {
+            $query->where('role', $role);
+        }
+
+        if ($status = $request->query('status')) {
+            $query->where('status', $status);
+        }
+
+        $users = $query->orderBy('role')
+                        ->orderBy('first_name')
+                        ->paginate(15)
+                        ->appends($request->query());
 
         return view('admin.users.index', compact('users'));
     }
@@ -57,8 +80,8 @@ class UserController extends Controller
         // --- 2. Role-specific rules ---
         $roleRules = match ($role) {
             'Doctor'  => [
-                'specialization'  => 'required|string|max:50',
-                'license_number'  => 'required|string|max:20',
+                'specialization' => 'required|string|max:50',
+                'license_number' => 'required|string|max:20',
             ],
             'Staff'   => [
                 'employee_id' => 'required|string|max:20|unique:users,employee_id',
@@ -75,7 +98,7 @@ class UserController extends Controller
                 'emergency_contact_number' => 'nullable|digits:11',
                 'emergency_address'        => 'nullable|string|max:100',
             ],
-            default   => [],   // Admin – no extra fields
+            default => [],
         };
 
         $request->validate(array_merge($rules, $roleRules));
@@ -139,11 +162,18 @@ class UserController extends Controller
                 'emergency_contact_number' => $request->emergency_contact_number,
                 'emergency_address'        => $request->emergency_address,
             ],
-            default   => [],
+            default => [],
         });
 
         // --- 8. Create user ---
         $user = User::create($data);
+
+        // --- 8b. Default feature permissions (Doctor gets none; Staff
+        // gets the default Medicine CRUD set). Admin can adjust these
+        // afterwards from Manage Permissions. Patient is never
+        // considered here — Permission::defaultSlugsForRole() returns
+        // nothing for it.
+        \App\Models\Permission::assignDefaultsTo($user);
 
         // --- 9. Send email verification & credentials ---
         event(new Registered($user));
@@ -202,13 +232,23 @@ class UserController extends Controller
     }
 
     // =========================================================
-    //  DESTROY
+    //  DESTROY  –  Admin accounts are protected from deletion
+    //  Ang cascade delete ay hawak ng User model boot() event
     // =========================================================
     public function destroy(User $user)
     {
+        if ($user->role === 'Admin') {
+            return redirect()->route('admin.users.index')
+                             ->with('error', 'Admin accounts cannot be deleted.');
+        }
+
+        // $user->delete() na ang mag-trigger ng cascade
+        // sa boot() ng User model — lahat ng appointments
+        // at related records ay matatanggal din
         $user->delete();
 
-        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
+        return redirect()->route('admin.users.index')
+                         ->with('success', 'User and all related records deleted successfully.');
     }
 
     // =========================================================
@@ -227,13 +267,17 @@ class UserController extends Controller
     }
 
     // =========================================================
-    //  REJECT
+    //  REJECT  –  email muna bago i-delete para ma-trigger
+    //  ang cascade delete ng User model
     // =========================================================
     public function rejectUser($id)
     {
         $user = User::findOrFail($id);
 
+        // Siguraduhing napadala ang email bago matanggal ang user
         Mail::to($user->email)->send(new AccountRejected($user));
+
+        // Ang delete() ay mag-ti-trigger ng boot() cascade
         $user->delete();
 
         return back()->with('success', 'User rejected and removed.');

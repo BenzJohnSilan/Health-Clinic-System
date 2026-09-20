@@ -36,28 +36,93 @@
         </div>
     @endif
 
+    {{-- ===== PROFILE COMPLETION STATUS ===== --}}
+    <div class="profile-status-card {{ $profileComplete ? 'is-complete' : 'is-incomplete' }}">
+        @if($profileComplete)
+            <div class="profile-status-title">
+                <i class='bx bx-check-circle'></i>
+                <span>Profile Status: <strong>Complete</strong></span>
+            </div>
+        @else
+            <div class="profile-status-title">
+                <i class='bx bx-error'></i>
+                <span>Profile Status: <strong>Incomplete</strong></span>
+            </div>
+            <p class="profile-status-desc">
+                Please complete the following:
+            </p>
+            <ul class="profile-status-missing">
+                @foreach($missingProfileFields as $field)
+                    <li>{{ $field }}</li>
+                @endforeach
+            </ul>
+        @endif
+    </div>
+
     <div class="settings-container">
 
         {{-- ===== SIDEBAR ===== --}}
         <div class="settings-sidebar">
 
             <div class="profile-card">
-                <div class="avatar-wrapper" id="avatarPreviewWrapper">
-                    @if($doctor->avatar)
-                        <img src="{{ asset('storage/'.$doctor->avatar) }}" alt="Avatar" id="avatarPreview">
-                    @else
-                        <img src="https://via.placeholder.com/84" alt="Avatar" id="avatarPreview">
-                    @endif
-                    <div class="avatar-overlay" onclick="document.getElementById('avatarInput').click()">
-                        <i class='bx bx-camera'></i>
+
+                {{-- ===== AVATAR (independent form — Choose = click avatar) ===== --}}
+                <form action="{{ route('doctor.profile.avatar.update') }}"
+                      method="POST"
+                      enctype="multipart/form-data"
+                      id="avatarForm">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="avatar-wrapper" id="avatarPreviewWrapper" onclick="document.getElementById('avatarInput').click()">
+                        @if($doctor->avatar)
+                            <img src="{{ asset('storage/'.$doctor->avatar) }}" alt="Avatar" id="avatarPreview">
+                        @else
+                            <img src="https://via.placeholder.com/84" alt="Avatar" id="avatarPreview">
+                        @endif
+                        <div class="avatar-overlay">
+                            <i class='bx bx-camera'></i>
+                        </div>
                     </div>
-                </div>
-                <div class="profile-card-info">
-                    <strong>{{ $doctor->first_name }} {{ $doctor->last_name }}</strong>
-                    <span>{{ $doctor->email }}</span>
-                    <span class="role-badge">{{ $doctor->role }}</span>
-                </div>
-            </div>
+
+                    <input type="file" id="avatarInput" name="avatar" accept="image/jpg,image/jpeg,image/png"
+                           style="display:none" onchange="previewAvatar(event)">
+
+                    <div class="profile-card-info">
+                        <strong>{{ $doctor->first_name }} {{ $doctor->last_name }}</strong>
+                        <span>{{ $doctor->email }}</span>
+                        <span class="role-badge">{{ $doctor->role }}</span>
+                    </div>
+
+                    {{-- ===== ONLY 2 BUTTONS: SAVE & REMOVE ===== --}}
+                    <div class="avatar-actions-sidebar">
+                        <button type="submit" class="btn-avatar-save" id="saveAvatarBtn" disabled>
+                            <i class='bx bx-save'></i> Save
+                        </button>
+
+                        @if($doctor->avatar)
+                            <button type="button" class="btn-avatar-remove" onclick="confirmRemoveAvatar()">
+                                <i class='bx bx-trash'></i> Remove
+                            </button>
+                        @endif
+                    </div>
+
+                    @error('avatar')
+                        <span class="avatar-field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>
+                    @enderror
+                </form>
+
+                @if($doctor->avatar)
+                <form action="{{ route('doctor.profile.avatar.remove') }}"
+                      method="POST"
+                      id="removeAvatarForm"
+                      style="display:none;">
+                    @csrf
+                    @method('DELETE')
+                </form>
+                @endif
+
+            </div>{{-- end profile-card --}}
 
             <nav class="tab-nav">
                 <button class="tab-btn active" data-tab="profile">
@@ -70,6 +135,11 @@
                     <span>Change Password</span>
                     <i class='bx bx-chevron-right arrow'></i>
                 </button>
+                <button class="tab-btn" data-tab="signature">
+                    <i class='bx bx-pen'></i>
+                    <span>Digital Signature</span>
+                    <i class='bx bx-chevron-right arrow'></i>
+                </button>
             </nav>
 
         </div>{{-- end settings-sidebar --}}
@@ -77,7 +147,7 @@
         {{-- ===== MAIN PANEL ===== --}}
         <div class="settings-panel">
 
-            {{-- ===== TAB: PROFILE ===== --}}
+            {{-- ===== TAB: PROFILE (NO AVATAR HERE) ===== --}}
             <div class="tab-content active" id="tab-profile">
 
                 <div class="panel-header">
@@ -85,13 +155,9 @@
                     <p>Update your personal details and contact information</p>
                 </div>
 
-                <form action="{{ route('doctor.profile.update') }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('doctor.profile.update') }}" method="POST">
                     @csrf
                     @method('PUT')
-
-                    {{-- Hidden avatar input --}}
-                    <input type="file" id="avatarInput" name="avatar" accept="image/*"
-                           style="display:none" onchange="previewAvatar(event)">
 
                     {{-- ===== PERSONAL DETAILS ===== --}}
                     <div class="form-section">
@@ -133,6 +199,14 @@
                             </div>
 
                             <div class="form-group">
+                                <label>Birthdate <span class="required">*</span></label>
+                                <input type="date" name="birthdate"
+                                       value="{{ old('birthdate', optional($doctor->birthdate)->format('Y-m-d')) }}"
+                                       class="{{ $errors->has('birthdate') ? 'is-invalid' : '' }}" required>
+                                @error('birthdate')<span class="field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>@enderror
+                            </div>
+
+                            <div class="form-group">
                                 <label>Gender <span class="required">*</span></label>
                                 <select name="gender"
                                         class="{{ $errors->has('gender') ? 'is-invalid' : '' }}" required>
@@ -148,12 +222,18 @@
                             </div>
 
                             <div class="form-group">
-                                <label>Specialization <span class="required">*</span></label>
-                                <input type="text" name="specialization"
-                                       value="{{ old('specialization', $doctor->specialization) }}"
-                                       class="{{ $errors->has('specialization') ? 'is-invalid' : '' }}"
-                                       placeholder="e.g. General Practitioner, Pediatrics" required>
-                                @error('specialization')<span class="field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>@enderror
+                                <label>Civil Status <span class="required">*</span></label>
+                                <select name="civil_status"
+                                        class="{{ $errors->has('civil_status') ? 'is-invalid' : '' }}" required>
+                                    <option value="">— Select status —</option>
+                                    @foreach(['Single','Married','Widowed','Separated'] as $cs)
+                                        <option value="{{ $cs }}"
+                                            {{ old('civil_status', $doctor->civil_status) == $cs ? 'selected' : '' }}>
+                                            {{ $cs }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('civil_status')<span class="field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>@enderror
                             </div>
 
                         </div>
@@ -181,6 +261,34 @@
                                        class="{{ $errors->has('contact_number') ? 'is-invalid' : '' }}"
                                        placeholder="e.g. 09XX-XXX-XXXX" required>
                                 @error('contact_number')<span class="field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>@enderror
+                            </div>
+
+                        </div>
+                    </div>
+
+                    {{-- ===== PROFESSIONAL INFORMATION ===== --}}
+                    <div class="form-section">
+                        <h3 class="section-label">
+                            <i class='bx bx-briefcase-alt-2'></i> Professional Information
+                        </h3>
+                        <div class="form-grid">
+
+                            <div class="form-group">
+                                <label>Specialization <span class="required">*</span></label>
+                                <input type="text" name="specialization"
+                                       value="{{ old('specialization', $doctor->specialization) }}"
+                                       class="{{ $errors->has('specialization') ? 'is-invalid' : '' }}"
+                                       placeholder="e.g. General Practitioner, Pediatrics" required>
+                                @error('specialization')<span class="field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>@enderror
+                            </div>
+
+                            <div class="form-group">
+                                <label>License Number <span class="required">*</span></label>
+                                <input type="text" name="license_number"
+                                       value="{{ old('license_number', $doctor->license_number) }}"
+                                       class="{{ $errors->has('license_number') ? 'is-invalid' : '' }}"
+                                       placeholder="e.g. PRC License Number" required>
+                                @error('license_number')<span class="field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>@enderror
                             </div>
 
                         </div>
@@ -311,6 +419,62 @@
                 </form>
             </div>{{-- end tab-password --}}
 
+            {{-- ===== TAB: DIGITAL SIGNATURE ===== --}}
+            <div class="tab-content" id="tab-signature">
+
+                <div class="panel-header">
+                    <h2><i class='bx bx-pen'></i> Digital Signature</h2>
+                    <p>Upload the signature that will appear on medical certificates you sign and issue</p>
+                </div>
+
+                <div class="form-section">
+                    <h3 class="section-label">
+                        <i class='bx bx-image'></i> Current Signature
+                    </h3>
+
+                    @if($doctor->signature)
+                        <div class="signature-preview-box">
+                            <img src="{{ asset('storage/'.$doctor->signature) }}" alt="Current Signature">
+                        </div>
+                    @else
+                        <div class="signature-preview-box signature-preview-empty">
+                            No signature uploaded yet.
+                        </div>
+                    @endif
+                </div>
+
+                <form action="{{ route('doctor.signature.update') }}" method="POST" enctype="multipart/form-data" class="form-section">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="form-group">
+                        <label>Upload Signature (PNG or JPG, transparent PNG recommended)</label>
+                        <input type="file" name="signature" accept="image/png,image/jpeg" required>
+                        @error('signature')<span class="field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>@enderror
+                    </div>
+
+                    <div class="form-actions signature-actions">
+                        <button type="submit" class="btn-save">
+                            <i class='bx bx-upload'></i> {{ $doctor->signature ? 'Replace Signature' : 'Upload Signature' }}
+                        </button>
+                    </div>
+                </form>
+
+                @if($doctor->signature)
+                    <form action="{{ route('doctor.signature.remove') }}" method="POST"
+                          onsubmit="return confirm('Remove your saved signature?');">
+                        @csrf
+                        @method('DELETE')
+                        <div class="form-actions signature-actions">
+                            <button type="submit" class="btn-save btn-signature-remove">
+                                <i class='bx bx-trash'></i> Remove Signature
+                            </button>
+                        </div>
+                    </form>
+                @endif
+
+            </div>{{-- end tab-signature --}}
+
         </div>{{-- end settings-panel --}}
     </div>{{-- end settings-container --}}
 </div>{{-- end settings-wrapper --}}
@@ -322,6 +486,10 @@ const tabContents = document.querySelectorAll('.tab-content');
 
 @if($errors->has('current_password') || $errors->has('password'))
     document.addEventListener('DOMContentLoaded', () => switchTab('password'));
+@endif
+
+@if($errors->has('signature'))
+    document.addEventListener('DOMContentLoaded', () => switchTab('signature'));
 @endif
 
 tabBtns.forEach(btn => {
@@ -337,15 +505,26 @@ function switchTab(tabName) {
     if (panel) panel.classList.add('active');
 }
 
-/* ===== AVATAR PREVIEW ===== */
+/* ===== PROFILE PICTURE — PREVIEW + SAVE BUTTON STATE (sidebar) ===== */
 function previewAvatar(event) {
     const file = event.target.files[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onload = e => {
         document.getElementById('avatarPreview').src = e.target.result;
     };
     reader.readAsDataURL(file);
+
+    const saveBtn = document.getElementById('saveAvatarBtn');
+    if (saveBtn) saveBtn.disabled = false;
+}
+
+/* ===== PROFILE PICTURE — REMOVE CONFIRMATION ===== */
+function confirmRemoveAvatar() {
+    if (confirm('Are you sure you want to remove your profile picture?')) {
+        document.getElementById('removeAvatarForm').submit();
+    }
 }
 
 /* ===== TOGGLE PASSWORD VISIBILITY ===== */

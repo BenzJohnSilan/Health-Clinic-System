@@ -90,64 +90,121 @@
     border-radius: 10px;
 }
 
-/* ================= TABLE ACTION BUTTONS ================= */
-.btn-view-pending {
-    background-color: #4f46e5;
+/* ================= ACTION COLUMN: View + three-dot menu =================
+   Visual language matched to Staff → Appointments (.action-cell /
+   .action-menu-*) but kept under pa-* names so this shared stylesheet
+   (also loaded by admin/pending-appointments) can't leak into that page. */
+.pa-action-cell {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    white-space: nowrap;
+    height: 100%;
+}
+
+.pa-btn-view {
+    background-color: #6a0dad;
     color: #fff;
     border: none;
-    padding: 5px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 12px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 13px;
     font-weight: 600;
-    transition: background 0.2s;
-    margin-right: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
 
-.btn-view-pending:hover {
-    background-color: #4338ca;
+.pa-btn-view:hover {
+    background-color: #560aaf;
 }
 
-.btn-approve-pending {
-    background-color: #16a34a;
-    color: #fff;
+.pa-action-menu {
+    position: relative;
+    display: inline-block;
+}
+
+.pa-action-menu-toggle {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    color: #6a0dad;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.pa-action-menu-toggle:hover,
+.pa-action-menu-toggle[aria-expanded="true"] {
+    background: #f3e8ff;
+    border-color: #c084fc;
+}
+
+.pa-action-menu-dropdown {
+    display: none;
+    min-width: 180px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+    padding: 6px;
+    z-index: 2000;
+}
+
+.pa-action-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    background: none;
     border: none;
-    padding: 5px 12px;
-    border-radius: 6px;
+    text-align: left;
+    padding: 9px 10px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    color: #374151;
     cursor: pointer;
-    font-size: 12px;
-    font-weight: 600;
-    transition: background 0.2s;
-    margin-right: 4px;
+    transition: background-color 0.15s;
 }
 
-.btn-approve-pending:hover {
-    background-color: #15803d;
+.pa-action-menu-item i {
+    width: 16px;
+    text-align: center;
+    font-size: 15px;
 }
 
-.btn-reject-pending {
-    background-color: #ef4444;
-    color: #fff;
-    border: none;
-    padding: 5px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 600;
-    transition: background 0.2s;
+.pa-action-menu-approve {
+    color: #059669;
 }
 
-.btn-reject-pending:hover {
-    background-color: #b91c1c;
+.pa-action-menu-approve:hover {
+    background: #ecfdf5;
+}
+
+.pa-action-menu-reject {
+    color: #dc2626;
+}
+
+.pa-action-menu-reject:hover {
+    background: #fef2f2;
 }
 
 /* ================= BADGES ================= */
 .badge {
     display: inline-block;
-    padding: 3px 9px;
+    padding: 4px 12px;
     border-radius: 20px;
-    font-size: 12px;
+    font-size: 0.78rem;
     font-weight: 600;
+    letter-spacing: 0.3px;
 }
 
 .badge--verified   { background: #d1fae5; color: #065f46; }
@@ -160,36 +217,63 @@
 .badge--staff   { background: #fef9c3; color: #713f12; }
 .badge--patient { background: #fce7f3; color: #9d174d; }
 
-/* ================= USERS TABLE ================= */
-.users-table {
+/* ================= PENDING ACCOUNTS TABLE =================
+   Visual language matched to Staff → Appointments (.appointments-table):
+   white card, rounded corners, purple header, zebra rows, row hover. */
+.pa-table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.pending-accounts-table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 10px;
-    border-radius: 10px;
+    background: #fff;
+    border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
 }
 
-.users-table th,
-.users-table td {
-    border-bottom: 1px solid #e5e7eb;
-    padding: 12px 15px;
+.pending-accounts-table th,
+.pending-accounts-table td {
+    padding: 13px 16px;
     text-align: left;
     font-size: 14px;
+    border-bottom: 1px solid #f0e6ff;
     vertical-align: middle;
 }
 
-.users-table th {
-    background-color: #f3f4f6;
-    color: #111827;
-    font-weight: 700;
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+.pending-accounts-table .pa-col-name     { min-width: 180px; }
+.pending-accounts-table .pa-col-email    { min-width: 200px; }
+.pending-accounts-table .pa-col-role     { min-width: 110px; }
+.pending-accounts-table .pa-col-verified { min-width: 130px; }
+.pending-accounts-table .pa-col-action   { min-width: 160px; }
+
+.pending-accounts-table th {
+    background-color: #6a0dad;
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
 }
 
-.users-table tr:hover td {
-    background-color: #f0f4ff;
+.pending-accounts-table tbody tr:nth-child(even) td {
+    background-color: #f9f5ff;
+}
+
+.pending-accounts-table tbody tr:nth-child(odd) td {
+    background-color: #ffffff;
+}
+
+.pending-accounts-table tbody tr:hover td {
+    background-color: #ede9f7;
+    transition: background-color 0.2s ease;
+}
+
+.pending-accounts-table tbody tr:last-child td {
+    border-bottom: none;
 }
 
 /* ================= MODAL ================= */
@@ -228,6 +312,211 @@
     margin-bottom: 20px;
 }
 
+/* ================= ACCOUNT REVIEW MODAL (View Account) =================
+   Compact, wide, purple-themed review layout: fixed header, scrollable
+   body, fixed footer. Only used by the pending-accounts View modal. */
+.modal-content--review {
+    width: 900px;
+    max-width: 100%;
+    max-height: 85vh;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.pa-review-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 24px;
+    border-bottom: 1px solid #f0e6ff;
+    flex-shrink: 0;
+}
+
+.pa-review-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 2px;
+}
+
+.pa-review-subtext {
+    font-size: 12.5px;
+    color: #6b7280;
+}
+
+.pa-review-header .modal-close {
+    position: static;
+    flex-shrink: 0;
+}
+
+.pa-review-body {
+    padding: 18px 24px;
+    overflow-y: auto;
+    flex: 1 1 auto;
+}
+
+.pa-review-body .form-section {
+    padding: 14px 16px;
+    margin-bottom: 12px;
+}
+
+.pa-review-body .form-section:last-child {
+    margin-bottom: 0;
+}
+
+.pa-review-body .section-heading {
+    margin-bottom: 10px;
+}
+
+/* ================= COMPACT IDENTITY CARD ================= */
+.pa-review-identity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f9f5ff;
+    border: 1px solid #e9d9fb;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+}
+
+.pa-review-avatar-img {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #6a0dad;
+    flex-shrink: 0;
+}
+
+.pa-review-avatar-initials {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6a0dad, #a855f7);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    letter-spacing: 1px;
+}
+
+.pa-review-identity-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.pa-review-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+    line-height: 1.3;
+    word-break: break-word;
+}
+
+.pa-review-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+/* ================= ID PREVIEW ================= */
+.pa-review-id-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 16px;
+}
+
+.pa-id-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.pa-id-thumb-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.pa-id-thumb-link {
+    display: block;
+    flex-shrink: 0;
+}
+
+.pa-id-thumb {
+    width: 72px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    display: block;
+}
+
+.pa-id-view-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #6a0dad;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.pa-id-view-link:hover {
+    text-decoration: underline;
+}
+
+/* ================= STICKY FOOTER ================= */
+.pa-review-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 24px;
+    border-top: 1px solid #f0e6ff;
+    flex-shrink: 0;
+    background: #fff;
+}
+
+.pa-btn-close {
+    background: #fff;
+    color: #374151;
+    border: 1.5px solid #e5e7eb;
+    padding: 9px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13.5px;
+    font-family: inherit;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.pa-btn-close:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+}
+
+.pa-btn-approve {
+    padding: 9px 18px;
+    font-size: 13.5px;
+    background-color: #6a0dad;
+}
+
+.pa-btn-approve:hover {
+    background-color: #560aaf;
+}
+
 .modal-close {
     position: absolute;
     top: 14px;
@@ -250,57 +539,6 @@
 .modal-close:hover {
     background: #e5e7eb;
     color: #111827;
-}
-
-/* ================= USER HERO (View Modal) ================= */
-.pending-user-hero {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 14px 16px;
-    margin-bottom: 16px;
-}
-
-.pending-avatar-img {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid #4f46e5;
-    flex-shrink: 0;
-}
-
-.pending-avatar-initials {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #4f46e5, #818cf8);
-    color: #fff;
-    font-size: 20px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    letter-spacing: 1px;
-}
-
-.pending-hero-info {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-}
-
-.pending-hero-name {
-    width: 100%;
-    font-size: 16px;
-    font-weight: 600;
-    color: #111827;
-    margin: 0 0 4px;
 }
 
 /* ================= FORM SECTIONS ================= */
@@ -449,11 +687,6 @@
     line-height: 1.5;
 }
 
-/* ================= MODAL FOOTER ================= */
-.pending-modal-footer {
-    margin-top: 4px;
-}
-
 /* ================= RESPONSIVE ================= */
 @media screen and (max-width: 700px) {
     .modal-content     { width: 98%; padding: 18px; }
@@ -461,12 +694,30 @@
     .form-grid-2       { grid-template-columns: 1fr; }
     .info-cell-full    { grid-column: 1 / -1; }
 
-    .pending-user-hero  { flex-direction: column; text-align: center; }
-    .pending-hero-info  { justify-content: center; }
+    .modal-content--review { width: 98%; max-height: 92vh; }
+    .pa-review-header,
+    .pa-review-body,
+    .pa-review-footer { padding-left: 16px; padding-right: 16px; }
+    .pa-review-id-row { grid-template-columns: 1fr; }
+    .pa-review-identity { flex-direction: column; text-align: center; }
+    .pa-review-badges { justify-content: center; }
+    .pa-review-footer { flex-wrap: wrap; }
+    .pa-review-footer form,
+    .pa-btn-close,
+    .pa-btn-approve { width: 100%; }
+
     .pending-reject-card{ flex-direction: column; }
 
-    .users-table th,
-    .users-table td { padding: 8px 10px; font-size: 12px; }
+    .pending-accounts-table th,
+    .pending-accounts-table td { padding: 8px 10px; font-size: 12px; }
 
     .page-header { flex-direction: column; align-items: flex-start; }
+}
+
+/* Touch-friendly tap target for the three-dot menu on mobile */
+@media (max-width: 768px) {
+    .pa-action-menu-toggle {
+        width: 34px;
+        height: 34px;
+    }
 }

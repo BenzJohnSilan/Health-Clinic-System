@@ -81,4 +81,12 @@ class Patient extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    /**
+     * Invoices billed to this walk-in patient (Billing & Payments module).
+     */
+    public function invoices()
+    {
+        return $this->hasMany(\App\Models\Invoice::class, 'walkin_patient_id');
+    }
 }

@@ -11,183 +11,268 @@
 
 <body>
 
+<a class="skip-link" href="#main-content">Skip to content</a>
+
 <!-- ===== NAVBAR ===== -->
-<nav>
+<nav aria-label="Main navigation">
+    <button class="nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="primaryNavigation" aria-label="Open navigation menu">
+        <i class='bx bx-menu'></i>
+    </button>
+
     <a class="nav-brand" href="#home">
         <i class='bx bx-plus-medical' style="font-size:18px; vertical-align:middle;"></i>
         ClinicRMS
     </a>
 
-    <ul class="nav-center">
+    <ul class="nav-center" id="primaryNavigation">
         <li><a href="#home">Home</a></li>
+        <li><a href="#about">About Us</a></li>
         <li><a href="#services">Services</a></li>
-        <li><a href="#about">About</a></li>
-        <li><a href="#faqs">FAQs</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
         <li><a href="#contact">Contact</a></li>
-        <li><a href="#location">Location</a></li>
     </ul>
 
     <div class="nav-links">
         <a href="{{ route('login') }}" class="btn-nav-outline">Login</a>
         <a href="{{ route('register') }}" class="btn-nav-fill">Register</a>
     </div>
+
 </nav>
 
+<main id="main-content">
 <!-- ===== HERO ===== -->
 <div id="home" class="hero">
-    <div class="hero-left">
-        <div class="hero-badge">
-            <i class='bx bxs-shield-plus'></i>
-            Health Clinic Record Management
+    <div class="hero-grid">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <i class='bx bxs-shield-plus'></i>
+                Secure Patient Portal
+            </div>
+
+            <h1>
+                Your Health,<br>
+                <span>Our Priority</span>
+            </h1>
+
+            <p>
+                Manage your appointments and access your medical records anytime
+                through our clinic's secure, easy-to-use online patient portal.
+            </p>
+
+            <div class="hero-buttons">
+                <a href="{{ route('register') }}" class="btn-primary-hero">
+                    Get Started <i class='bx bx-right-arrow-alt'></i>
+                </a>
+                <a href="#about" class="btn-secondary-hero">
+                    Learn More
+                </a>
+            </div>
         </div>
 
-        <h1>
-            Smarter Clinic<br>
-            Management <span>Starts Here</span>
-        </h1>
+        <div class="hero-visual">
+            <div class="portal-card">
+                <div class="portal-card-header">
+                    <div class="portal-dots"><span></span><span></span><span></span></div>
+                    <span class="portal-card-title"><i class='bx bxs-shield-plus'></i> Patient Portal</span>
+                </div>
 
-        <p>
-            Manage patient records, appointments, and clinic operations
-            effortlessly — all in one secure and easy-to-use platform.
-        </p>
+                <div class="portal-row">
+                    <div class="portal-row-icon"><i class='bx bxs-calendar-check'></i></div>
+                    <div class="portal-row-text">
+                        <h6>Appointments</h6>
+                        <p>General Consultation</p>
+                    </div>
+                    <span class="portal-status status-approved">Approved</span>
+                </div>
 
-        <div class="hero-buttons">
-            <a href="{{ route('login') }}" class="btn-primary-hero">
-                Get Started <i class='bx bx-right-arrow-alt'></i>
-            </a>
-            <a href="{{ route('register') }}" class="btn-secondary-hero">
-                <i class='bx bx-user-plus'></i> Create Account
-            </a>
-        </div>
-    </div>
+                <div class="portal-row">
+                    <div class="portal-row-icon"><i class='bx bxs-folder-open'></i></div>
+                    <div class="portal-row-text">
+                        <h6>Medical Records</h6>
+                        <p>Securely stored & organized</p>
+                    </div>
+                    <span class="portal-status status-neutral">View</span>
+                </div>
 
-    <div class="hero-right">
-        <div class="hero-card">
-            <div class="hero-card-header">
-                <div class="hero-card-avatar"><i class='bx bxs-clinic'></i></div>
-                <div>
-                    <h4>Clinic Dashboard</h4>
-                    <p>Live appointment overview</p>
+                <div class="portal-row">
+                    <div class="portal-row-icon"><i class='bx bxs-lock-alt'></i></div>
+                    <div class="portal-row-text">
+                        <h6>Secure Access</h6>
+                        <p>Role-based & encrypted</p>
+                    </div>
+                    <span class="portal-status status-secure"><i class='bx bx-check-shield'></i></span>
                 </div>
             </div>
 
-            <div class="stat-row">
-                <div class="stat-box">
-                    <div class="stat-num">128</div>
-                    <div class="stat-label">Total Patients</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-num">24</div>
-                    <div class="stat-label">Today's Appts</div>
-                </div>
-            </div>
-
-            <!-- Patient names replaced with anonymous identifiers for data privacy -->
-            <div class="appt-item">
-                <div class="appt-dot" style="background:#6a11cb;"></div>
-                <div class="appt-info">
-                    <p>Patient #001</p>
-                    <span>9:00 AM · Dr. Santos</span>
-                </div>
-                <span class="appt-badge badge-approved">Approved</span>
-            </div>
-            <div class="appt-item">
-                <div class="appt-dot" style="background:#a044ff;"></div>
-                <div class="appt-info">
-                    <p>Patient #002</p>
-                    <span>10:30 AM · Dr. Santos</span>
-                </div>
-                <span class="appt-badge badge-pending">Pending</span>
-            </div>
-            <div class="appt-item">
-                <div class="appt-dot" style="background:#6a11cb;"></div>
-                <div class="appt-info">
-                    <p>Patient #003</p>
-                    <span>1:00 PM · Dr. Santos</span>
-                </div>
-                <span class="appt-badge badge-approved">Approved</span>
-            </div>
+            <div class="hero-visual-badge"><i class='bx bxs-badge-check'></i> Private &amp; Secure</div>
         </div>
     </div>
 </div>
+
+<!-- ===== ABOUT ===== -->
+<section id="about">
+    <div class="about-inner">
+        <div class="about-left reveal">
+            <p class="section-label" style="text-align:left;">Who We Are</p>
+            <h2>About Our <span>Clinic</span></h2>
+            <p>
+                Our clinic is committed to providing accessible and organized healthcare
+                services for the community. Through our online patient portal, patients
+                can manage appointments and access their personal health records in one
+                convenient platform.
+            </p>
+            <p>
+                Whether you're a patient booking your first appointment or a member of
+                our clinical team, our system provides a smooth and secure experience
+                tailored to your role — with access strictly limited to what's relevant
+                to you.
+            </p>
+        </div>
+
+        <div class="about-right reveal">
+            <div class="about-img-wrap">
+                <i class='bx bxs-clinic'></i>
+            </div>
+        </div>
+    </div>
+</section>
 
 <!-- ===== SERVICES ===== -->
 <section id="services">
     <p class="section-label">What We Offer</p>
     <h2 class="section-title">Our Services</h2>
-    <p class="section-sub">Comprehensive tools designed to keep your clinic running smoothly and your patients well-cared for.</p>
+    <p class="section-sub">Straightforward, well-organized care — supported by our online patient portal.</p>
 
     <div class="services-grid">
-        <div class="service-card">
-            <div class="service-icon"><i class='bx bxs-folder-open'></i></div>
-            <h4>Patient Records</h4>
-            <p>Store and manage complete patient information securely in one centralized and easily accessible system.</p>
+        <div class="service-card reveal">
+            <div class="service-icon"><i class='bx bx-plus-medical'></i></div>
+            <h4>General Consultation</h4>
+            <p>Sit down with a doctor to discuss your health concerns and get the guidance you need.</p>
         </div>
-        <div class="service-card">
-            <div class="service-icon"><i class='bx bxs-calendar-check'></i></div>
+        <div class="service-card reveal">
+            <div class="service-icon"><i class='bx bxs-heart'></i></div>
+            <h4>Health Checkup</h4>
+            <p>Routine checkups to help keep track of your health and catch concerns early.</p>
+        </div>
+        <div class="service-card reveal">
+            <div class="service-icon"><i class='bx bxs-calendar-plus'></i></div>
             <h4>Appointment Scheduling</h4>
-            <p>Book, track, and manage clinic appointments with real-time slot availability and conflict prevention.</p>
+            <p>Request a visit online and get notified as soon as the clinic confirms your slot.</p>
         </div>
-        <div class="service-card">
-            <div class="service-icon"><i class='bx bxs-lock-alt'></i></div>
-            <h4>Secure Role Access</h4>
-            <p>Role-based login for admins, doctors, and patients — each with controlled access to relevant data.</p>
-        </div>
-        <div class="service-card">
+        <div class="service-card reveal">
             <div class="service-icon"><i class='bx bxs-report'></i></div>
-            <h4>Medical Reports</h4>
-            <p>Generate detailed patient visit reports and medical histories for informed clinical decision-making.</p>
-        </div>
-        <div class="service-card">
-            <div class="service-icon"><i class='bx bxs-bell-ring'></i></div>
-            <h4>Appointment Reminders</h4>
-            <p>Automated status updates keep patients informed about their upcoming or approved appointments.</p>
-        </div>
-        <div class="service-card">
-            <div class="service-icon"><i class='bx bxs-user-detail'></i></div>
-            <h4>Doctor Management</h4>
-            <p>Manage doctor profiles, schedules, and patient assignments all from a single admin dashboard.</p>
+            <h4>Medical Records</h4>
+            <p>Your visit history and reports, kept organized and accessible whenever you need them.</p>
         </div>
     </div>
 </section>
 
-<!-- ===== ABOUT ===== -->
-<section id="about">
-    <div class="about-inner">
-        <div class="about-left">
-            <p class="section-label" style="text-align:left;">Who We Are</p>
-            <h2>About Our <span>Clinic System</span></h2>
-            <p>
-                We are a dedicated team committed to modernizing healthcare administration.
-                Our Clinic Record Management System was built to replace outdated paper-based
-                processes with a fast, reliable, and secure digital platform.
-            </p>
-            <p>
-                Whether you're a patient booking your first appointment or an admin overseeing
-                daily operations, our system provides a smooth and intuitive experience tailored
-                to every role in the clinic.
-            </p>
+<!-- ===== PATIENT PORTAL FEATURES ===== -->
+<section id="portal-features">
+    <p class="section-label">Your Account</p>
+    <h2 class="section-title">What You Can Do In The Patient Portal</h2>
+    <p class="section-sub">Once your account is approved, everything you need is a login away.</p>
 
-            <div class="about-stats">
-                <div class="about-stat-box">
-                    <div class="num">500+</div>
-                    <div class="lbl">Patients Served</div>
-                </div>
-                <div class="about-stat-box">
-                    <div class="num">10+</div>
-                    <div class="lbl">Doctors</div>
-                </div>
-                <div class="about-stat-box">
-                    <div class="num">99%</div>
-                    <div class="lbl">Uptime</div>
-                </div>
+    <div class="portal-features-grid">
+        <div class="portal-feature reveal">
+            <div class="portal-feature-icon"><i class='bx bxs-calendar-week'></i></div>
+            <div>
+                <h4>Manage Appointments</h4>
+                <p>Request, track, and reschedule your appointments from your dashboard.</p>
             </div>
         </div>
-
-        <div class="about-right">
-            <div class="about-img-wrap">
-                <i class='bx bxs-clinic'></i>
+        <div class="portal-feature reveal">
+            <div class="portal-feature-icon"><i class='bx bxs-file-find'></i></div>
+            <div>
+                <h4>View Medical Records</h4>
+                <p>Access your own reports and visit history whenever you need them.</p>
             </div>
+        </div>
+        <div class="portal-feature reveal">
+            <div class="portal-feature-icon"><i class='bx bxs-id-card'></i></div>
+            <div>
+                <h4>Access Personal Information</h4>
+                <p>Review and update your profile and contact details securely.</p>
+            </div>
+        </div>
+        <div class="portal-feature reveal">
+            <div class="portal-feature-icon"><i class='bx bxs-bell-ring'></i></div>
+            <div>
+                <h4>Receive Clinic Updates</h4>
+                <p>Get organized, real-time notifications about your appointment status.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== HOW IT WORKS ===== -->
+<section id="how-it-works">
+    <p class="section-label">Getting Started</p>
+    <h2 class="section-title">How It Works</h2>
+    <p class="section-sub">Getting access to your patient account takes just a few simple steps.</p>
+
+    <div class="steps-row">
+        <div class="step-item reveal">
+            <div class="step-icon-wrap">
+                <div class="step-icon"><i class='bx bxs-user-plus'></i></div>
+                <span class="step-num-badge">01</span>
+            </div>
+            <h4>Register an Account</h4>
+            <p>Create your patient account with your basic information in just a few minutes.</p>
+        </div>
+        <div class="step-item reveal">
+            <div class="step-icon-wrap">
+                <div class="step-icon"><i class='bx bxs-user-check'></i></div>
+                <span class="step-num-badge">02</span>
+            </div>
+            <h4>Wait for Clinic Approval</h4>
+            <p>Our clinic staff reviews new patient accounts to keep records secure and accurate.</p>
+        </div>
+        <div class="step-item reveal">
+            <div class="step-icon-wrap">
+                <div class="step-icon"><i class='bx bxs-calendar-check'></i></div>
+                <span class="step-num-badge">03</span>
+            </div>
+            <h4>Book an Appointment</h4>
+            <p>Once approved, log in anytime to request an appointment for your preferred date.</p>
+        </div>
+        <div class="step-item reveal">
+            <div class="step-icon-wrap">
+                <div class="step-icon"><i class='bx bxs-institution'></i></div>
+                <span class="step-num-badge">04</span>
+            </div>
+            <h4>Visit the Clinic</h4>
+            <p>Arrive for your scheduled visit and let our clinic team take care of the rest.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ===== SYSTEM WORKFLOW ===== -->
+<section id="workflow">
+    <p class="section-label">Behind The Scenes</p>
+    <h2 class="section-title">How Your Appointment Is Handled</h2>
+    <p class="section-sub">A simple, transparent workflow from request to completed visit.</p>
+
+    <div class="workflow-track">
+        <div class="workflow-step reveal">
+            <div class="workflow-icon"><i class='bx bx-message-square-detail'></i></div>
+            <span>Appointment Request</span>
+        </div>
+        <div class="workflow-step reveal">
+            <div class="workflow-icon"><i class='bx bx-check-double'></i></div>
+            <span>Approval</span>
+        </div>
+        <div class="workflow-step reveal">
+            <div class="workflow-icon"><i class='bx bx-log-in-circle'></i></div>
+            <span>Checked In</span>
+        </div>
+        <div class="workflow-step reveal">
+            <div class="workflow-icon"><i class='bx bx-plus-medical'></i></div>
+            <span>Consultation</span>
+        </div>
+        <div class="workflow-step reveal">
+            <div class="workflow-icon"><i class='bx bx-badge-check'></i></div>
+            <span>Completed</span>
         </div>
     </div>
 </section>
@@ -198,50 +283,17 @@
     <h2 class="section-title">Frequently Asked Questions</h2>
     <p class="section-sub">Find answers to the most common questions about our clinic system. Can't find what you're looking for? Chat with Viora!</p>
 
-    <div class="faqs-inner">
+    <div class="faqs-inner reveal">
         <!-- Category Tabs -->
         <div class="faq-categories">
-            <button class="faq-cat-btn active" data-cat="about">About the System</button>
-            <button class="faq-cat-btn" data-cat="appointment">Appointment Booking</button>
-            <button class="faq-cat-btn" data-cat="account">Login / Account</button>
-            <button class="faq-cat-btn" data-cat="doctors">Doctors & Services</button>
-            <button class="faq-cat-btn" data-cat="privacy">Privacy & Security</button>
+            <button class="faq-cat-btn active" data-cat="appointments">Appointments</button>
+            <button class="faq-cat-btn" data-cat="account">Account & Login</button>
+            <button class="faq-cat-btn" data-cat="records">Medical Records</button>
+            <button class="faq-cat-btn" data-cat="clinic">Clinic Info</button>
         </div>
 
-        <!-- About the System -->
-        <div class="faq-group active" id="faq-about">
-            <div class="faq-item">
-                <button class="faq-question">
-                    What is ClinicRMS and what is it for?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>ClinicRMS is a digital system for managing patient records, appointment scheduling, and general clinic operations. It is designed to replace outdated paper-based records with a faster, more secure, and easier-to-use digital solution.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-question">
-                    Who can use ClinicRMS?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>The system supports three types of users: <strong>Admins</strong> who manage the entire clinic, <strong>Doctors</strong> who have access to their patients and schedules, and <strong>Patients</strong> who can book appointments and view their own records.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-question">
-                    Is using the system free?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>Registering and using ClinicRMS as a patient is completely free. Clinics and healthcare providers may contact us for subscription plans suited to the size of their operations.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-question">
-                    Is the system available on mobile?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>Yes! ClinicRMS is fully responsive, meaning it works beautifully on all devices — whether desktop, tablet, or smartphone. No app installation is required.</p></div>
-            </div>
-        </div>
-
-        <!-- Appointment Booking -->
-        <div class="faq-group" id="faq-appointment">
+        <!-- Appointments -->
+        <div class="faq-group active" id="faq-appointments">
             <div class="faq-item">
                 <button class="faq-question">
                     How do I book an appointment?
@@ -251,68 +303,100 @@
             </div>
             <div class="faq-item">
                 <button class="faq-question">
-                    How long does it take for an appointment to be approved?
+                    Can I reschedule or cancel my appointment?
                     <span class="faq-icon"><i class='bx bx-plus'></i></span>
                 </button>
-                <div class="faq-answer"><p>Appointments are typically reviewed and approved within <strong>24 to 48 hours</strong>. You will receive a system notification whenever there is a change in the status of your booking.</p></div>
+                <div class="faq-answer"><p>Yes. Go to <strong>My Appointments</strong> in your dashboard and select the appointment you wish to cancel or reschedule. We recommend doing so at least <strong>24 hours before</strong> your scheduled time to allow other patients to book that slot.</p></div>
             </div>
             <div class="faq-item">
                 <button class="faq-question">
-                    Can I cancel or reschedule an appointment?
+                    How long does it take for an appointment to be confirmed?
                     <span class="faq-icon"><i class='bx bx-plus'></i></span>
                 </button>
-                <div class="faq-answer"><p>Yes, you can cancel or request to reschedule your appointment through your account dashboard. We recommend doing so at least <strong>24 hours before</strong> your scheduled appointment to allow other patients the opportunity to book that slot.</p></div>
+                <div class="faq-answer"><p>Appointments are typically reviewed and confirmed within <strong>24 to 48 hours</strong> during clinic operating hours. You will receive a system notification whenever the status of your booking changes.</p></div>
             </div>
             <div class="faq-item">
                 <button class="faq-question">
-                    Can I book an appointment for someone else (e.g., my child or parent)?
+                    What happens if I miss my scheduled appointment?
                     <span class="faq-icon"><i class='bx bx-plus'></i></span>
                 </button>
-                <div class="faq-answer"><p>Yes. From your account, you can book an appointment on behalf of your dependents. Please make sure to provide the correct name and information of the actual patient during the booking process.</p></div>
+                <div class="faq-answer"><p>If you miss your appointment, you may request a new schedule depending on available clinic slots. Repeated missed appointments without prior notice may affect future booking priority.</p></div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">
+                    Can I walk in without an appointment?
+                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
+                </button>
+                <div class="faq-answer"><p>Walk-in patients may still be accommodated depending on clinic availability and queue capacity. However, booking in advance is strongly recommended to secure your preferred time slot.</p></div>
             </div>
         </div>
 
-        <!-- Account Issues -->
+        <!-- Account & Login -->
         <div class="faq-group" id="faq-account">
+            <div class="faq-item">
+                <button class="faq-question">
+                    How do I register for an account?
+                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
+                </button>
+                <div class="faq-answer"><p>Click the <strong>"Register"</strong> button in the navigation bar. Fill in your name, email address, and password. Verify your email through the link we send you, and you're ready to use the system. Registration as a patient is completely free.</p></div>
+            </div>
             <div class="faq-item">
                 <button class="faq-question">
                     I forgot my password. What should I do?
                     <span class="faq-icon"><i class='bx bx-plus'></i></span>
                 </button>
-                <div class="faq-answer"><p>On the login page, click <strong>"Forgot Password"</strong> and enter your registered email address. We will send you a link to reset your password. Also check your spam or junk folder if you don't see the email in your inbox.</p></div>
+                <div class="faq-answer"><p>On the login page, click <strong>"Forgot Password"</strong> and enter your registered email address. We will send you a link to reset your password. Check your spam or junk folder if you don't see the email in your inbox.</p></div>
             </div>
             <div class="faq-item">
                 <button class="faq-question">
-                    I can't log in to my account. What might be the issue?
+                    How do I update my personal information?
                     <span class="faq-icon"><i class='bx bx-plus'></i></span>
                 </button>
-                <div class="faq-answer"><p>You may have entered an incorrect email or password. Make sure your email address has been verified. If you recently registered, check your inbox for a verification email. If the problem persists, contact us at <strong>support@clinicrms.com</strong>.</p></div>
+                <div class="faq-answer"><p>Go to <strong>Profile Settings</strong> after logging in. From there, you can edit your name, contact number, and other personal details. Make sure to save your changes when done.</p></div>
             </div>
             <div class="faq-item">
                 <button class="faq-question">
-                    How do I update my personal information in my account?
+                    Who can access and use ClinicRMS?
                     <span class="faq-icon"><i class='bx bx-plus'></i></span>
                 </button>
-                <div class="faq-answer"><p>Go to <strong>Profile Settings</strong> after logging in. From there, you can edit your name, contact number, and other details. Make sure to save your changes when done.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-question">
-                    How do I register for ClinicRMS?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>Click the <strong>"Register"</strong> button in the navigation bar or the hero section. Fill in your name, email address, and password. Verify your email through the link we send you, and you're ready to use the system.</p></div>
+                <div class="faq-answer"><p>The system supports three types of users: <strong>Admins</strong> who manage clinic operations, <strong>Doctors</strong> who access their assigned patients and schedules, and <strong>Patients</strong> who can book appointments and view their own records. Each role has controlled access to relevant data only.</p></div>
             </div>
         </div>
 
-        <!-- Doctors & Services -->
-        <div class="faq-group" id="faq-doctors">
+        <!-- Medical Records -->
+        <div class="faq-group" id="faq-records">
             <div class="faq-item">
                 <button class="faq-question">
-                    What specialists are available at the clinic?
+                    Can I view my medical history and past consultations?
                     <span class="faq-icon"><i class='bx bx-plus'></i></span>
                 </button>
-                <div class="faq-answer"><p>We have general practitioners and various specialists on staff. For the most up-to-date list of available doctors, you can log in to your account and visit the <strong>Doctors</strong> section, or contact the clinic directly.</p></div>
+                <div class="faq-answer"><p>Yes. In your patient dashboard, you can view your appointment history and medical reports issued by your doctor. Access to other patients' records is strictly restricted to protect privacy.</p></div>
             </div>
+            <div class="faq-item">
+                <button class="faq-question">
+                    Will my medical records and personal information remain confidential?
+                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
+                </button>
+                <div class="faq-answer"><p>Yes. We use <strong>encrypted connections (HTTPS)</strong> and role-based access controls to ensure only authorized personnel can view your records. We never share your personal or medical data with third parties.</p></div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">
+                    Can I request a copy of my medical record?
+                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
+                </button>
+                <div class="faq-answer"><p>Yes. Requests for medical records may be processed following clinic policies and proper patient verification procedures. Please contact the clinic staff or email us at <strong>support@clinicrms.com</strong> to initiate your request.</p></div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">
+                    What should I do if there is incorrect information in my record?
+                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
+                </button>
+                <div class="faq-answer"><p>Inform the clinic staff immediately so the necessary corrections can be made. You may also reach us at <strong>support@clinicrms.com</strong> or call <strong>+63 917 123 4567</strong> for assistance.</p></div>
+            </div>
+        </div>
+
+        <!-- Clinic Info -->
+        <div class="faq-group" id="faq-clinic">
             <div class="faq-item">
                 <button class="faq-question">
                     What are the clinic's operating hours?
@@ -322,42 +406,24 @@
             </div>
             <div class="faq-item">
                 <button class="faq-question">
-                    Can I view all of my medical records in the system?
+                    What doctors and specialists are available?
                     <span class="faq-icon"><i class='bx bx-plus'></i></span>
                 </button>
-                <div class="faq-answer"><p>Yes. In your patient dashboard, you can view your appointment history, medical reports issued by your doctor, and your personal information. Access to other patients' records is strictly restricted.</p></div>
-            </div>
-        </div>
-
-        <!-- Privacy & Security -->
-        <div class="faq-group" id="faq-privacy">
-            <div class="faq-item">
-                <button class="faq-question">
-                    Is my personal and medical information safe?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>Yes. ClinicRMS uses <strong>encrypted connections (HTTPS)</strong> and role-based access control to ensure that your information is only accessible to authorized individuals. Your data is never shared with third parties without your consent.</p></div>
+                <div class="faq-answer"><p>We have general practitioners and various specialists on staff. For the most up-to-date list, log in to your account and visit the <strong>Doctors</strong> section, or contact the clinic directly at <strong>+63 917 123 4567</strong>.</p></div>
             </div>
             <div class="faq-item">
                 <button class="faq-question">
-                    Who has access to my medical records?
+                    Is the system accessible on mobile phones?
                     <span class="faq-icon"><i class='bx bx-plus'></i></span>
                 </button>
-                <div class="faq-answer"><p>Your medical records can only be accessed by your <strong>attending physician</strong> and authorized clinic staff. As a patient, you also have access to your own records. No other person can view your information without the proper authorization.</p></div>
+                <div class="faq-answer"><p>Yes. ClinicRMS is fully responsive and works on all devices — desktop, tablet, or smartphone — with an internet connection. No app installation is required.</p></div>
             </div>
             <div class="faq-item">
                 <button class="faq-question">
-                    Can I request to have my data deleted?
+                    Who should I contact for concerns or technical assistance?
                     <span class="faq-icon"><i class='bx bx-plus'></i></span>
                 </button>
-                <div class="faq-answer"><p>Yes. You may request the deletion of your account and personal data by contacting us at <strong>support@clinicrms.com</strong>. Please note that certain medical records may be required to be retained for a period of time in accordance with applicable legal and regulatory requirements.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-question">
-                    What should I do if I notice suspicious activity on my account?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>Change your password immediately and contact us at <strong>support@clinicrms.com</strong> or call our hotline. Never share your login credentials with anyone to prevent unauthorized access to your account.</p></div>
+                <div class="faq-answer"><p>You may contact the clinic staff directly, email us at <strong>support@clinicrms.com</strong>, or call <strong>+63 917 123 4567</strong>. You can also use the Contact form on this page or chat with our AI assistant <strong>Viora</strong> for quick answers.</p></div>
             </div>
         </div>
     </div>
@@ -370,7 +436,7 @@
     <p class="section-sub">Have questions or need support? Reach out to us and we'll get back to you as soon as possible.</p>
 
     <div class="contact-inner">
-        <div class="contact-info">
+        <div class="contact-info reveal">
             <div class="contact-item">
                 <div class="contact-icon"><i class='bx bxs-map'></i></div>
                 <div>
@@ -392,23 +458,22 @@
                     <p>support@clinicrms.com<br>admin@clinicrms.com</p>
                 </div>
             </div>
-            <!-- Clinic Hours removed here to avoid duplication with Location section -->
         </div>
 
-        <div class="contact-form">
+        <div class="contact-form reveal">
             <div class="form-row">
                 <div class="form-group">
                     <label>First Name</label>
-                    <input type="text" placeholder="Juan">
+                    <input type="text" placeholder="First name">
                 </div>
                 <div class="form-group">
                     <label>Last Name</label>
-                    <input type="text" placeholder="dela Cruz">
+                    <input type="text" placeholder="Last name">
                 </div>
             </div>
             <div class="form-group">
                 <label>Email Address</label>
-                <input type="email" placeholder="juan@email.com">
+                <input type="email" placeholder="you@email.com">
             </div>
             <div class="form-group">
                 <label>Subject</label>
@@ -425,14 +490,14 @@
     </div>
 </section>
 
-<!-- ===== LOCATION ===== -->
+<!-- ===== LOCATION / CLINIC INFO ===== -->
 <section id="location">
     <p class="section-label">Find Us</p>
-    <h2 class="section-title">Our Location</h2>
+    <h2 class="section-title">Clinic Information</h2>
     <p class="section-sub">Visit us at our clinic. We're conveniently located and easy to find.</p>
 
     <div class="location-inner">
-        <div class="location-details">
+        <div class="location-details reveal">
             <div class="location-card">
                 <div class="location-card-icon"><i class='bx bxs-map-pin'></i></div>
                 <div>
@@ -463,7 +528,7 @@
             </div>
         </div>
 
-        <div class="map-wrap">
+        <div class="map-wrap reveal">
             <iframe
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3868.1!2d121.3167!3d14.1500!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd5b2e2e2e2e2f%3A0x0!2sBrgy.+Dayap%2C+Calauan%2C+Laguna!5e0!3m2!1sen!2sph!4v1"
                 allowfullscreen=""
@@ -473,19 +538,48 @@
         </div>
     </div>
 </section>
-
-<!-- ===== CTA ===== -->
-<div class="cta">
-    <h2>Ready to Get Started?</h2>
-    <p>Join the clinic management system trusted by healthcare professionals.</p>
-    <a href="{{ route('register') }}" class="btn-cta">
-        Create Your Account <i class='bx bx-right-arrow-alt'></i>
-    </a>
-</div>
+</main>
 
 <!-- ===== FOOTER ===== -->
 <footer>
-    <p>&copy; {{ date('Y') }} Clinic Record System &mdash; Developed by <span>Benz</span></p>
+    <div class="footer-inner">
+        <div class="footer-col footer-brand">
+            <a class="footer-logo" href="#home">
+                <i class='bx bx-plus-medical'></i> ClinicRMS
+            </a>
+            <p>Our clinic's official online patient portal for managing appointments and medical records, securely and in one place.</p>
+        </div>
+
+        <div class="footer-col">
+            <h5>Quick Links</h5>
+            <ul>
+                <li><a href="#home">Home</a></li>
+                <li><a href="#about">About Us</a></li>
+                <li><a href="#services">Services</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#faqs">FAQs</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </div>
+
+        <div class="footer-col">
+            <h5>Contact</h5>
+            <ul class="footer-contact">
+                <li><i class='bx bxs-map'></i> Barangay Dayap, Calauan, Laguna 4012, Philippines</li>
+                <li><i class='bx bxs-phone-call'></i> +63 917 123 4567</li>
+                <li><i class='bx bxs-envelope'></i> support@clinicrms.com</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="footer-bottom">
+        <p>&copy; {{ date('Y') }} Clinic Record System. All rights reserved.</p>
+        <div class="footer-legal">
+            <a href="#">Privacy Policy</a>
+            <span>·</span>
+            <a href="#">Terms of Use</a>
+        </div>
+    </div>
 </footer>
 
 <!-- ===== VIORA CHATBOT ===== -->
@@ -501,12 +595,10 @@
             <h4>Viora</h4>
             <p>ClinicRMS AI Assistant • Online</p>
         </div>
-        <button class="viora-close" id="vioraClose"><i class='bx bx-x'></i></button>
+        <button class="viora-close" id="vioraClose" type="button" aria-label="Close chat"><i class='bx bx-x'></i></button>
     </div>
 
-    <div class="viora-messages" id="vioraMessages">
-        <!-- Messages inserted by JS -->
-    </div>
+    <div class="viora-messages" id="vioraMessages"></div>
 
     <div class="viora-quick-btns" id="vioraQuickBtns">
         <button class="quick-btn" data-q="How do I book an appointment?">📅 Book Appointment</button>
@@ -519,11 +611,51 @@
 
     <div class="viora-input-area">
         <input class="viora-input" id="vioraInput" type="text" placeholder="Type your question here..." autocomplete="off">
-        <button class="viora-send" id="vioraSend"><i class='bx bx-send'></i></button>
+        <button class="viora-send" id="vioraSend" type="button" aria-label="Send message"><i class='bx bx-send'></i></button>
     </div>
 </div>
 
 <script>
+// ===== SCROLL REVEAL =====
+const navToggle = document.getElementById('navToggle');
+const primaryNavigation = document.getElementById('primaryNavigation');
+
+navToggle.addEventListener('click', () => {
+    const isOpen = primaryNavigation.classList.toggle('is-open');
+    navToggle.setAttribute('aria-expanded', isOpen);
+    navToggle.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
+    navToggle.innerHTML = `<i class='bx ${isOpen ? 'bx-x' : 'bx-menu'}'></i>`;
+});
+
+primaryNavigation.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
+    primaryNavigation.classList.remove('is-open');
+    navToggle.setAttribute('aria-expanded', 'false');
+    navToggle.setAttribute('aria-label', 'Open navigation menu');
+    navToggle.innerHTML = "<i class='bx bx-menu'></i>";
+}));
+
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && primaryNavigation.classList.contains('is-open')) {
+        navToggle.click();
+        navToggle.focus();
+    }
+});
+
+const revealEls = document.querySelectorAll('.reveal');
+if ('IntersectionObserver' in window) {
+    const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+                revealObserver.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+    revealEls.forEach(el => revealObserver.observe(el));
+} else {
+    revealEls.forEach(el => el.classList.add('is-visible'));
+}
+
 // ===== FAQ ACCORDION =====
 document.querySelectorAll('.faq-cat-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -538,68 +670,99 @@ document.querySelectorAll('.faq-question').forEach(btn => {
     btn.addEventListener('click', () => {
         const item = btn.parentElement;
         const isOpen = item.classList.contains('open');
-        // Close all in same group
         btn.closest('.faq-group').querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
         if (!isOpen) item.classList.add('open');
     });
 });
 
 // ===== VIORA CHATBOT =====
-const vioraTrigger = document.getElementById('vioraTrigger');
-const vioraWindow  = document.getElementById('vioraWindow');
-const vioraClose   = document.getElementById('vioraClose');
-const vioraMessages= document.getElementById('vioraMessages');
-const vioraInput   = document.getElementById('vioraInput');
-const vioraSend    = document.getElementById('vioraSend');
-const vioraIcon    = document.getElementById('vioraIcon');
-const vioraBadge   = vioraTrigger.querySelector('.viora-badge');
+const vioraTrigger  = document.getElementById('vioraTrigger');
+const vioraWindow   = document.getElementById('vioraWindow');
+const vioraClose    = document.getElementById('vioraClose');
+const vioraMessages = document.getElementById('vioraMessages');
+const vioraInput    = document.getElementById('vioraInput');
+const vioraSend     = document.getElementById('vioraSend');
+const vioraIcon     = document.getElementById('vioraIcon');
+const vioraBadge    = vioraTrigger.querySelector('.viora-badge');
 let chatOpen = false;
 let greeted  = false;
 
 const responses = [
     {
-        keys: ['book','appointment','schedule','reschedule'],
+        keys: ['book', 'appointment', 'schedule'],
         answer: `To book an appointment:\n1️⃣ Log in to your account\n2️⃣ Go to the "Appointments" section\n3️⃣ Select your preferred doctor, date, and time\n4️⃣ Submit your request\n\nYou'll receive a notification within 24–48 hours once it's approved! 😊`
     },
     {
-        keys: ['hours','schedule','open','closed','operating','clinic hours'],
+        keys: ['reschedule', 'cancel', 'change appointment'],
+        answer: `Yes, you can cancel or reschedule an appointment! 📅\n\n1️⃣ Log in to your account\n2️⃣ Go to "My Appointments"\n3️⃣ Select the appointment and choose Cancel or Reschedule\n\nⓘ We recommend doing this at least **24 hours before** your appointment. 🙏`
+    },
+    {
+        keys: ['confirm', 'approved', 'how long', 'notification'],
+        answer: `Appointments are usually reviewed and confirmed within **24 to 48 hours** ⏱️ during clinic operating hours.\n\nYou will receive a system notification as soon as the status of your booking changes!`
+    },
+    {
+        keys: ['walk in', 'walk-in', 'without appointment', 'no appointment'],
+        answer: `Walk-in patients may still be accommodated depending on clinic availability and queue capacity. 🚶\n\nHowever, we strongly recommend **booking in advance** to secure your preferred time slot!`
+    },
+    {
+        keys: ['miss', 'missed', 'absent', 'no show'],
+        answer: `If you miss your appointment, you may request a new schedule depending on available clinic slots. 📅\n\nPlease make sure to cancel in advance if you're unable to attend so others can use that slot. 🙏`
+    },
+    {
+        keys: ['hours', 'open', 'closed', 'operating', 'clinic hours', 'schedule'],
         answer: `🕐 Our clinic hours are:\n\n• **Monday–Friday:** 9:00 AM – 5:00 PM\n• **Saturday:** 9:00 AM – 12:00 PM\n• **Sunday:** Closed\n\nWe recommend booking an appointment before visiting! 📅`
     },
     {
-        keys: ['register','how to','create account','sign up'],
-        answer: `Registering for ClinicRMS is easy! 🎉\n\n1️⃣ Click the "Register" button at the top\n2️⃣ Fill in your name, email, and password\n3️⃣ Verify your email address\n4️⃣ Done! You can now log in\n\nRegistration as a patient is completely free! ✅`
+        keys: ['register', 'sign up', 'create account'],
+        answer: `Registering for ClinicRMS is easy and free! 🎉\n\n1️⃣ Click the "Register" button at the top\n2️⃣ Fill in your name, email, and password\n3️⃣ Verify your email address\n4️⃣ Done! You're ready to use the system ✅`
     },
     {
-        keys: ['password','forgot','reset','can\'t log in','login','account'],
-        answer: `Having trouble logging in? Don't worry! 😊\n\n• **Forgot password:** Click "Forgot Password" on the login page and we'll send a reset link to your email.\n• **Email not verified:** Check your inbox or spam folder for the verification email.\n• **Other issues:** Contact us at support@clinicrms.com 📧`
+        keys: ['password', 'forgot', 'reset', "can't log in", 'login issue'],
+        answer: `Having trouble logging in? Don't worry! 😊\n\n• **Forgot password:** Click "Forgot Password" on the login page and we'll send a reset link to your email.\n• **Can't log in:** Make sure your email has been verified. Check your inbox or spam folder.\n• **Still stuck?** Contact us at support@clinicrms.com 📧`
     },
     {
-        keys: ['location','where','address','map','directions','calauan','laguna','dayap'],
-        answer: `📍 Our clinic is located at:\n\n**Barangay Dayap, Calauan, Laguna 4012, Philippines**\n\n🚌 How to get here:\nFrom Santa Cruz, take a jeepney or bus to Calauan. From the town proper, take a tricycle to Brgy. Dayap.\n\n🅿️ Free parking is also available for patients!`
+        keys: ['update', 'personal info', 'profile', 'edit account'],
+        answer: `To update your personal information:\n\n1️⃣ Log in to your account\n2️⃣ Go to **Profile Settings**\n3️⃣ Edit your name, contact number, or other details\n4️⃣ Save your changes ✅`
     },
     {
-        keys: ['privacy','safe','data','security','information','personal','medical','records'],
-        answer: `🔒 Your privacy is our priority!\n\n• We use **encrypted connections (HTTPS)**\n• **Role-based access** — only your doctor and authorized staff can view your records\n• We never share your data with third parties\n• You can request data deletion at any time\n\nYour information is in good hands! 💜`
+        keys: ['medical record', 'history', 'consultation', 'past visit', 'records'],
+        answer: `Yes! In your patient dashboard, you can view:\n\n• 📋 Your appointment history\n• 📄 Medical reports from your doctor\n• 👤 Your personal information\n\nAccess to other patients' records is strictly restricted. 🔒`
     },
     {
-        keys: ['doctor','specialist','available','who'],
-        answer: `👨‍⚕️ We have general practitioners and various specialists available.\n\nFor the most up-to-date list of our doctors:\n• Log in to your account\n• Visit the "Doctors" section\n\nOr contact us at:\n📞 +63 917 123 4567\n📧 support@clinicrms.com`
+        keys: ['copy', 'request record', 'get record'],
+        answer: `Yes, you can request a copy of your medical record! 📄\n\nRequests are processed following clinic policies and patient verification procedures.\n\nPlease contact us at:\n📧 support@clinicrms.com\n📞 +63 917 123 4567`
     },
     {
-        keys: ['cancel','change','reschedule','modify'],
-        answer: `Yes, you can cancel or reschedule an appointment! 📅\n\n1️⃣ Log in to your account\n2️⃣ Go to "My Appointments"\n3️⃣ Find the appointment and click Cancel/Reschedule\n\nⓘ We recommend doing this at least **24 hours before** your appointment. Thank you for your understanding! 🙏`
+        keys: ['wrong', 'incorrect', 'error in record', 'fix record'],
+        answer: `If there's incorrect information in your record, please inform the clinic staff immediately so corrections can be made. 📝\n\nYou can also reach us at:\n📧 support@clinicrms.com\n📞 +63 917 123 4567`
     },
     {
-        keys: ['contact','reach','number','email','phone','support'],
-        answer: `📞 Here is our contact information:\n\n• **Phone:** +63 917 123 4567 / +63 2 8123 4567\n• **Email:** support@clinicrms.com\n• **Address:** Brgy. Dayap, Calauan, Laguna\n\nYou can also fill out the contact form in the Contact section of the website! 😊`
+        keys: ['privacy', 'safe', 'data', 'security', 'confidential', 'information'],
+        answer: `🔒 Your privacy is our priority!\n\n• **Encrypted connections (HTTPS)** protect your data\n• **Role-based access** — only your doctor and authorized staff can view your records\n• We never share your data with third parties\n\nYour information is in good hands! 💜`
     },
     {
-        keys: ['hello','hi','hey','good morning','good afternoon','good evening','greetings'],
-        answer: `Hello! 👋 I'm **Viora**, your ClinicRMS AI Assistant!\n\nI'm here to help you with:\n• 📅 Booking appointments\n• 🔑 Account and login issues\n• 🕐 Clinic hours and location\n• 🔒 Privacy and security\n• And much more!\n\nHow can I assist you today? 💜`
+        keys: ['doctor', 'specialist', 'available doctor'],
+        answer: `👨‍⚕️ We have general practitioners and various specialists available.\n\nFor the most up-to-date list:\n• Log in and visit the **Doctors** section\n• Or contact us at:\n📞 +63 917 123 4567\n📧 support@clinicrms.com`
     },
     {
-        keys: ['thank','thanks','okay','alright','got it','great'],
-        answer: `You're welcome! 😊 I'm always here to help. If you have any more questions about ClinicRMS, feel free to ask anytime! 💜\n\nHave a great day! ☀️`
+        keys: ['location', 'where', 'address', 'map', 'directions', 'calauan', 'laguna', 'dayap'],
+        answer: `📍 Our clinic is located at:\n\n**Barangay Dayap, Calauan, Laguna 4012, Philippines**\n\n🚌 **How to get here:**\nFrom Santa Cruz, take a jeepney or bus to Calauan. From the town proper, take a tricycle to Brgy. Dayap.\n\n🅿️ Free parking is available for patients!`
+    },
+    {
+        keys: ['mobile', 'phone', 'app', 'smartphone', 'tablet'],
+        answer: `Yes! ClinicRMS is fully responsive and works on all devices — desktop, tablet, or smartphone. 📱\n\nNo app installation is required. Just open the site in your browser and you're good to go! ✅`
+    },
+    {
+        keys: ['contact', 'reach', 'number', 'email', 'phone', 'support'],
+        answer: `📞 Here is our contact information:\n\n• **Phone:** +63 917 123 4567 / +63 2 8123 4567\n• **Email:** support@clinicrms.com\n• **Address:** Brgy. Dayap, Calauan, Laguna\n\nYou can also fill out the contact form on this page! 😊`
+    },
+    {
+        keys: ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening', 'greetings'],
+        answer: `Hello! 👋 I'm **Viora**, your ClinicRMS AI Assistant!\n\nI'm here to help you with:\n• 📅 Booking & managing appointments\n• 🔑 Account and login issues\n• 🕐 Clinic hours and location\n• 🔒 Privacy and medical records\n• And much more!\n\nHow can I assist you today? 💜`
+    },
+    {
+        keys: ['thank', 'thanks', 'okay', 'alright', 'got it', 'great'],
+        answer: `You're welcome! 😊 If you have any more questions about ClinicRMS, feel free to ask anytime!\n\nHave a great day! ☀️`
     }
 ];
 
@@ -608,7 +771,7 @@ function getResponse(msg) {
     for (const r of responses) {
         if (r.keys.some(k => lower.includes(k))) return r.answer;
     }
-    return `Sorry, I'm not able to answer that question directly just yet. 😅\n\nYou can try:\n• One of the quick reply buttons below\n• Emailing us at **support@clinicrms.com**\n• Calling us at **+63 917 123 4567**\n\nIs there anything else I can help you with? 💜`;
+    return `Sorry, I'm not able to answer that directly just yet. 😅\n\nYou can try:\n• One of the quick reply buttons below\n• Emailing us at **support@clinicrms.com**\n• Calling us at **+63 917 123 4567**\n\nIs there anything else I can help you with? 💜`;
 }
 
 function addMessage(text, type) {

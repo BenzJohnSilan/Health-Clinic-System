@@ -69,8 +69,9 @@ body {
 .page-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: 16px;
+    margin-top: 14px;
     margin-bottom: 22px;
     flex-wrap: wrap;
 }
@@ -78,7 +79,7 @@ body {
 .page-header-left {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 4px;
 }
 
 .page-title-group {
@@ -93,6 +94,12 @@ body {
     font-weight: 700;
     color: var(--text-main);
     line-height: 1.2;
+}
+
+.page-subtitle {
+    font-size: 13.5px;
+    color: var(--text-sub);
+    font-weight: 400;
 }
 
 .back-btn {
@@ -167,73 +174,21 @@ body {
 }
 
 /* ══════════════════════════════════════════════
-   REFERENCE RIBBON
+   LEVEL 2 — TOP INFORMATION GRID
+   (Record Information | Patient Information)
 ══════════════════════════════════════════════ */
-.ref-ribbon {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 14px 22px;
-    display: flex;
-    align-items: center;
-    gap: 0;
-    flex-wrap: wrap;
-    margin-bottom: 22px;
-    box-shadow: var(--shadow-sm);
-}
-
-.ref-ribbon-item {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    padding: 4px 22px 4px 0;
-}
-
-.ref-ribbon-item:first-child { padding-left: 0; }
-
-.ref-ribbon-label {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .07em;
-    color: var(--text-muted);
-}
-
-.ref-ribbon-value {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-main);
-}
-
-.ref-ribbon-divider {
-    width: 1px;
-    height: 36px;
-    background: var(--border);
-    margin: 0 22px 0 0;
-    flex-shrink: 0;
-}
-
-/* ══════════════════════════════════════════════
-   BODY GRID (2 COLUMNS)
-══════════════════════════════════════════════ */
-.body-grid {
+.top-grid {
     display: grid;
-    grid-template-columns: 340px 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 20px;
-    align-items: start;
+    align-items: stretch;
+    margin-bottom: 20px;
 }
 
 @media (max-width: 900px) {
-    .body-grid {
+    .top-grid {
         grid-template-columns: 1fr;
     }
-}
-
-.col-left,
-.col-right {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
 }
 
 /* ══════════════════════════════════════════════
@@ -245,6 +200,14 @@ body {
     padding: 22px;
     border: 1px solid var(--border);
     box-shadow: var(--shadow-sm);
+}
+
+.card--full {
+    margin-bottom: 20px;
+}
+
+.card--full:last-child {
+    margin-bottom: 0;
 }
 
 .card-header {
@@ -377,8 +340,20 @@ body {
 /* ── Vitals Grid ──────────────────────────── */
 .vitals-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(4, 1fr);
     gap: 12px;
+}
+
+@media (max-width: 900px) {
+    .vitals-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .vitals-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .vital-tile {
@@ -421,11 +396,17 @@ body {
     font-weight: 500;
 }
 
-/* ── Notes Stack ───────────────────────────── */
-.notes-stack {
-    display: flex;
-    flex-direction: column;
+/* ── Clinical Notes Grid ───────────────────── */
+.notes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 14px;
+}
+
+@media (max-width: 700px) {
+    .notes-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .notes-block {
@@ -434,10 +415,16 @@ body {
     border-left: 3px solid transparent;
 }
 
-.notes-block--complaint { background: #fff7ed; border-color: #ea580c; }
-.notes-block--diagnosis { background: var(--red-light); border-color: var(--red); }
-.notes-block--treatment { background: var(--green-light); border-color: var(--green); }
-.notes-block--notes     { background: var(--blue-light); border-color: var(--blue); }
+.notes-block--wide {
+    grid-column: 1 / -1;
+}
+
+.notes-block--complaint { background: #fff7ed;         border-color: #ea580c; }
+.notes-block--hpi       { background: var(--primary-light); border-color: var(--primary); }
+.notes-block--exam      { background: var(--teal-light);    border-color: var(--teal); }
+.notes-block--diagnosis { background: var(--red-light);     border-color: var(--red); }
+.notes-block--treatment { background: var(--green-light);   border-color: var(--green); }
+.notes-block--notes     { background: var(--blue-light);    border-color: var(--blue); }
 
 .notes-block-label {
     display: flex;
@@ -452,15 +439,19 @@ body {
 }
 
 .notes-block--complaint .notes-block-label { color: #9a3412; }
+.notes-block--hpi       .notes-block-label { color: var(--primary-dark); }
+.notes-block--exam      .notes-block-label { color: var(--teal); }
 .notes-block--diagnosis .notes-block-label { color: #991b1b; }
 .notes-block--treatment .notes-block-label { color: #166534; }
-.notes-block--notes .notes-block-label     { color: #1e40af; }
+.notes-block--notes     .notes-block-label { color: #1e40af; }
 
 .notes-block-content {
     font-size: 14px;
     font-weight: 400;
     color: var(--text-main);
     line-height: 1.6;
+    white-space: pre-line;
+    word-break: break-word;
 }
 
 /* ── Follow-up Block ──────────────────────── */
@@ -595,6 +586,7 @@ body {
 @media (max-width: 640px) {
     .page-header {
         flex-direction: column;
+        align-items: flex-start;
     }
 
     .page-header-actions {
@@ -606,28 +598,20 @@ body {
         justify-content: center;
     }
 
-    .ref-ribbon {
-        gap: 10px;
-    }
-
-    .ref-ribbon-divider {
-        display: none;
-    }
-
-    .ref-ribbon-item {
-        padding: 4px 0;
-        min-width: 48%;
-    }
-
     .info-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .vitals-grid {
         grid-template-columns: 1fr;
     }
 
     .page-title {
         font-size: 20px;
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .record-table {
+        min-width: 620px;
     }
 }

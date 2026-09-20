@@ -32,13 +32,26 @@
             </thead>
             <tbody>
                 @forelse($appointments as $appointment)
+
+                @php
+                    // Use the model helper — works for both registered & walk-in patients
+                    $patientName  = $appointment->patientName();
+                    $patient      = $appointment->resolvedPatient();
+                    $patientEmail = $appointment->patientEmail() ?? 'N/A';
+                    $patientPhone = $patient?->contact_number ?? 'N/A';
+
+                    $doctorName   = $appointment->doctor
+                        ? $appointment->doctor->first_name . ' ' . $appointment->doctor->last_name
+                        : 'N/A';
+                @endphp
+
                 <tr>
-                    <td>{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}</td>
-                    <td>{{ $appointment->doctor->first_name }} {{ $appointment->doctor->last_name }}</td>
+                    <td>{{ $patientName }}</td>
+                    <td>{{ $doctorName }}</td>
                     <td>
                         {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('F j, Y') }}
                         at
-                        {{ \Carbon\Carbon::parse($appointment->appointment_time)->format('g:i A') }}
+                        {{ $appointment->formatted_time }}
                     </td>
                     <td>{{ $appointment->reason ?? '-' }}</td>
                     <td>
@@ -51,12 +64,12 @@
                         </form>
 
                         <!-- REJECT BUTTON -->
-                        <button 
+                        <button
                             class="btn-reject openRejectModal"
                             data-id="{{ $appointment->id }}"
-                            data-name="{{ $appointment->patient->first_name }} {{ $appointment->patient->last_name }}"
-                            data-email="{{ $appointment->patient->email }}"
-                            data-phone="{{ $appointment->patient->contact_number ?? 'N/A' }}"
+                            data-name="{{ $patientName }}"
+                            data-email="{{ $patientEmail }}"
+                            data-phone="{{ $patientPhone }}"
                         >
                             Reject
                         </button>
@@ -84,7 +97,6 @@
         <p><strong>Email:</strong> <span id="modalEmail"></span></p>
         <p><strong>Phone:</strong> <span id="modalPhone"></span></p>
 
-        <!-- IMPORTANT FIX HERE -->
         <form id="rejectForm" method="POST" data-url="{{ route('admin.appointments.reject', ':id') }}">
             @csrf
 
@@ -102,37 +114,26 @@
 <!-- ================= JS ================= -->
 <script>
 document.querySelectorAll('.openRejectModal').forEach(button => {
-    button.addEventListener('click', function() {
+    button.addEventListener('click', function () {
+        document.getElementById('modalName').innerText  = this.dataset.name;
+        document.getElementById('modalEmail').innerText = this.dataset.email;
+        document.getElementById('modalPhone').innerText = this.dataset.phone;
 
-        const id = this.dataset.id;
-        const name = this.dataset.name;
-        const email = this.dataset.email;
-        const phone = this.dataset.phone;
-
-        document.getElementById('modalName').innerText = name;
-        document.getElementById('modalEmail').innerText = email;
-        document.getElementById('modalPhone').innerText = phone;
-
-        // ✅ FIXED ROUTE (IMPORTANT)
-        let form = document.getElementById('rejectForm');
-        let url = form.dataset.url.replace(':id', id);
-        form.action = url;
+        const form = document.getElementById('rejectForm');
+        form.action = form.dataset.url.replace(':id', this.dataset.id);
 
         document.getElementById('rejectModal').style.display = 'flex';
     });
 });
 
-document.getElementById('closeModal').addEventListener('click', function() {
+document.getElementById('closeModal').addEventListener('click', function () {
     document.getElementById('rejectModal').style.display = 'none';
 });
 
-// close pag click outside
-window.onclick = function(event) {
-    let modal = document.getElementById('rejectModal');
-    if (event.target == modal) {
-        modal.style.display = "none";
-    }
-}
+window.addEventListener('click', function (e) {
+    const modal = document.getElementById('rejectModal');
+    if (e.target === modal) modal.style.display = 'none';
+});
 </script>
 
 <!-- ================= CSS ================= -->
@@ -140,28 +141,24 @@ window.onclick = function(event) {
 .modal {
     display: none;
     position: fixed;
-    top: 0; 
-    left: 0;
-    width: 100%; 
-    height: 100%;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     background: rgba(0,0,0,0.5);
     justify-content: center;
     align-items: center;
+    z-index: 1000;
 }
-
 .modal-content {
     background: #fff;
     padding: 20px;
     width: 400px;
     border-radius: 8px;
 }
-
 .modal textarea {
     width: 100%;
     height: 80px;
     margin-top: 5px;
 }
-
 .modal-actions {
     margin-top: 15px;
     display: flex;

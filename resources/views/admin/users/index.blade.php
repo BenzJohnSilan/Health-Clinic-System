@@ -11,27 +11,44 @@
     <!-- ================= PAGE HEADER ================= -->
     <div class="page-header">
         <h1>Manage Users</h1>
-        <button id="openAddModal" class="btn-primary">+ Add User</button>
+        <button id="openAddModal" class="btn-add-user" type="button">
+            <i class="fa-solid fa-plus"></i> Add User
+        </button>
     </div>
 
     <!-- ================= SEARCH & FILTER ================= -->
-    <div class="filter-bar">
-        <input type="text" id="searchInput" placeholder="Search user...">
+    <form method="GET" action="{{ route('admin.users.index') }}" class="filter-bar">
+        <input
+            type="text"
+            name="search"
+            class="filter-input"
+            placeholder="Search name, username, or email..."
+            value="{{ request('search') }}">
 
-        <select id="roleFilter">
+        <select name="role" class="filter-input">
             <option value="">All Roles</option>
-            <option value="Admin">Admin</option>
-            <option value="Doctor">Doctor</option>
-            <option value="Staff">Staff</option>
-            <option value="Patient">Patient</option>
+            <option value="Admin"   {{ request('role') == 'Admin'   ? 'selected' : '' }}>Admin</option>
+            <option value="Doctor"  {{ request('role') == 'Doctor'  ? 'selected' : '' }}>Doctor</option>
+            <option value="Staff"   {{ request('role') == 'Staff'   ? 'selected' : '' }}>Staff</option>
+            <option value="Patient" {{ request('role') == 'Patient' ? 'selected' : '' }}>Patient</option>
         </select>
 
-        <select id="statusFilter">
+        <select name="status" class="filter-input">
             <option value="">All Status</option>
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
+            <option value="Active"   {{ request('status') == 'Active'   ? 'selected' : '' }}>Active</option>
+            <option value="Inactive" {{ request('status') == 'Inactive' ? 'selected' : '' }}>Inactive</option>
         </select>
-    </div>
+
+        <button type="submit" class="btn-filter">
+            <i class="fa-solid fa-filter"></i> Filter
+        </button>
+
+        @if(request('search') || request('role') || request('status'))
+            <a href="{{ route('admin.users.index') }}" class="btn-clear-filter">
+                Clear
+            </a>
+        @endif
+    </form>
 
     <!-- ================= SUCCESS MESSAGE ================= -->
     @if(session('success'))
@@ -432,6 +449,7 @@
     <!-- ================================================================
          USERS TABLE
     ================================================================ -->
+    <div class="table-container">
     <table class="users-table">
         <thead>
             <tr>
@@ -447,12 +465,7 @@
         </thead>
         <tbody>
         @forelse($users as $user)
-            <tr class="user-row"
-                data-name="{{ strtolower($user->first_name . ' ' . $user->last_name) }}"
-                data-username="{{ strtolower($user->username) }}"
-                data-email="{{ strtolower($user->email) }}"
-                data-role="{{ $user->role }}"
-                data-status="{{ $user->status }}">
+            <tr>
                 <td>{{ $user->id }}</td>
                 <td>
                     @if($user->avatar)
@@ -473,7 +486,7 @@
                 </td>
                 <td><span class="badge badge--role badge--{{ strtolower($user->role) }}">{{ $user->role }}</span></td>
                 <td><span class="badge badge--{{ strtolower($user->status) }}">{{ $user->status }}</span></td>
-                <td>
+                <td class="action-cell">
                     <button type="button" class="editBtn"
                         data-id="{{ $user->id }}"
                         data-first="{{ $user->first_name }}"
@@ -492,22 +505,108 @@
                         Edit
                     </button>
 
-                    <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" style="display:inline;">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" onclick="return confirm('Delete this user?')">Delete</button>
-                    </form>
+                    {{-- =====================================================
+                         DELETE BUTTON
+                         Disabled + tooltip kung Admin ang role ng user.
+                         Ito ay frontend-only protection. Para sa mas
+                         mataas na seguridad, i-check din sa Controller.
+                    ====================================================== --}}
+                    @if($user->role === 'Admin')
+                        <button type="button"
+                                class="btn-delete-disabled"
+                                disabled
+                                title="Hindi mabura ang Admin account">
+                            Delete
+                        </button>
+                    @else
+                        <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" style="display:inline;">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" onclick="return confirm('Delete this user?')">Delete</button>
+                        </form>
+                    @endif
+
                 </td>
             </tr>
         @empty
             <tr>
                 <td colspan="8" style="text-align:center;color:#6b7280;padding:30px;">
-                    No approved users found.
+                    @if(request('search') || request('role') || request('status'))
+                        No users match your search/filters.
+                    @else
+                        No approved users found.
+                    @endif
                 </td>
             </tr>
         @endforelse
         </tbody>
     </table>
+    </div><!-- /table-container -->
+
+    <!-- ================= PAGINATION ================= -->
+    <div class="pagination-wrapper">
+        <div class="pagination-info">
+            @if($users->total() > 0)
+                Showing <strong>{{ $users->firstItem() }}–{{ $users->lastItem() }}</strong>
+                of <strong>{{ $users->total() }}</strong> result{{ $users->total() !== 1 ? 's' : '' }}
+            @else
+                No results found
+            @endif
+        </div>
+
+        <nav class="pagination-nav" aria-label="Pagination">
+
+            {{-- Previous --}}
+            @if($users->onFirstPage())
+                <span class="page-btn disabled">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </span>
+            @else
+                <a class="page-btn" href="{{ $users->previousPageUrl() }}">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </a>
+            @endif
+
+            {{-- Page Numbers --}}
+            @php
+                $currentPage = $users->currentPage();
+                $lastPage    = $users->lastPage();
+
+                $pages = collect(range(1, $lastPage))->filter(function ($p) use ($currentPage, $lastPage) {
+                    return $p === 1
+                        || $p === $lastPage
+                        || abs($p - $currentPage) <= 2;
+                })->values();
+            @endphp
+
+            @php $prev = null; @endphp
+            @foreach($pages as $page)
+                @if($prev !== null && $page - $prev > 1)
+                    <span class="page-ellipsis">…</span>
+                @endif
+
+                @if($page === $currentPage)
+                    <span class="page-btn active">{{ $page }}</span>
+                @else
+                    <a class="page-btn" href="{{ $users->url($page) }}">{{ $page }}</a>
+                @endif
+
+                @php $prev = $page; @endphp
+            @endforeach
+
+            {{-- Next --}}
+            @if($users->hasMorePages())
+                <a class="page-btn" href="{{ $users->nextPageUrl() }}">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            @else
+                <span class="page-btn disabled">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </span>
+            @endif
+
+        </nav>
+    </div>
 
 </div><!-- /container -->
 
@@ -661,33 +760,6 @@ document.querySelectorAll('.editBtn').forEach(btn => {
     };
 });
 
-/* ------------------------------------------------------------------
-   SEARCH + FILTER
------------------------------------------------------------------- */
-const searchInput  = document.getElementById('searchInput');
-const roleFilter   = document.getElementById('roleFilter');
-const statusFilter = document.getElementById('statusFilter');
-const rows         = document.querySelectorAll('.user-row');
-
-function filterUsers() {
-    const search = searchInput.value.toLowerCase().trim();
-    const role   = roleFilter.value;
-    const status = statusFilter.value;
-
-    rows.forEach(row => {
-        const matchSearch = row.dataset.name.includes(search)
-                         || row.dataset.username.includes(search)
-                         || row.dataset.email.includes(search);
-        const matchRole   = !role   || row.dataset.role   === role;
-        const matchStatus = !status || row.dataset.status === status;
-
-        row.style.display = (matchSearch && matchRole && matchStatus) ? '' : 'none';
-    });
-}
-
-searchInput.addEventListener('input',  filterUsers);
-roleFilter.addEventListener('change',  filterUsers);
-statusFilter.addEventListener('change',filterUsers);
 </script>
 
 @endsection

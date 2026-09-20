@@ -9,6 +9,14 @@
 
 {{-- ── Action bar (hidden on print) ── --}}
 <div class="rx-action-bar no-print">
+    <a href="{{ url()->previous() }}" class="btn-rx-back">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+             stroke="currentColor" stroke-width="2" width="15" height="15">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Back
+    </a>
+
     <button class="btn-rx-print" onclick="window.print()">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
              stroke="currentColor" stroke-width="2" width="15" height="15">
@@ -136,8 +144,11 @@
         </div>
 
         <div class="rx-sig-block">
-            {{-- Signature placeholder line --}}
-            <div class="rx-sig-line"></div>
+            <div class="rx-sig-line">
+                @if($appointment->doctor?->signature)
+                    <img src="{{ asset('storage/'.$appointment->doctor->signature) }}" alt="Doctor's Signature">
+                @endif
+            </div>
             <div class="rx-sig-name">
                 Dr. {{ $appointment->doctor->first_name }} {{ $appointment->doctor->last_name }}, MD
             </div>
@@ -152,5 +163,15 @@
     </div>{{-- /.rx-footer-row --}}
 
 </div>{{-- /#rx-printable --}}
+
+@if($autoprint ?? false)
+<script>
+    // Reached from the Medical Report's "Print Prescription" button —
+    // open the browser print dialog automatically.
+    window.addEventListener('load', function () {
+        window.print();
+    });
+</script>
+@endif
 
 @endsection

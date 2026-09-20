@@ -139,6 +139,15 @@ class AdminController extends Controller
     }
 
     /**
+     * ================= ACCOUNT SETTINGS =================
+     */
+    public function settings()
+    {
+        $admin = Auth::user();
+        return view('admin.account-settings', compact('admin'));
+    }
+
+    /**
      * ================= PROFILE =================
      */
     public function profile()
@@ -181,6 +190,7 @@ class AdminController extends Controller
         UserLog::create([
             'user_id' => auth()->id(),
             'action'  => 'Updated Profile',
+            'module'  => 'Account',
             'details' => 'Admin updated profile'
         ]);
 
@@ -193,7 +203,7 @@ class AdminController extends Controller
 
         $admin->save();
 
-        return redirect()->route('admin.profile')
+        return redirect()->route('admin.settings')
             ->with('success', 'Profile updated successfully.');
     }
 
@@ -214,10 +224,39 @@ class AdminController extends Controller
         UserLog::create([
             'user_id' => auth()->id(),
             'action'  => 'Removed Avatar',
+            'module'  => 'Account',
             'details' => 'Admin removed profile picture'
         ]);
 
         return back()->with('success', 'Profile picture removed successfully.');
+    }
+
+    /**
+     * ================= UPDATE AVATAR (independent from profile form) =================
+     */
+    public function updateAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        $admin = Auth::user();
+
+        if ($admin->avatar && Storage::disk('public')->exists($admin->avatar)) {
+            Storage::disk('public')->delete($admin->avatar);
+        }
+
+        $admin->avatar = $request->file('avatar')->store('avatars', 'public');
+        $admin->save();
+
+        UserLog::create([
+            'user_id' => auth()->id(),
+            'action'  => 'Updated Profile Picture',
+            'module'  => 'Account',
+            'details' => 'Admin updated profile picture'
+        ]);
+
+        return back()->with('success', 'Profile picture updated successfully.');
     }
 
     /**
@@ -242,6 +281,7 @@ class AdminController extends Controller
         UserLog::create([
             'user_id' => auth()->id(),
             'action'  => 'Changed Password',
+            'module'  => 'Account',
             'details' => 'Admin changed password'
         ]);
 
@@ -281,6 +321,7 @@ class AdminController extends Controller
         UserLog::create([
             'user_id' => auth()->id(),
             'action'  => 'Created User',
+            'module'  => 'Account',
             'details' => $user->role . ' - ' . $user->username
         ]);
 
@@ -314,6 +355,7 @@ class AdminController extends Controller
         UserLog::create([
             'user_id' => auth()->id(),
             'action'  => 'Approved User',
+            'module'  => 'Account',
             'details' => 'User ID: ' . $user->id
         ]);
 
@@ -336,6 +378,7 @@ class AdminController extends Controller
         UserLog::create([
             'user_id' => auth()->id(),
             'action'  => 'Rejected User',
+            'module'  => 'Account',
             'details' => 'User ID: ' . $user->id . ' | Reason: ' . $request->reason
         ]);
 

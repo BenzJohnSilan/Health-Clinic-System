@@ -11,16 +11,25 @@ use Illuminate\Http\Request;
 
 class PrescriptionController extends Controller
 {
+    /**
+     * Doctor creates a prescription. This ONLY records what was
+     * written — it never touches medicine inventory. Stock is deducted
+     * exclusively by StaffPrescriptionController::dispense() once
+     * Staff actually releases the medicine (see Section 10 of the
+     * workflow spec: "The Doctor must not manage or deduct medicine
+     * inventory").
+     */
     public function store(Request $request)
     {
         $isManual = $request->medicine_id === 'manual';
 
         $request->validate([
-            'appointment_id'      => 'required',
+            'appointment_id'      => 'required|exists:appointments,id',
             'medicine_id'         => 'required',
             'dosage'              => 'required|string',
             'frequency'           => 'required|string',
             'duration'            => 'required|string',
+            'instructions'        => 'nullable|string|max:255',
 
             // Only required when NOT manual
             'quantity_prescribed' => $isManual
@@ -28,8 +37,19 @@ class PrescriptionController extends Controller
                                         : 'required|integer|min:1',
         ]);
 
+        $appointment = Appointment::where('doctor_id', auth()->id())
+            ->findOrFail($request->appointment_id);
+
+        // A prescription may only be written while the consultation is
+        // actively In Progress — matches the same window the
+        // consultation form itself is editable in.
+        if ($appointment->status !== 'In Progress') {
+            return back()->with('error', 'Prescriptions can only be added while the consultation is In Progress.');
+        }
+
         // =====================================================
-        // MANUAL PRESCRIPTION
+        // MANUAL PRESCRIPTION (no inventory link — never billed,
+        // never dispensable against stock)
         // =====================================================
         if ($isManual) {
 
@@ -38,14 +58,19 @@ class PrescriptionController extends Controller
             ]);
 
             Prescription::create([
-                'appointment_id'       => $request->appointment_id,
+                'appointment_id'       => $appointment->id,
                 'medicine_id'          => null,
                 'manual_medicine_name' => $request->manual_medicine_name,
                 'dosage'               => $request->dosage,
                 'frequency'            => $request->frequency,
                 'duration'             => $request->duration,
+                'instructions'         => $request->instructions,
                 'quantity_prescribed'  => $request->quantity_prescribed ?? 0,
             ]);
+
+            // Stay on Step 3 (Prescription & Review) — never bounce back
+            // to Step 1 after adding a prescription.
+            session(["consultation_step_{$appointment->id}" => 3]);
 
             return back()->with(
                 'success',
@@ -54,46 +79,24 @@ class PrescriptionController extends Controller
         }
 
         // =====================================================
-        // NORMAL MEDICINE FLOW
+        // NORMAL MEDICINE FLOW — no stock check here. Availability is
+        // checked at dispensing time by Staff, who can also see the
+        // live stock number before deciding whether/how much to
+        // release.
         // =====================================================
         $medicine = Medicine::findOrFail($request->medicine_id);
 
-        // Check stock
-        if ($medicine->quantity < $request->quantity_prescribed) {
-
-            return back()->with(
-                'error',
-                'Not enough stock for this medicine!'
-            );
-        }
-
-        // Save prescription
         Prescription::create([
-            'appointment_id'      => $request->appointment_id,
+            'appointment_id'      => $appointment->id,
             'medicine_id'         => $medicine->id,
             'dosage'              => $request->dosage,
             'frequency'           => $request->frequency,
             'duration'            => $request->duration,
+            'instructions'        => $request->instructions,
             'quantity_prescribed' => $request->quantity_prescribed,
         ]);
 
-        // Deduct stock
-        $medicine->quantity -= $request->quantity_prescribed;
-
-        // Update status
-        $medicine->status = match (true) {
-
-            $medicine->quantity <= 0
-                => 'Out of Stock',
-
-            $medicine->quantity <= 10
-                => 'Low Stock',
-
-            default
-                => 'Available',
-        };
-
-        $medicine->save();
+        session(["consultation_step_{$appointment->id}" => 3]);
 
         return back()->with(
             'success',
@@ -101,37 +104,29 @@ class PrescriptionController extends Controller
         );
     }
 
+    /**
+     * Delete a prescription the Doctor hasn't finalized yet. Never
+     * touches inventory (creation no longer deducts it either). Blocked
+     * once Staff has already dispensed it — deleting a dispensed
+     * prescription would erase the only record of medicine that has
+     * physically left the clinic.
+     */
     public function destroy(Prescription $prescription)
     {
-        // =====================================================
-        // RESTORE STOCK (if normal medicine)
-        // =====================================================
-        if ($prescription->medicine_id) {
+        if ($prescription->dispense_status === 'Dispensed') {
+            return back()->with('error', 'This prescription has already been dispensed and can no longer be deleted.');
+        }
 
-            $medicine = $prescription->medicine;
+        $appointment = Appointment::where('doctor_id', auth()->id())
+            ->findOrFail($prescription->appointment_id);
 
-            if ($medicine) {
-
-                $medicine->quantity +=
-                    $prescription->quantity_prescribed;
-
-                $medicine->status = match (true) {
-
-                    $medicine->quantity <= 0
-                        => 'Out of Stock',
-
-                    $medicine->quantity <= 10
-                        => 'Low Stock',
-
-                    default
-                        => 'Available',
-                };
-
-                $medicine->save();
-            }
+        if ($appointment->status !== 'In Progress') {
+            return back()->with('error', 'Prescriptions can only be deleted while the consultation is In Progress.');
         }
 
         $prescription->delete();
+
+        session(["consultation_step_{$appointment->id}" => 3]);
 
         return back()->with(
             'success',
@@ -145,6 +140,7 @@ class PrescriptionController extends Controller
     public function print($appointmentId)
     {
         $appointment = Appointment::with([
+            'doctor',
             'patient',
             'walkinPatient',
             'prescriptions.medicine'

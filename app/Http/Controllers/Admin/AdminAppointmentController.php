@@ -2,186 +2,83 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Staff\StaffAppointmentController;
 use App\Models\Appointment;
-use App\Models\User;
 use App\Models\UserLog;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\AppointmentStatusMail;
 
-class AdminAppointmentController extends Controller
+/**
+ * Admin's single, centralized Appointments page.
+ *
+ * This intentionally extends the Staff controller instead of
+ * re-implementing appointment management: the list/search/filter
+ * query, the status tabs, and every workflow action (Approve, Reject,
+ * Cancel, Reschedule, Check In, No Show) are all inherited as-is from
+ * StaffAppointmentController. Admin automatically has full access to
+ * every one of those actions because User::hasPermission() already
+ * bypasses the permission system entirely for the Admin role (see
+ * App\Models\User::hasPermission()), so nothing here needs its own
+ * authorization logic or a parallel permission set.
+ *
+ * Only what's genuinely different for Admin lives in this class:
+ *  - index()/pending() point at the Admin-branded view/route instead
+ *    of the Staff one (via the small indexView()/indexRoute() hooks
+ *    on the parent).
+ *  - show() renders a simpler, read-only Admin appointment details
+ *    page (no prescriptions/dispensing — that's a Staff/pharmacy
+ *    workflow, not part of Admin's Appointments page).
+ *  - destroy() is Admin-only; Staff never gets a Delete action.
+ *
+ * Appointment CREATION is deliberately NOT here — that stays on
+ * Admin -> Patient List -> Schedule Appointment, handled entirely by
+ * AdminPatientController::scheduleAppointment(). This controller is
+ * view + manage only.
+ */
+class AdminAppointmentController extends StaffAppointmentController
 {
-    /**
-     * Display ONLY approved appointments.
-     */
-    public function index()
+    protected function indexView(): string
     {
-        $appointments = Appointment::with(['patient', 'doctor'])
-            ->where('status', 'Approved')
-            ->latest()
-            ->get();
-
-        $patients = User::where('role', 'patient')->get();
-        $doctors  = User::where('role', 'doctor')->get();
-
-        return view('admin.appointments', compact('appointments', 'patients', 'doctors'));
+        return 'admin.appointments';
     }
 
-    /**
-     * Display all pending appointments.
-     */
-    public function pending()
+    protected function indexRoute(): string
     {
-        $appointments = Appointment::with(['patient', 'doctor'])
-            ->where('status', 'Pending')
-            ->latest()
-            ->get();
-
-        return view('admin.pending-appointments', compact('appointments'));
+        return 'admin.appointments.index';
     }
 
+    // ================= SHOW APPOINTMENT DETAILS (read-only) =================
     /**
-     * Store a newly created appointment.
+     * A simpler details view than Staff's — just the patient info,
+     * schedule, and reason. No prescriptions/dispensing section: that
+     * belongs to the Staff Check-In -> Dispensing workflow, not to
+     * Admin's Appointments page.
      */
-    public function store(Request $request)
+    public function show($id)
     {
-        $validated = $request->validate([
-            'patient_id'       => 'required|exists:users,id',
-            'doctor_id'        => 'required|exists:users,id',
-            'appointment_date' => 'required|date',
-            'appointment_time' => 'required',
-            'status'           => 'required|string',
-            'reason'           => 'nullable|string',
-        ]);
+        $appointment = Appointment::with(['patient', 'walkinPatient', 'doctor'])->findOrFail($id);
 
-        $appointment = Appointment::create($validated);
-
-        // ================= LOG =================
-        UserLog::create([
-            'user_id' => auth()->id(),
-            'action'  => 'Created Appointment',
-            'details' => 'Appointment ID: ' . $appointment->id
-        ]);
-
-        return redirect()->route('admin.appointments.index')
-                         ->with('success', 'Appointment added successfully!');
+        return view('admin.appointment-show', compact('appointment'));
     }
 
+    // ================= DELETE APPOINTMENT (Admin-only) =================
     /**
-     * Show edit form.
-     */
-    public function edit($id)
-    {
-        $appointment = Appointment::findOrFail($id);
-
-        $patients = User::where('role', 'patient')->get();
-        $doctors  = User::where('role', 'doctor')->get();
-
-        return view('admin.edit-appointment', compact('appointment', 'patients', 'doctors'));
-    }
-
-    /**
-     * Update appointment.
-     */
-    public function update(Request $request, $id)
-    {
-        $appointment = Appointment::findOrFail($id);
-
-        $validated = $request->validate([
-            'patient_id'       => 'required|exists:users,id',
-            'doctor_id'        => 'required|exists:users,id',
-            'appointment_date' => 'required|date',
-            'appointment_time' => 'required',
-            'status'           => 'required|string',
-            'reason'           => 'nullable|string',
-        ]);
-
-        $appointment->update($validated);
-
-        // ================= LOG =================
-        UserLog::create([
-            'user_id' => auth()->id(),
-            'action'  => 'Updated Appointment',
-            'details' => 'Appointment ID: ' . $appointment->id
-        ]);
-
-        return redirect()->route('admin.appointments.index')
-                         ->with('success', 'Appointment updated successfully!');
-    }
-
-    /**
-     * Delete appointment.
+     * Staff has no equivalent action — Delete is only ever offered to
+     * Admin, straight from the three-dot menu on the Appointments page.
      */
     public function destroy($id)
     {
         $appointment = Appointment::findOrFail($id);
 
-        // ================= LOG =================
         UserLog::create([
             'user_id' => auth()->id(),
             'action'  => 'Deleted Appointment',
-            'details' => 'Appointment ID: ' . $appointment->id
+            'module'  => 'Appointments',
+            'details' => 'Deleted appointment ' . $appointment->reference_no
+                       . ' for ' . $appointment->patientName() . '.',
         ]);
 
         $appointment->delete();
 
         return redirect()->route('admin.appointments.index')
-                         ->with('success', 'Appointment deleted successfully!');
-    }
-
-    /**
-     * Approve appointment + EMAIL
-     */
-    public function approve($id)
-    {
-        $appointment = Appointment::with(['patient', 'doctor'])->findOrFail($id);
-
-        $appointment->update([
-            'status' => 'Approved'
-        ]);
-
-        // ================= LOG =================
-        UserLog::create([
-            'user_id' => auth()->id(),
-            'action'  => 'Approved Appointment',
-            'details' => 'Appointment ID: ' . $appointment->id
-        ]);
-
-        // SEND EMAIL
-        Mail::to($appointment->patient->email)
-            ->send(new AppointmentStatusMail($appointment, 'Approved'));
-
-        return redirect()->back()->with('success', 'Appointment approved successfully!');
-    }
-
-    /**
-     * Reject appointment WITH reason + EMAIL
-     */
-    public function reject(Request $request, $id)
-    {
-        $appointment = Appointment::with(['patient', 'doctor'])->findOrFail($id);
-
-        $request->validate([
-            'reason' => 'required|string|max:255'
-        ]);
-
-        $appointment->update([
-            'status' => 'Rejected',
-            'reason' => $request->reason
-        ]);
-
-        // ================= LOG =================
-        UserLog::create([
-            'user_id' => auth()->id(),
-            'action'  => 'Rejected Appointment',
-            'details' => 'Appointment ID: ' . $appointment->id . ' | Reason: ' . $request->reason
-        ]);
-
-        // SEND EMAIL
-        Mail::to($appointment->patient->email)
-            ->send(new AppointmentStatusMail($appointment, 'Rejected'));
-
-        return redirect()->back()->with('success', 'Appointment rejected successfully!');
+            ->with('success', 'Appointment deleted successfully!');
     }
 }

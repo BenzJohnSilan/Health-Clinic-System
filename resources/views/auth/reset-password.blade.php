@@ -351,6 +351,19 @@ body {
 
 .input-wrap input::placeholder { color: #bbb; }
 
+/* Disabled/readonly email field */
+.input-wrap input[readonly] {
+    background: #f0eeff;
+    color: #888;
+    cursor: not-allowed;
+    border-color: rgba(106,17,203,0.1);
+}
+
+.input-wrap input[readonly]:focus {
+    border-color: rgba(106,17,203,0.1);
+    box-shadow: none;
+}
+
 .input-icon {
     position: absolute;
     left: 16px;
@@ -422,6 +435,28 @@ body {
 }
 
 .submit-btn:active { transform: translateY(0); }
+
+/* Disabled submit button state */
+.submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Strength error message */
+.strength-error {
+    display: none;
+    font-size: 12px;
+    color: #b91c1c;
+    margin: -14px 0 14px;
+    padding: 8px 12px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+}
+
+.strength-error.visible { display: block; }
 
 /* Back link */
 .back-login-link {
@@ -517,7 +552,7 @@ body {
 
             <ul class="tips">
                 <li><i class='bx bx-check-circle'></i> At least 8 characters long</li>
-                <li><i class='bx bx-check-circle'></i> Include uppercase & lowercase letters</li>
+                <li><i class='bx bx-check-circle'></i> Include uppercase &amp; lowercase letters</li>
                 <li><i class='bx bx-check-circle'></i> Add numbers or special characters</li>
                 <li><i class='bx bx-check-circle'></i> Don't reuse old passwords</li>
             </ul>
@@ -549,22 +584,28 @@ body {
             @endif
         </div>
 
-        <form method="POST" action="{{ route('password.update') }}">
+        <form method="POST" action="{{ route('password.update') }}" id="resetForm">
             @csrf
             <input type="hidden" name="token" value="{{ $token }}">
 
-            <!-- EMAIL -->
+            <!-- EMAIL — readonly, cannot be changed -->
             <label class="input-label">Email Address</label>
             <div class="input-wrap">
                 <i class='bx bxs-envelope input-icon'></i>
-                <input type="email" name="email" placeholder="Your registered email" required value="{{ request()->email }}">
+                <input
+                    type="email"
+                    name="email"
+                    readonly
+                    value="{{ $email ?? request()->email ?? old('email') }}"
+                    tabindex="-1"
+                >
             </div>
 
             <!-- NEW PASSWORD -->
             <label class="input-label">New Password</label>
             <div class="input-wrap">
                 <i class='bx bxs-lock-alt input-icon'></i>
-                <input type="password" id="password" name="password" placeholder="Enter new password" required>
+                <input type="password" id="password" name="password" placeholder="Enter new password" required autocomplete="new-password">
                 <i class='bx bxs-show input-toggle' id="togglePassword"></i>
             </div>
 
@@ -577,15 +618,21 @@ body {
                 <span id="strengthLabel"></span>
             </div>
 
+            <!-- Strength error shown on submit attempt -->
+            <div class="strength-error" id="strengthError">
+                <i class='bx bx-error-circle'></i>
+                Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.
+            </div>
+
             <!-- CONFIRM PASSWORD -->
             <label class="input-label">Confirm Password</label>
             <div class="input-wrap">
                 <i class='bx bxs-lock input-icon'></i>
-                <input type="password" id="password_confirmation" name="password_confirmation" placeholder="Re-enter new password" required>
+                <input type="password" id="password_confirmation" name="password_confirmation" placeholder="Re-enter new password" required autocomplete="new-password">
                 <i class='bx bxs-show input-toggle' id="toggleConfirm"></i>
             </div>
 
-            <button type="submit" class="submit-btn">
+            <button type="submit" class="submit-btn" id="submitBtn">
                 <i class='bx bx-check-shield'></i> Reset Password
             </button>
         </form>
@@ -605,8 +652,8 @@ togglePassword.addEventListener('click', () => {
     togglePassword.classList.toggle('bxs-hide',  isHidden);
 });
 
-const toggleConfirm  = document.getElementById('toggleConfirm');
-const confirmInput   = document.getElementById('password_confirmation');
+const toggleConfirm = document.getElementById('toggleConfirm');
+const confirmInput  = document.getElementById('password_confirmation');
 
 toggleConfirm.addEventListener('click', () => {
     const isHidden = confirmInput.type === 'password';
@@ -622,26 +669,60 @@ const bars   = [
     document.getElementById('bar3'),
     document.getElementById('bar4'),
 ];
-const label  = document.getElementById('strengthLabel');
+const label        = document.getElementById('strengthLabel');
+const strengthError = document.getElementById('strengthError');
+const submitBtn    = document.getElementById('submitBtn');
+
+const colors = ['', '#ef4444', '#f97316', '#eab308', '#22c55e'];
+const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+
+function getScore(val) {
+    let score = 0;
+    if (val.length >= 8)           score++;
+    if (/[A-Z]/.test(val))         score++;
+    if (/[0-9]/.test(val))         score++;
+    if (/[^A-Za-z0-9]/.test(val))  score++;
+    return score;
+}
+
+function isStrongEnough(val) {
+    // Must meet ALL 4 criteria
+    return (
+        val.length >= 8 &&
+        /[A-Z]/.test(val) &&
+        /[a-z]/.test(val) &&
+        /[0-9]/.test(val) &&
+        /[^A-Za-z0-9]/.test(val)
+    );
+}
 
 passwordInput.addEventListener('input', () => {
     const val   = passwordInput.value;
-    let score   = 0;
-
-    if (val.length >= 8)            score++;
-    if (/[A-Z]/.test(val))          score++;
-    if (/[0-9]/.test(val))          score++;
-    if (/[^A-Za-z0-9]/.test(val))   score++;
-
-    const colors = ['', '#ef4444', '#f97316', '#eab308', '#22c55e'];
-    const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+    const score = getScore(val);
 
     bars.forEach((bar, i) => {
         bar.style.background = i < score ? colors[score] : '#e8e8e8';
     });
 
-    label.textContent      = val.length ? labels[score] : '';
-    label.style.color      = colors[score];
+    label.textContent = val.length ? labels[score] : '';
+    label.style.color = colors[score];
+
+    // Hide strength error while user is typing
+    strengthError.classList.remove('visible');
+});
+
+/* ===== Block submit if password is not strong ===== */
+document.getElementById('resetForm').addEventListener('submit', function (e) {
+    const val = passwordInput.value;
+
+    if (!isStrongEnough(val)) {
+        e.preventDefault();
+        strengthError.classList.add('visible');
+        passwordInput.focus();
+        return;
+    }
+
+    strengthError.classList.remove('visible');
 });
 </script>
 

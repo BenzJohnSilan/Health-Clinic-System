@@ -22,6 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
             // ✅ ADD THIS: role-based middleware
             'role' => \App\Http\Middleware\CheckRole::class,
+
+            // Granular feature-permission middleware (Manage Permissions)
+            'permission' => \App\Http\Middleware\CheckPermission::class,
         ]);
 
     })

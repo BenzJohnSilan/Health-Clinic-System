@@ -224,9 +224,15 @@ body {
 .sidebar.collapsed { width: 68px; }
 
 .sidebar.collapsed .brand-text,
-.sidebar.collapsed .nav-section-label,
 .sidebar.collapsed .sidebar-nav-wrapper a span,
 .sidebar.collapsed .user-info { display: none; }
+
+/* Keep the section label's box (height, padding, margin) exactly as it is
+   expanded — only hide the text itself. Using display:none here removed
+   the whole row and shifted every icon below it upward. */
+.sidebar.collapsed .nav-section-label {
+    color: transparent;
+}
 
 .sidebar.collapsed .sidebar-brand { justify-content: center; padding: 20px 10px; }
 .sidebar.collapsed .sidebar-nav-wrapper a { justify-content: center; padding: 12px; gap: 0; }
@@ -803,8 +809,26 @@ body {
     .sidebar.open { left: 0; }
     .main-content { margin-left: 0; }
     .main-content.shift { margin-left: 260px; }
+    .main-content.collapsed { margin-left: 0; }
     .header-date { display: none; }
     .notif-panel { width: 300px; right: -40px; }
+}
+
+/* Disables the width/margin transition for the first frame after a page
+   load, while JS applies the saved collapsed state. Without this, the
+   browser can render one frame at the default (expanded) width before the
+   'collapsed' class lands, and the transition below animates that brief
+   flash — it looks like the sidebar "opens" on every navigation. */
+.no-transition {
+    transition: none !important;
+}
+
+/* ================= REDUCED MOTION ================= */
+@media (prefers-reduced-motion: reduce) {
+    .sidebar,
+    .main-content {
+        transition: none;
+    }
 }
 
 /* ================= LOGOUT MODAL ================= */

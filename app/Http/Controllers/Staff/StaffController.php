@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
+use App\Models\UserLog;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -14,6 +15,7 @@ class StaffController extends Controller
     // ================= DASHBOARD =================
     public function dashboard()
     {
+        $staff = auth()->user();
         $today = Carbon::today();
 
         $totalAppointments     = Appointment::count();
@@ -22,25 +24,39 @@ class StaffController extends Controller
         $completedAppointments = Appointment::where('status', 'Completed')->count();
         $cancelledAppointments = Appointment::where('status', 'Cancelled')->count();
 
-        $todayAppointments = Appointment::with(['patient', 'doctor'])
-            ->whereDate('appointment_date', $today)
-            ->latest()
-            ->get();
+        // Today's appointments, earliest first — only the next 5 are shown
+        // on the dashboard card so it stays compact; the total is fetched
+        // separately (count only) so the "Showing X of Y" text underneath
+        // stays accurate even though the display list itself is limited.
+        $totalTodayAppointments = Appointment::whereDate('appointment_date', $today)->count();
 
-        $pendingList = Appointment::with(['patient', 'doctor'])
-            ->where('status', 'Pending')
-            ->latest()
+        $todayAppointments = Appointment::with(['patient', 'walkinPatient', 'doctor'])
+            ->whereDate('appointment_date', $today)
+            ->orderBy('appointment_time', 'asc')
             ->take(5)
             ->get();
 
+        // Same greeting logic/time bands as the Patient Dashboard
+        // (PatientController::dashboard), kept in sync intentionally.
+        $hour = Carbon::now()->hour;
+        if ($hour >= 5 && $hour < 12) {
+            $greeting = 'Good Morning';
+        } elseif ($hour >= 12 && $hour < 18) {
+            $greeting = 'Good Afternoon';
+        } else {
+            $greeting = 'Good Evening';
+        }
+
         return view('staff.dashboard', compact(
+            'staff',
+            'greeting',
             'totalAppointments',
             'pendingAppointments',
             'approvedAppointments',
             'completedAppointments',
             'cancelledAppointments',
             'todayAppointments',
-            'pendingList'
+            'totalTodayAppointments'
         ));
     }
 
@@ -114,6 +130,13 @@ class StaffController extends Controller
 
         $staff->update($data);
 
+        UserLog::create([
+            'user_id' => auth()->id(),
+            'action'  => 'Updated Profile',
+            'module'  => 'Account',
+            'details' => 'Updated account profile information.',
+        ]);
+
         return back()->with('success', 'Profile updated successfully!');
     }
 
@@ -138,6 +161,13 @@ class StaffController extends Controller
         // Update password
         $staff->update([
             'password' => Hash::make($request->password)
+        ]);
+
+        UserLog::create([
+            'user_id' => auth()->id(),
+            'action'  => 'Changed Password',
+            'module'  => 'Account',
+            'details' => 'Changed account password.',
         ]);
 
         return back()->with('success', 'Password updated successfully!');

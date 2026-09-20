@@ -54,6 +54,7 @@ return new class extends Migration
             // ================= DOCTOR INFORMATION =================
             $table->string('specialization', 50)->nullable();
             $table->string('license_number', 20)->nullable();
+            $table->string('signature')->nullable();
 
             // ================= STAFF INFORMATION =================
             $table->string('employee_id', 20)->nullable();
@@ -61,9 +62,14 @@ return new class extends Migration
 
             // ================= LOGIN =================
             $table->string('username', 50)->unique();
-            $table->string('email')->unique();       // ✅ FIXED: inalis ang (50) limit
+            $table->string('email')->unique();       
+
+            // OTP Verification
+            $table->string('email_otp', 6)->nullable();
+            $table->timestamp('otp_expires_at')->nullable();
+
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');              // ✅ FIXED: inalis ang (50) limit, bcrypt needs 60+ chars
+            $table->string('password');              
 
             // ================= ROLE =================
             $table->enum('role', ['Admin', 'Patient', 'Doctor', 'Staff'])
@@ -76,6 +82,8 @@ return new class extends Migration
             // ================= APPROVAL =================
             $table->enum('approval_status', ['Pending', 'Approved', 'Rejected'])
                   ->default('Pending');
+            
+            $table->boolean('profile_completed')->default(false);
 
             $table->rememberToken();
             $table->timestamps();

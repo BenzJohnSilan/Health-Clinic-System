@@ -44,7 +44,7 @@
                                         <p><strong>Time:</strong> {{ \Carbon\Carbon::parse($appointment->appointment_time)->format('g:i A') }}</p>
 
                                         @if($status == 'Rejected')
-                                            <p><strong>Reason:</strong> {{ $appointment->reason }}</p>
+                                            <p><strong>Reason:</strong> {{ $appointment->rejection_reason ?? $appointment->reason }}</p>
                                         @endif
                                     </td>
                                 </tr>

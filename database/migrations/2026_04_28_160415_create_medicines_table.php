@@ -27,6 +27,13 @@ return new class extends Migration
                   ->default('Available');
 
             $table->timestamps();
+
+            // Medicines can have years of stock movement history
+            // attached to them (see medicine_stock_movements). Soft
+            // deletes let "Delete Medicine" remove a medicine from the
+            // active inventory list without destroying that history
+            // or forcing a cascade delete.
+            $table->softDeletes();
         });
     }
 

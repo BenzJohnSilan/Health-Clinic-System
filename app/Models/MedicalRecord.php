@@ -14,6 +14,8 @@ class MedicalRecord extends Model
         'doctor_id',
         'appointment_id',
         'chief_complaint',
+        'history_of_present_illness',
+        'physical_examination',
         'diagnosis',
         'treatment',
         'notes',

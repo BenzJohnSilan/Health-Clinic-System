@@ -31,7 +31,7 @@ return new class extends Migration
             $table->text('address')->nullable();
 
             // Medical Information
-            $table->enum('blood_type', ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'])->nullable();
+            $table->enum('blood_type', ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'])->nullable();
             $table->text('allergies')->nullable();
 
             // Emergency Contact

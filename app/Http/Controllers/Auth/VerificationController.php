@@ -4,47 +4,82 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Support\Facades\Auth;
+use App\Notifications\OtpVerificationNotification;
 
 class VerificationController extends Controller
 {
     /**
-     * Show the email verification notice.
+     * Show the OTP verification page.
      */
     public function notice()
     {
+        if (Auth::user()->email_verified_at) {
+            Auth::logout();
+            return redirect()->route('login')
+                ->with('success', 'Email already verified. Please wait for admin approval.');
+        }
+
         return view('auth.verify-email');
     }
 
     /**
-     * Handle the email verification.
+     * Handle OTP verification.
      */
-    public function verify(EmailVerificationRequest $request)
+    public function verify(Request $request)
     {
-        // Mark email as verified
-        $request->fulfill();
+        $request->validate([
+            'otp' => 'required|digits:6',
+        ]);
 
-        // Logout the user after verification
+        $user = Auth::user();
+
+        if ($user->email_verified_at) {
+            Auth::logout();
+            return redirect()->route('login')
+                ->with('success', 'Email already verified. Please wait for admin approval.');
+        }
+
+        if (!$user->otp_expires_at || now()->isAfter($user->otp_expires_at)) {
+            return back()->with('error', 'Your OTP has expired. Please request a new one.');
+        }
+
+        if ($request->otp !== $user->email_otp) {
+            return back()->with('error', 'Invalid OTP. Please try again.');
+        }
+
+        $user->email_verified_at = now();
+        $user->email_otp         = null;
+        $user->otp_expires_at    = null;
+        $user->save();
+
         Auth::logout();
 
-        // Redirect to login page with success message
         return redirect()->route('login')
             ->with('success', 'Email verified successfully! Please wait for admin approval.');
     }
 
     /**
-     * Resend the verification email.
+     * Resend OTP.
      */
     public function resend(Request $request)
     {
-        if ($request->user()->hasVerifiedEmail()) {
+        $user = Auth::user();
+
+        if ($user->email_verified_at) {
+            Auth::logout();
             return redirect()->route('login')
                 ->with('success', 'Your email is already verified. Please wait for admin approval.');
         }
 
-        $request->user()->sendEmailVerificationNotification();
+        $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
-        return back()->with('success', 'Verification link sent to your email!');
+        $user->email_otp      = $otp;
+        $user->otp_expires_at = now()->addMinutes(10);
+        $user->save();
+
+        $user->notify(new OtpVerificationNotification($otp));
+
+        return back()->with('success', 'A new OTP has been sent to your email.');
     }
 }

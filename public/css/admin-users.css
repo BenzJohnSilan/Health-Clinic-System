@@ -21,37 +21,106 @@
     font-weight: 700;
 }
 
-/* ================= FILTER BAR ================= */
+/* ================= FILTER BAR =================
+   Matches the Admin Appointments search & filter bar (same card,
+   purple accent, filter-input styling) so both admin tables feel
+   like one consistent system. */
 .filter-bar {
     display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
     flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    border: 1px solid #f0e6ff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
 }
 
-.filter-bar input,
-.filter-bar select {
-    padding: 10px 12px;
-    border: 1px solid #d1d5db;
+.filter-input {
+    padding: 8px 12px;
+    border: 1.5px solid #d1d5db;
     border-radius: 8px;
-    font-size: 14px;
-    transition: 0.2s;
+    font-size: 13px;
+    color: #111827;
+    background: #f9fafb;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.2s, background 0.2s;
 }
 
-.filter-bar input {
-    flex: 1;
-    min-width: 200px;
+.filter-input:focus {
+    border-color: #6a0dad;
+    background: #fff;
 }
 
-.filter-bar select {
+input.filter-input {
+    flex: 1 1 200px;
+    min-width: 160px;
+}
+
+select.filter-input {
     min-width: 150px;
 }
 
-.filter-bar input:focus,
-.filter-bar select:focus {
-    outline: none;
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 2px rgba(79,70,229,0.15);
+.btn-filter {
+    background-color: #6a0dad;
+    color: #fff;
+    border: none;
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: inherit;
+}
+
+.btn-filter:hover {
+    background-color: #560aaf;
+}
+
+.btn-clear-filter {
+    background: none;
+    border: none;
+    color: #6b7280;
+    font-size: 13px;
+    text-decoration: underline;
+    padding: 9px 4px;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.btn-clear-filter:hover {
+    color: #374151;
+}
+
+/* ================= ADD USER BUTTON (header) =================
+   Purple to match the rest of the redesigned page — distinct from
+   .btn-primary so the Add/Edit User modal submit buttons (which also
+   use .btn-primary) are left untouched. */
+.btn-add-user {
+    background-color: #6a0dad;
+    color: #fff;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: background-color 0.2s;
+    font-family: inherit;
+}
+
+.btn-add-user:hover {
+    background-color: #560aaf;
 }
 
 /* ================= BUTTONS ================= */
@@ -210,11 +279,6 @@
 }
 
 /* ================= ROLE BREADCRUMB BAR ================= */
-/*
-   The bar that replaces the role picker once a role is selected.
-   Left side: "← Change Role" ghost button
-   Right side: colour dot + "Creating: <Role>"
-*/
 .role-breadcrumb {
     display: flex;
     align-items: center;
@@ -274,7 +338,6 @@
     height: 10px;
     border-radius: 50%;
     flex-shrink: 0;
-    /* background-color set dynamically via JS */
     background-color: #6b7280;
 }
 
@@ -375,7 +438,7 @@
 }
 
 .input-with-badge input {
-    padding-right: 110px; /* room for the badge */
+    padding-right: 110px;
 }
 
 .input-badge {
@@ -395,7 +458,6 @@
     white-space: nowrap;
 }
 
-/* Read-only style for auto-generated fields */
 .input-readonly {
     background: #f9fafb !important;
     color: #374151;
@@ -427,55 +489,193 @@
 .badge--staff   { background:#fef9c3; color:#713f12; }
 .badge--patient { background:#fce7f3; color:#9d174d; }
 
-/* ================= USERS TABLE ================= */
+.badge--approved { background:#d1fae5; color:#065f46; }
+.badge--pending  { background:#fef9c3; color:#713f12; }
+.badge--rejected { background:#fee2e2; color:#991b1b; }
+
+/* ================= USERS TABLE =================
+   Same visual system as the Admin Appointments table: purple
+   #6a0dad header, rounded corners, zebra rows, hover state, and a
+   scrollable wrapper on small screens. */
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 .users-table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 10px;
-    border-radius: 10px;
+    background: #fff;
+    border-radius: 12px 12px 0 0;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
 }
 
 .users-table th,
 .users-table td {
-    border-bottom: 1px solid #e5e7eb;
-    padding: 12px 15px;
+    padding: 13px 16px;
     text-align: left;
     font-size: 14px;
+    border-bottom: 1px solid #f0e6ff;
     vertical-align: middle;
 }
 
 .users-table th {
-    background-color: #f3f4f6;
-    color: #111827;
-    font-weight: 700;
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    background-color: #6a0dad;
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
 }
 
-.users-table tr:hover td {
-    background-color: #f0f4ff;
+.users-table tbody tr:nth-child(even) td {
+    background-color: #f9f5ff;
+}
+
+.users-table tbody tr:nth-child(odd) td {
+    background-color: #ffffff;
+}
+
+.users-table tbody tr:hover td {
+    background-color: #ede9f7;
+    transition: background-color 0.2s ease;
+}
+
+.users-table tbody tr:last-child td {
+    border-bottom: none;
 }
 
 /* ================= TABLE ACTION BUTTONS ================= */
+.action-cell {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    white-space: nowrap;
+}
+
 .users-table button {
     background-color: #ef4444;
     color: #fff;
     border: none;
-    padding: 5px 12px;
-    border-radius: 6px;
+    padding: 7px 12px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     transition: background 0.2s;
 }
 
-.users-table button:hover  { background-color: #b91c1c; }
+.users-table button:hover  { background-color: #dc2626; }
 
-.users-table .editBtn      { background-color: #4f46e5; margin-right: 5px; }
-.users-table .editBtn:hover{ background-color: #4338ca; }
+.users-table .editBtn      { background-color: #6a0dad; }
+.users-table .editBtn:hover{ background-color: #560aaf; }
+
+/* ================= DISABLED DELETE BUTTON (Admin rows) ================= */
+/*
+   Ginagamit para sa Admin users na hindi pwedeng burahin.
+   Naka-override ang hover effect ng table button dahil disabled ito.
+*/
+.users-table .btn-delete-disabled,
+.users-table .btn-delete-disabled:hover {
+    background-color: #e5e7eb;
+    color: #9ca3af;
+    border: none;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+/* ================= PAGINATION ================= */
+.pagination-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #fff;
+    border: 1px solid #f0e6ff;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+    margin-bottom: 30px;
+}
+
+.pagination-info {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.pagination-info strong {
+    color: #374151;
+    font-weight: 600;
+}
+
+.pagination-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 8px;
+    border: 1.5px solid #e9d5ff;
+    background: #fff;
+    color: #6a0dad;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.page-btn:hover {
+    background: #f3e8ff;
+    border-color: #c084fc;
+    color: #6a0dad;
+}
+
+.page-btn.active {
+    background: #6a0dad;
+    border-color: #6a0dad;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(106, 13, 173, 0.3);
+    cursor: default;
+    pointer-events: none;
+}
+
+.page-btn.disabled {
+    color: #d1d5db;
+    border-color: #f3f4f6;
+    background: #f9fafb;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.page-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    font-size: 13px;
+    color: #9ca3af;
+}
 
 /* ================= RESPONSIVE ================= */
 @media screen and (max-width: 700px) {
@@ -491,5 +691,15 @@
     .users-table td { padding: 8px 10px; font-size: 12px; }
 
     .page-header    { flex-direction: column; align-items: flex-start; }
-    .filter-bar     { flex-direction: column; }
+
+    .filter-bar      { flex-direction: column; align-items: stretch; }
+    input.filter-input,
+    select.filter-input { min-width: 0; }
+    .btn-filter { width: 100%; justify-content: center; text-align: center; }
+    .btn-clear-filter { width: 100%; justify-content: center; text-align: center; }
+
+    .pagination-wrapper {
+        flex-direction: column;
+        align-items: center;
+    }
 }

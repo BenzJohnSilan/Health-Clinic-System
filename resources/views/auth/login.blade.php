@@ -89,7 +89,8 @@
             <label class="input-label">Username or Email</label>
             <div class="input-wrap">
                 <i class='bx bxs-user input-icon'></i>
-                <input type="text" name="login" placeholder="Enter your username or email" required>
+                {{-- ✅ FIX: Added old('login') so value persists after failed login --}}
+                <input type="text" name="login" value="{{ old('login') }}" placeholder="Enter your username or email" required>
             </div>
 
             <!-- Password -->
@@ -103,7 +104,8 @@
             <!-- Options -->
             <div class="options">
                 <label>
-                    <input type="checkbox"> Remember Me
+                    {{-- ✅ FIX: Added name="remember" and value="1" so controller can read it --}}
+                    <input type="checkbox" name="remember" value="1" {{ old('remember') ? 'checked' : '' }}> Remember Me
                 </label>
                 <a href="{{ route('password.request') }}" class="forgot-link">Forgot Password?</a>
             </div>
@@ -118,11 +120,12 @@
         <div class="divider">or continue with</div>
 
         <!-- Social -->
+        {{-- ✅ FIX: Added type="button" to prevent accidental form submission --}}
         <div class="social-row">
-            <button class="social-btn" title="Google"><i class='bx bxl-google'></i></button>
-            <button class="social-btn" title="Facebook"><i class='bx bxl-facebook'></i></button>
-            <button class="social-btn" title="GitHub"><i class='bx bxl-github'></i></button>
-            <button class="social-btn" title="LinkedIn"><i class='bx bxl-linkedin'></i></button>
+            <button type="button" class="social-btn" title="Google"><i class='bx bxl-google'></i></button>
+            <button type="button" class="social-btn" title="Facebook"><i class='bx bxl-facebook'></i></button>
+            <button type="button" class="social-btn" title="GitHub"><i class='bx bxl-github'></i></button>
+            <button type="button" class="social-btn" title="LinkedIn"><i class='bx bxl-linkedin'></i></button>
         </div>
 
     </div>

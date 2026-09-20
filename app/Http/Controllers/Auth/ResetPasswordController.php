@@ -13,15 +13,35 @@ class ResetPasswordController extends Controller
 {
     public function showResetForm($token)
     {
-        return view('auth.reset-password', ['token' => $token]);
+        // Pass the email from the query string to the view
+        // so it can be prefilled and locked in the form
+        return view('auth.reset-password', [
+            'token' => $token,
+            'email' => request()->query('email'),
+        ]);
     }
 
     public function reset(Request $request)
     {
         $request->validate([
-            'token' => 'required',
-            'email' => 'required|email',
-            'password' => 'required|min:6|confirmed',
+            'token'    => 'required',
+            'email'    => 'required|email',
+            'password' => [
+                'required',
+                'confirmed',
+                'min:8',
+                // Must contain at least one uppercase letter
+                'regex:/[A-Z]/',
+                // Must contain at least one lowercase letter
+                'regex:/[a-z]/',
+                // Must contain at least one digit
+                'regex:/[0-9]/',
+                // Must contain at least one special character
+                'regex:/[^A-Za-z0-9]/',
+            ],
+        ], [
+            'password.regex' => 'Password must include uppercase, lowercase, a number, and a special character.',
+            'password.min'   => 'Password must be at least 8 characters.',
         ]);
 
         $status = Password::reset(

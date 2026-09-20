@@ -27,11 +27,11 @@
 
             <p>Create your account to access<br>clinic services and appointments.</p>
 
-            <ul class="left-steps">
-                <li><i class='bx bx-check'></i> Fill in your personal details</li>
-                <li><i class='bx bx-check'></i> Upload a valid ID for verification</li>
-                <li><i class='bx bx-check'></i> Set your login credentials</li>
-                <li><i class='bx bx-check'></i> Start booking appointments</li>
+            <ul class="left-steps" aria-label="Registration progress">
+                <li data-progress="personal"><i class='bx bx-check'></i> Fill in your personal details</li>
+                <li data-progress="verification"><i class='bx bx-check'></i> Upload a valid ID for verification</li>
+                <li data-progress="credentials"><i class='bx bx-check'></i> Set your login credentials</li>
+                <li data-progress="ready"><i class='bx bx-check'></i> Start booking appointments</li>
             </ul>
 
             <p style="margin-bottom:14px;">Already have an account?</p>
@@ -63,21 +63,6 @@
 
         <form method="POST" action="{{ route('register.store') }}" enctype="multipart/form-data">
             @csrf
-
-            <!-- ===== PROFILE PICTURE ===== -->
-            <div class="section-header">
-                <div class="section-header-icon"><i class='bx bxs-camera'></i></div>
-                <span>Profile Picture</span>
-            </div>
-
-            <div class="input-group">
-                <label class="file-label">
-                    <i class='bx bx-image-add'></i>
-                    <span id="avatarLabel">Click to upload profile photo (JPG, PNG)</span>
-                    <input type="file" name="avatar" accept="image/jpg,image/jpeg,image/png"
-                           onchange="document.getElementById('avatarLabel').textContent = this.files[0]?.name || 'Click to upload profile photo'">
-                </label>
-            </div>
 
             <!-- ===== PERSONAL INFORMATION ===== -->
             <div class="section-header">
@@ -178,7 +163,8 @@
                 <div class="input-wrap">
                     <i class='bx bxs-phone input-icon'></i>
                     <input type="tel" name="contact_number" id="contact_number"
-                        placeholder="09XXXXXXXXX" maxlength="11" required>
+                        placeholder="09XXXXXXXXX" maxlength="11"
+                        value="{{ old('contact_number') }}" required>
                 </div>
             </div>
 
@@ -207,109 +193,35 @@
 
             <div class="input-group">
                 <label class="input-label">Upload Valid ID *</label>
-                <label class="file-label">
-                    <i class='bx bx-upload'></i>
-                    <span id="idLabel">Click to upload your valid ID (JPG, PNG)</span>
-                    <input type="file" name="valid_id" accept="image/jpg,image/jpeg,image/png" required
-                           onchange="document.getElementById('idLabel').textContent = this.files[0]?.name || 'Click to upload your valid ID'">
-                </label>
-            </div>
-
-            <!-- ===== REASON FOR REGISTRATION ===== -->
-            <div class="section-header">
-                <div class="section-header-icon"><i class='bx bxs-notepad'></i></div>
-                <span>Reason for Registration</span>
-            </div>
-
-            <div class="input-group">
-                <label class="input-label">Purpose *</label>
-                <div class="input-wrap">
-                    <i class='bx bxs-info-circle input-icon'></i>
-                    <select name="reason" required>
-                        <option value="">-- Select Reason --</option>
-                        <option value="To Book Appointments Online" {{ old('reason')=='To Book Appointments Online' ? 'selected':'' }}>To Book Appointments Online</option>
-                        <option value="To Access Clinic Services"   {{ old('reason')=='To Access Clinic Services'     ? 'selected':'' }}>To Access Clinic Services</option>
-                        <option value="To Manage Personal Health Records"   {{ old('reason')=='To Manage Personal Health Records'   ? 'selected':'' }}>To Manage Personal Health Records</option>
-                        <option value="For Easier Communication with the Clinic" {{ old('reason')=='For Easier Communication with the Clinic' ? 'selected':'' }}>For Easier Communication with the Clinic</option>
-                        <option value="Others"                  {{ old('reason')=='Others'                  ? 'selected':'' }}>Others</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- ===== MEDICAL INFORMATION ===== -->
-            <div class="section-header">
-                <div class="section-header-icon"><i class='bx bxs-heart-circle'></i></div>
-                <span>Medical Information</span>
-            </div>
-
-            <div class="input-group">
-                <label class="input-label">Blood Type *</label>
-                <div class="input-wrap">
-                    <i class='bx bx-droplet input-icon'></i>
-                    <select name="blood_type" required>
-                        <option value="">-- Select Blood Type --</option>
-                        <option value="Unknown" {{ old('blood_type')=='Unknown' ? 'selected':'' }}>Unknown / Not Sure</option>
-                        <option value="A+"  {{ old('blood_type')=='A+'  ? 'selected':'' }}>A+</option>
-                        <option value="A-"  {{ old('blood_type')=='A-'  ? 'selected':'' }}>A-</option>
-                        <option value="B+"  {{ old('blood_type')=='B+'  ? 'selected':'' }}>B+</option>
-                        <option value="B-"  {{ old('blood_type')=='B-'  ? 'selected':'' }}>B-</option>
-                        <option value="AB+" {{ old('blood_type')=='AB+' ? 'selected':'' }}>AB+</option>
-                        <option value="AB-" {{ old('blood_type')=='AB-' ? 'selected':'' }}>AB-</option>
-                        <option value="O+"  {{ old('blood_type')=='O+'  ? 'selected':'' }}>O+</option>
-                        <option value="O-"  {{ old('blood_type')=='O-'  ? 'selected':'' }}>O-</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="input-group">
-                <label class="input-label">Known Allergies</label>
-                <div class="input-wrap textarea-wrap">
-                    <i class='bx bxs-virus input-icon'></i>
-                    <textarea name="allergies" placeholder="List any existing allergies (e.g. Penicillin, Shellfish, Dust)">{{ old('allergies') }}</textarea>
-                </div>
-            </div>
-
-            <!-- ===== EMERGENCY CONTACT ===== -->
-            <div class="section-header">
-                <div class="section-header-icon"><i class='bx bxs-phone-call'></i></div>
-                <span>Emergency Contact Information</span>
-            </div>
-
-            <div class="form-row">
-                <div class="input-group">
-                    <label class="input-label">Full Name *</label>
-                    <div class="input-wrap">
-                        <i class='bx bxs-user input-icon'></i>
-                        <input type="text" name="emergency_name" placeholder="Full name" value="{{ old('emergency_name') }}" required>
+                @if(session('temp_valid_id'))
+                    {{-- Show preview of previously uploaded valid ID --}}
+                    <div class="file-preview">
+                        <img src="{{ asset('storage/' . session('temp_valid_id')) }}" alt="Valid ID Preview" class="file-preview-img">
+                        <div class="file-preview-info">
+                            <i class='bx bx-check-circle' style="color:#22c55e; font-size:16px;"></i>
+                            <span>Valid ID uploaded</span>
+                        </div>
+                        <label class="file-reupload-btn">
+                            <i class='bx bx-refresh'></i> Change ID
+                            <input type="file" name="valid_id" accept="image/jpg,image/jpeg,image/png" style="display:none;"
+                                   onchange="previewFile(this, null, 'idLabel')">
+                        </label>
                     </div>
-                </div>
-                <div class="input-group">
-                    <label class="input-label">Relationship *</label>
-                    <div class="input-wrap">
-                        <i class='bx bxs-group input-icon'></i>
-                        <input type="text" name="relationship" placeholder="e.g. Parent, Spouse" value="{{ old('relationship') }}" required>
-                    </div>
-                </div>
+                @else
+                    <label class="file-label">
+                        <i class='bx bx-upload'></i>
+                        <span id="idLabel">Click to upload your valid ID (JPG, PNG)</span>
+                        <input type="file" name="valid_id" accept="image/jpg,image/jpeg,image/png" required
+                               onchange="previewFile(this, null, 'idLabel')">
+                    </label>
+                @endif
             </div>
 
-            <div class="form-row">
-                <div class="input-group">
-                    <label class="input-label">Contact Number *</label>
-                    <div class="input-wrap">
-                        <i class='bx bxs-phone input-icon'></i>
-                        <input type="tel" name="emergency_contact_number"
-                            placeholder="09XXXXXXXXX" maxlength="11"
-                            value="{{ old('emergency_contact_number') }}" required>
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label class="input-label">Address *</label>
-                    <div class="input-wrap">
-                        <i class='bx bxs-map input-icon'></i>
-                        <input type="text" name="emergency_address" placeholder="Complete address" value="{{ old('emergency_address') }}" required>
-                    </div>
-                </div>
-            </div>
+            {{-- Profile Picture and Reason for Registration are no longer
+                 collected during registration. Profile Picture can be added
+                 later by the patient via the Patient Profile page (Account
+                 Settings). Medical Information and Emergency Contact are
+                 also completed there before booking their first appointment. --}}
 
             <!-- ===== LOGIN INFORMATION ===== -->
             <div class="section-header">
@@ -334,21 +246,50 @@
                 </div>
             </div>
 
-            <div class="form-row">
-                <div class="input-group">
-                    <label class="input-label">Password *</label>
-                    <div class="input-wrap">
-                        <i class='bx bxs-lock-alt input-icon'></i>
-                        <input type="password" id="password" name="password" placeholder="Min. 6 characters" required>
-                        <i class='bx bxs-show input-toggle' id="togglePassword"></i>
+            <!-- PASSWORD WITH STRENGTH CHECKER -->
+            <div class="input-group">
+                <label class="input-label">Password *</label>
+                <div class="input-wrap">
+                    <i class='bx bxs-lock-alt input-icon'></i>
+                    <input type="password" id="password" name="password" placeholder="Min. 8 characters" required>
+                    <i class='bx bxs-show input-toggle' id="togglePassword"></i>
+                </div>
+
+                <!-- ✅ PASSWORD STRENGTH INDICATOR -->
+                <div class="password-strength" id="passwordStrength" style="display:none;">
+                    <div class="strength-bar">
+                        <span id="bar1"></span>
+                        <span id="bar2"></span>
+                        <span id="bar3"></span>
+                        <span id="bar4"></span>
+                    </div>
+                    <div class="strength-label" id="strengthLabel">Enter a password</div>
+                    <div class="password-checklist">
+                        <div class="check-item" id="check-length">
+                            <i class='bx bx-x-circle'></i> At least 8 characters
+                        </div>
+                        <div class="check-item" id="check-upper">
+                            <i class='bx bx-x-circle'></i> Uppercase letter (A-Z)
+                        </div>
+                        <div class="check-item" id="check-lower">
+                            <i class='bx bx-x-circle'></i> Lowercase letter (a-z)
+                        </div>
+                        <div class="check-item" id="check-number">
+                            <i class='bx bx-x-circle'></i> Number (0-9)
+                        </div>
+                        <div class="check-item" id="check-special">
+                            <i class='bx bx-x-circle'></i> Special character (@$!%*#?&)
+                        </div>
                     </div>
                 </div>
-                <div class="input-group">
-                    <label class="input-label">Confirm Password *</label>
-                    <div class="input-wrap">
-                        <i class='bx bxs-lock input-icon'></i>
-                        <input type="password" name="password_confirmation" placeholder="Re-enter password" required>
-                    </div>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Confirm Password *</label>
+                <div class="input-wrap">
+                    <i class='bx bxs-lock input-icon'></i>
+                    <input type="password" name="password_confirmation" id="password_confirmation" placeholder="Re-enter password" required>
+                    <i class='bx bxs-show input-toggle' id="toggleConfirm"></i>
                 </div>
             </div>
 
@@ -361,9 +302,66 @@
 </div>
 
 <script>
-// Age auto-fill
+// ===== FILE PREVIEW HELPER =====
+function previewFile(input, imgId, labelId) {
+    const file = input.files[0];
+    if (!file) return;
+
+    // Update label text
+    if (labelId && document.getElementById(labelId)) {
+        document.getElementById(labelId).textContent = file.name;
+    }
+
+    // Update image preview if an img element id was provided
+    if (imgId && document.getElementById(imgId)) {
+        const reader = new FileReader();
+        reader.onload = e => { document.getElementById(imgId).src = e.target.result; };
+        reader.readAsDataURL(file);
+    }
+}
+
+// ===== AGE AUTO-FILL =====
 const birthdateInput = document.getElementById('birthdate');
 const agePreview     = document.getElementById('agePreview');
+
+// ===== REGISTRATION PROGRESS =====
+const registrationForm = document.querySelector('form');
+const progressSteps = {
+    personal: document.querySelector('[data-progress="personal"]'),
+    verification: document.querySelector('[data-progress="verification"]'),
+    credentials: document.querySelector('[data-progress="credentials"]'),
+    ready: document.querySelector('[data-progress="ready"]'),
+};
+
+function hasValue(name) {
+    return registrationForm.elements[name]?.value.trim().length > 0;
+}
+
+function setProgressStep(step, complete) {
+    const item = progressSteps[step];
+    item.classList.toggle('is-complete', complete);
+    item.querySelector('i').className = complete ? 'bx bxs-check-circle' : 'bx bx-check';
+}
+
+function updateRegistrationProgress() {
+    const personalComplete = ['first_name', 'last_name', 'birthdate', 'gender', 'civil_status', 'address', 'contact_number']
+        .every(hasValue);
+    const validIdInput = registrationForm.elements.valid_id;
+    const hasUploadedId = document.querySelector('.file-preview') || validIdInput?.files.length > 0;
+    const verificationComplete = hasValue('id_type') && hasUploadedId;
+    const credentialsComplete = hasValue('username') && hasValue('email') &&
+        registrationForm.elements.password.value.length >= 8 &&
+        registrationForm.elements.password.value === registrationForm.elements.password_confirmation.value;
+
+    setProgressStep('personal', personalComplete);
+    setProgressStep('verification', verificationComplete);
+    setProgressStep('credentials', credentialsComplete);
+    setProgressStep('ready', personalComplete && verificationComplete && credentialsComplete);
+}
+
+registrationForm.addEventListener('input', updateRegistrationProgress);
+registrationForm.addEventListener('change', updateRegistrationProgress);
+updateRegistrationProgress();
 
 function calculateAge(val) {
     if (!val) return;
@@ -378,20 +376,91 @@ function calculateAge(val) {
 calculateAge(birthdateInput.value);
 birthdateInput.addEventListener('change', function () { calculateAge(this.value); });
 
-// Numbers only on contact
+// ===== NUMBERS ONLY ON CONTACT =====
 document.getElementById('contact_number').addEventListener('input', function () {
     this.value = this.value.replace(/[^0-9]/g, '');
 });
 
-// Password toggle
-const toggle   = document.getElementById('togglePassword');
-const password = document.getElementById('password');
+// ===== PASSWORD TOGGLE =====
+function setupToggle(toggleId, inputId) {
+    const toggle = document.getElementById(toggleId);
+    const input  = document.getElementById(inputId);
+    toggle.addEventListener('click', () => {
+        const isHidden = input.type === 'password';
+        input.type = isHidden ? 'text' : 'password';
+        toggle.classList.toggle('bxs-show', !isHidden);
+        toggle.classList.toggle('bxs-hide',  isHidden);
+    });
+}
+setupToggle('togglePassword', 'password');
+setupToggle('toggleConfirm',  'password_confirmation');
 
-toggle.addEventListener('click', () => {
-    const isHidden = password.type === 'password';
-    password.type  = isHidden ? 'text' : 'password';
-    toggle.classList.toggle('bxs-show', !isHidden);
-    toggle.classList.toggle('bxs-hide',  isHidden);
+// ===== PASSWORD STRENGTH CHECKER =====
+const passwordInput  = document.getElementById('password');
+const strengthWidget = document.getElementById('passwordStrength');
+const strengthLabel  = document.getElementById('strengthLabel');
+const bars           = [
+    document.getElementById('bar1'),
+    document.getElementById('bar2'),
+    document.getElementById('bar3'),
+    document.getElementById('bar4'),
+];
+
+const rules = {
+    'check-length':  { test: v => v.length >= 8 },
+    'check-upper':   { test: v => /[A-Z]/.test(v) },
+    'check-lower':   { test: v => /[a-z]/.test(v) },
+    'check-number':  { test: v => /[0-9]/.test(v) },
+    'check-special': { test: v => /[@$!%*#?&]/.test(v) },
+};
+
+const strengthMap = [
+    { label: '',         color: '' },
+    { label: 'Weak',     color: 'active-weak' },
+    { label: 'Fair',     color: 'active-fair' },
+    { label: 'Good',     color: 'active-good' },
+    { label: 'Strong',   color: 'active-strong' },
+];
+
+passwordInput.addEventListener('input', function () {
+    const val = this.value;
+
+    if (!val) {
+        strengthWidget.style.display = 'none';
+        return;
+    }
+
+    strengthWidget.style.display = 'block';
+
+    // Check each rule
+    let passed = 0;
+    for (const [id, rule] of Object.entries(rules)) {
+        const el   = document.getElementById(id);
+        const icon = el.querySelector('i');
+        if (rule.test(val)) {
+            el.classList.add('passed');
+            icon.className = 'bx bx-check-circle';
+            passed++;
+        } else {
+            el.classList.remove('passed');
+            icon.className = 'bx bx-x-circle';
+        }
+    }
+
+    // Update strength bar (max 4 bars, based on 5 rules)
+    const level = passed === 0 ? 0 : passed <= 1 ? 1 : passed <= 2 ? 2 : passed <= 3 ? 3 : passed <= 4 ? 3 : 4;
+    bars.forEach((bar, i) => {
+        bar.className = i < level ? strengthMap[level].color : '';
+    });
+
+    strengthLabel.textContent = level > 0
+        ? 'Strength: ' + strengthMap[level].label
+        : 'Enter a password';
+    strengthLabel.style.color = level === 1 ? '#ef4444'
+                               : level === 2 ? '#f97316'
+                               : level === 3 ? '#eab308'
+                               : level === 4 ? '#15803d'
+                               : 'var(--text-muted)';
 });
 </script>
 

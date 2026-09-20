@@ -62,6 +62,7 @@ class AdminMedicineController extends Controller
         UserLog::create([
             'user_id' => auth()->id(),
             'action'  => 'Added Medicine',
+            'module'  => 'Medicine Inventory',
             'details' => $medicine->medicine_name
         ]);
 
@@ -103,6 +104,7 @@ class AdminMedicineController extends Controller
         UserLog::create([
             'user_id' => auth()->id(),
             'action'  => 'Updated Medicine',
+            'module'  => 'Medicine Inventory',
             'details' => $medicine->medicine_name
         ]);
 
@@ -119,6 +121,7 @@ class AdminMedicineController extends Controller
         UserLog::create([
             'user_id' => auth()->id(),
             'action'  => 'Deleted Medicine',
+            'module'  => 'Medicine Inventory',
             'details' => $medicine->medicine_name
         ]);
 

@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <title>Patient Panel - Clinic Record System</title>
 
 <!-- Boxicons -->
@@ -26,22 +27,13 @@
         substr($patient->last_name  ?? '', 0, 1)
     );
 
-    // Status update notifications: appointments that were recently Approved, Rejected, or Cancelled
-    $statusUpdates = \App\Models\Appointment::where('patient_id', $patient->id)
-        ->whereIn('status', ['Approved', 'Rejected', 'Cancelled'])
-        ->latest('updated_at')
-        ->take(5)
-        ->get();
-
-    // Upcoming appointment reminders: Approved appointments within the next 7 days
-    $upcomingAppointments = \App\Models\Appointment::where('patient_id', $patient->id)
-        ->where('status', 'Approved')
-        ->whereBetween('appointment_date', [now(), now()->addDays(7)])
-        ->orderBy('appointment_date')
-        ->take(5)
-        ->get();
-
-    $notificationCount = $statusUpdates->count() + $upcomingAppointments->count();
+    // Notifications + unread count are provided by the layouts.patient
+    // view composer (see AppServiceProvider::boot) via
+    // PatientNotificationService, which cross-references the persistent
+    // patient_notification_reads table. $patientNotifications / $patientUnreadCount
+    // are always available here, but default them defensively just in case.
+    $patientNotifications = $patientNotifications ?? collect();
+    $patientUnreadCount    = $patientUnreadCount ?? 0;
 @endphp
 
 <!-- ================= SIDEBAR ================= -->
@@ -79,6 +71,19 @@
             <i class='bx bx-history'></i>
             <span>Appointment History</span>
         </a>
+        <a href="{{ route('patient.medical-certificates.index') }}"
+           class="{{ request()->routeIs('patient.medical-certificates.*') ? 'active' : '' }}">
+            <i class='bx bx-file-blank'></i>
+            <span>Medical Certificates</span>
+        </a>
+        @if($patient->hasPermission('view_billing'))
+        <span class="nav-section-label">Billing</span>
+        <a href="{{ route('patient.billing.index') }}"
+           class="{{ request()->routeIs('patient.billing.*') ? 'active' : '' }}">
+            <i class='bx bx-receipt'></i>
+            <span>Billing &amp; Payments</span>
+        </a>
+        @endif
 
         <span class="nav-section-label">Account</span>
         <a href="{{ route('patient.activity.logs') }}"
@@ -114,9 +119,42 @@
 </div>
 <!-- END SIDEBAR -->
 
+<!-- Backdrop shown behind the sidebar on mobile/tablet when the drawer is open -->
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
 
 <!-- ================= MAIN CONTENT ================= -->
 <div class="main-content" id="mainContent">
+<script>
+// Apply the saved sidebar state immediately, before the rest of the page
+// renders, so there is no visible flash of the expanded sidebar first.
+(function () {
+    var sidebarEl = document.getElementById('sidebar');
+    var mainEl    = document.getElementById('mainContent');
+
+    // Disable the transition for this first frame — otherwise the browser
+    // can paint one frame at the default width before 'collapsed' lands,
+    // and the transition animates that brief flash into view.
+    sidebarEl.classList.add('no-transition');
+    mainEl.classList.add('no-transition');
+
+    try {
+        if (localStorage.getItem('clinicrms_sidebar_collapsed') === 'true' && window.innerWidth > 900) {
+            sidebarEl.classList.add('collapsed');
+            mainEl.classList.add('collapsed');
+        }
+    } catch (e) {}
+
+    // Re-enable transitions after the first paint so manual toggling still
+    // animates normally.
+    requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+            sidebarEl.classList.remove('no-transition');
+            mainEl.classList.remove('no-transition');
+        });
+    });
+})();
+</script>
 
     <!-- ================= HEADER ================= -->
     <div class="admin-header">
@@ -148,8 +186,8 @@
             <div class="notif-wrapper">
                 <button class="header-bell" id="notifBtn" title="Notifications" aria-label="Notifications">
                     <i class='bx bx-bell'></i>
-                    @if($notificationCount > 0)
-                        <span class="notif-badge">{{ $notificationCount }}</span>
+                    @if($patientUnreadCount > 0)
+                        <span class="notif-badge" id="notifBadge">{{ $patientUnreadCount }}</span>
                     @endif
                 </button>
 
@@ -162,98 +200,59 @@
                             <i class='bx bx-bell'></i>
                             <span>Notifications</span>
                         </div>
-                        @if($notificationCount > 0)
-                            <span class="notif-panel-count">{{ $notificationCount }} new</span>
-                        @endif
+                        <span class="notif-panel-count" id="notifPanelCount" style="{{ $patientUnreadCount > 0 ? '' : 'display:none;' }}">
+                            {{ $patientUnreadCount }} new
+                        </span>
+                    </div>
+
+                    <!-- Mark all as read -->
+                    <div class="notif-panel-actions" id="notifMarkAllWrap" style="{{ $patientUnreadCount > 0 ? '' : 'display:none;' }}">
+                        <button type="button" class="notif-mark-all-btn" id="notifMarkAllBtn">
+                            <i class='bx bx-check-double'></i> Mark all as read
+                        </button>
+                    </div>
+
+                    <!-- Filter Tabs -->
+                    <div class="notif-tabs" id="notifTabs" role="tablist" aria-label="Notification filters">
+                        <button type="button" class="notif-tab active" data-filter="all">All</button>
+                        <button type="button" class="notif-tab" data-filter="unread">Unread</button>
+                        <button type="button" class="notif-tab" data-filter="appointments">Appointments</button>
+                        <button type="button" class="notif-tab" data-filter="medical-certificate">Medical Cert.</button>
+                        <button type="button" class="notif-tab" data-filter="account">Account</button>
                     </div>
 
                     <!-- Notification List -->
                     <div class="notif-list" id="notifList">
 
-                        @if($notificationCount > 0)
+                        @forelse($patientNotifications as $item)
+                            <a href="{{ $item['url'] }}"
+                               class="notif-item {{ $item['unread'] ? 'notif-item--unread' : '' }}"
+                               data-key="{{ $item['key'] }}"
+                               data-category="{{ $item['category'] }}"
+                               data-unread="{{ $item['unread'] ? '1' : '0' }}">
 
-                            {{-- ---- UPCOMING REMINDERS ---- --}}
-                            @foreach($upcomingAppointments as $index => $app)
-                                <a href="{{ route('patient.appointments.index') }}"
-                                   class="notif-item notif-item--unread">
+                                <div class="notif-item-icon {{ $item['icon_class'] }}">
+                                    <i class='bx {{ $item['icon'] }}'></i>
+                                </div>
 
-                                    <div class="notif-item-icon notif-item-icon--upcoming">
-                                        <i class='bx bx-calendar-event'></i>
+                                <div class="notif-item-body">
+                                    <div class="notif-item-top">
+                                        <span class="notif-item-label {{ $item['label_class'] }}">{{ $item['label'] }}</span>
                                     </div>
+                                    <p class="notif-item-patient">{{ $item['title'] }}</p>
+                                    <p class="notif-item-reason">{{ $item['message'] }}</p>
+                                    <span class="notif-item-time">
+                                        <i class='bx bx-time-five'></i>
+                                        {{ $item['timestamp']->diffForHumans() }}
+                                    </span>
+                                </div>
 
-                                    <div class="notif-item-body">
-                                        <div class="notif-item-top">
-                                            <span class="notif-item-label notif-label--upcoming">Upcoming</span>
-                                            <span class="notif-item-new">Reminder</span>
-                                        </div>
-                                        <p class="notif-item-patient">{{ $app->reason }}</p>
-                                        <p class="notif-item-reason">
-                                            {{ \Carbon\Carbon::parse($app->appointment_date)->format('M j, Y') }}
-                                            @if($app->appointment_time)
-                                                · {{ \Carbon\Carbon::parse($app->appointment_time)->format('g:i a') }}
-                                            @endif
-                                        </p>
-                                        <span class="notif-item-time">
-                                            <i class='bx bx-time-five'></i>
-                                            {{ \Carbon\Carbon::parse($app->appointment_date)->diffForHumans() }}
-                                        </span>
-                                    </div>
+                                @if($item['unread'])
+                                    <div class="notif-item-dot"></div>
+                                @endif
 
-                                    <div class="notif-item-dot notif-item-dot--upcoming"></div>
-
-                                </a>
-                            @endforeach
-
-                            {{-- ---- STATUS UPDATES ---- --}}
-                            @foreach($statusUpdates as $index => $app)
-                                @php
-                                    $statusIcon  = match($app->status) {
-                                        'Approved'  => 'bx-check-circle',
-                                        'Rejected'  => 'bx-x-circle',
-                                        'Cancelled' => 'bx-minus-circle',
-                                        default     => 'bx-info-circle',
-                                    };
-                                    $statusClass = match($app->status) {
-                                        'Approved'  => 'notif-item-icon--approved',
-                                        'Rejected'  => 'notif-item-icon--rejected',
-                                        'Cancelled' => 'notif-item-icon--cancelled',
-                                        default     => '',
-                                    };
-                                    $labelClass  = match($app->status) {
-                                        'Approved'  => 'notif-label--approved',
-                                        'Rejected'  => 'notif-label--rejected',
-                                        'Cancelled' => 'notif-label--cancelled',
-                                        default     => '',
-                                    };
-                                @endphp
-
-                                <a href="{{ route('patient.appointments.index') }}"
-                                   class="notif-item {{ $index === 0 && $upcomingAppointments->count() === 0 ? 'notif-item--unread' : '' }}">
-
-                                    <div class="notif-item-icon {{ $statusClass }}">
-                                        <i class='bx {{ $statusIcon }}'></i>
-                                    </div>
-
-                                    <div class="notif-item-body">
-                                        <div class="notif-item-top">
-                                            <span class="notif-item-label {{ $labelClass }}">{{ $app->status }}</span>
-                                        </div>
-                                        <p class="notif-item-patient">{{ $app->reason }}</p>
-                                        <p class="notif-item-reason">
-                                            @if($app->appointment_date)
-                                                {{ \Carbon\Carbon::parse($app->appointment_date)->format('M j, Y') }}
-                                            @endif
-                                        </p>
-                                        <span class="notif-item-time">
-                                            <i class='bx bx-time-five'></i>
-                                            {{ $app->updated_at->format('M j, Y · g:i a') }}
-                                        </span>
-                                    </div>
-
-                                </a>
-                            @endforeach
-
-                        @else
+                            </a>
+                        @empty
                             <div class="notif-empty">
                                 <div class="notif-empty-icon">
                                     <i class='bx bx-bell-off'></i>
@@ -261,11 +260,19 @@
                                 <p>No notifications</p>
                                 <small>You're all caught up!</small>
                             </div>
-                        @endif
+                        @endforelse
+
+                        <div class="notif-empty notif-hidden" id="notifNoMatch">
+                            <div class="notif-empty-icon">
+                                <i class='bx bx-filter-alt'></i>
+                            </div>
+                            <p>Nothing here</p>
+                            <small>No notifications match this filter.</small>
+                        </div>
 
                     </div>
 
-                    @if($notificationCount > 0)
+                    @if($patientNotifications->isNotEmpty())
                         <div class="notif-panel-footer">
                             <a href="{{ route('patient.appointments.index') }}" class="notif-view-all">
                                 View all appointments
@@ -348,22 +355,8 @@
 
 
 <!-- ================= SCRIPTS ================= -->
+<script src="{{ asset('js/sidebar-collapse.js') }}"></script>
 <script>
-/* ---- Sidebar toggle ---- */
-const sidebar     = document.getElementById('sidebar');
-const mainContent = document.getElementById('mainContent');
-const hamburger   = document.getElementById('hamburgerBtn');
-
-hamburger.addEventListener('click', () => {
-    if (window.innerWidth <= 900) {
-        sidebar.classList.toggle('open');
-        mainContent.classList.toggle('shift');
-    } else {
-        sidebar.classList.toggle('collapsed');
-        mainContent.classList.toggle('collapsed');
-    }
-});
-
 /* ---- Avatar dropdown ---- */
 const avatarGroup = document.getElementById('avatarGroup');
 const hDropdown   = document.getElementById('hDropdown');
@@ -380,9 +373,134 @@ const notifPanel = document.getElementById('notifPanel');
 
 notifBtn.addEventListener('click', (e) => {
     e.stopPropagation();
+    // Opening the bell/panel NEVER marks anything as read — only
+    // clicking an individual notification or "Mark all as read" does.
     notifPanel.classList.toggle('show');
     hDropdown.classList.remove('show');
 });
+
+/* ---- Notification read/unread (persistent, DB-backed) ---- */
+(function () {
+    const csrfToken   = document.querySelector('meta[name="csrf-token"]')?.content;
+    const notifList   = document.getElementById('notifList');
+    const notifBadge  = document.getElementById('notifBadge');
+    const notifCount  = document.getElementById('notifPanelCount');
+    const markAllWrap = document.getElementById('notifMarkAllWrap');
+    const markAllBtn  = document.getElementById('notifMarkAllBtn');
+    const tabs        = document.getElementById('notifTabs');
+    const noMatch     = document.getElementById('notifNoMatch');
+
+    if (!notifList) return;
+
+    function updateUnreadUI(unreadCount) {
+        if (unreadCount > 0) {
+            if (notifBadge) {
+                notifBadge.textContent = unreadCount;
+                notifBadge.style.display = '';
+            } else {
+                const bell = document.getElementById('notifBtn');
+                const span = document.createElement('span');
+                span.className = 'notif-badge';
+                span.id = 'notifBadge';
+                span.textContent = unreadCount;
+                bell.appendChild(span);
+            }
+            if (notifCount) {
+                notifCount.textContent = unreadCount + ' new';
+                notifCount.style.display = '';
+            }
+            if (markAllWrap) markAllWrap.style.display = '';
+        } else {
+            if (notifBadge) notifBadge.remove();
+            if (notifCount) notifCount.style.display = 'none';
+            if (markAllWrap) markAllWrap.style.display = 'none';
+        }
+    }
+
+    function markItemRead(item) {
+        item.classList.remove('notif-item--unread');
+        item.dataset.unread = '0';
+        const dot = item.querySelector('.notif-item-dot');
+        if (dot) dot.remove();
+    }
+
+    // Click an individual notification -> mark it read (DB), then let the
+    // browser follow the link as normal. Uses keepalive so the request
+    // still completes even though the page is about to navigate away.
+    notifList.addEventListener('click', function (e) {
+        const item = e.target.closest('.notif-item');
+        if (!item || item.dataset.unread !== '1') return;
+
+        const key = item.dataset.key;
+        markItemRead(item);
+
+        const currentUnread = notifList.querySelectorAll('.notif-item--unread').length;
+        updateUnreadUI(currentUnread);
+
+        fetch(@json(route('patient.notifications.read')), {
+            method: 'POST',
+            keepalive: true,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify({ key: key }),
+        }).catch(() => {});
+    });
+
+    // Mark all as read
+    if (markAllBtn) {
+        markAllBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+
+            notifList.querySelectorAll('.notif-item--unread').forEach(markItemRead);
+            updateUnreadUI(0);
+
+            fetch(@json(route('patient.notifications.read-all')), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            }).catch(() => {});
+        });
+    }
+
+    // Filter tabs (All / Unread / Appointments / Medical Cert. / Account)
+    if (tabs) {
+        tabs.addEventListener('click', function (e) {
+            const tab = e.target.closest('.notif-tab');
+            if (!tab) return;
+
+            // Without this, the click bubbles up to the document-level
+            // "close on outside click" listener and closes the panel
+            // right after switching tabs.
+            e.stopPropagation();
+
+            tabs.querySelectorAll('.notif-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            const filter = tab.dataset.filter;
+            const items = notifList.querySelectorAll('.notif-item');
+            let visibleCount = 0;
+
+            items.forEach(item => {
+                let show = true;
+                if (filter === 'unread') {
+                    show = item.dataset.unread === '1';
+                } else if (filter !== 'all') {
+                    show = item.dataset.category === filter;
+                }
+                item.style.display = show ? '' : 'none';
+                if (show) visibleCount++;
+            });
+
+            if (noMatch) noMatch.classList.toggle('notif-hidden', items.length === 0 || visibleCount > 0);
+        });
+    }
+})();
 
 /* ---- Close on outside click ---- */
 document.addEventListener('click', () => {
@@ -415,6 +533,7 @@ setInterval(updateDateTime, 1000);
         'dashboard':           'Dashboard',
         'appointments':        'Appointments',
         'appointment/history': 'Appointment History',
+        'medical-certificates':'Medical Certificates',
         'activity':            'Activity Logs',
         'settings':            'Account Settings',
     };

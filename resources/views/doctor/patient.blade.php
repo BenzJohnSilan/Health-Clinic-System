@@ -10,6 +10,7 @@
     <!-- ================= PAGE HEADER ================= -->
     <div class="page-header">
         <h1 class="page-title">Patient List</h1>
+        <p class="page-subtitle">Manage registered and walk-in patients</p>
     </div>
 
     <!-- ================= ALERTS ================= -->
@@ -20,6 +21,42 @@
         <div class="alert-error">{{ session('error') }}</div>
     @endif
 
+    <!-- ================= SEARCH & FILTERS ================= -->
+    <form method="GET" action="{{ route('doctor.patient') }}" class="filters-bar">
+
+        <div class="filter-field filter-field-search">
+            <i class="fa-solid fa-magnifying-glass filter-search-icon"></i>
+            <input
+                type="text"
+                name="search"
+                value="{{ $search }}"
+                placeholder="Search by patient name, ID, or contact number..."
+                class="filter-input filter-search-input"
+            >
+        </div>
+
+        <div class="filter-field">
+            <select name="type" class="filter-input filter-select">
+                <option value="all" @selected($typeFilter === 'all')>All Patients</option>
+                <option value="registered" @selected($typeFilter === 'registered')>Registered</option>
+                <option value="walkin" @selected($typeFilter === 'walkin')>Walk-in</option>
+            </select>
+        </div>
+
+        <div class="filter-actions">
+            <button type="submit" class="btn-filter-apply">
+                <i class="fa-solid fa-filter"></i>
+                Filter
+            </button>
+            @if($search !== '' || $typeFilter !== 'all')
+                <a href="{{ route('doctor.patient') }}" class="btn-filter-clear">
+                    Clear Filters
+                </a>
+            @endif
+        </div>
+
+    </form>
+
     <!-- ================= TABLE ================= -->
     <div class="table-container">
 
@@ -27,10 +64,10 @@
 
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Email</th>
+                    <th>Patient ID</th>
+                    <th>Patient Name</th>
                     <th>Contact Number</th>
-                    <th>Address</th>
+                    <th>Patient Type</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -38,10 +75,16 @@
             <tbody>
                 @forelse($patients as $patient)
                     <tr>
+                        <td class="patient-id-cell">{{ $patient['patient_id'] }}</td>
                         <td>{{ $patient['first_name'] }} {{ $patient['last_name'] }}</td>
-                        <td>{{ $patient['email'] }}</td>
                         <td>{{ $patient['contact_number'] ?? 'N/A' }}</td>
-                        <td>{{ $patient['address'] ?? 'N/A' }}</td>
+                        <td>
+                            @if($patient['is_walk_in'])
+                                <span class="patient-type-badge walkin">Walk-in</span>
+                            @else
+                                <span class="patient-type-badge registered">Registered</span>
+                            @endif
+                        </td>
                         <td>
                             <a href="{{ route('doctor.patient.records', $patient['id']) }}" class="btn-view">
                                 View
@@ -50,7 +93,13 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="no-data">No patients found.</td>
+                        <td colspan="5" class="no-data">
+                            @if($search !== '' || $typeFilter !== 'all')
+                                No patients match your search or filter.
+                            @else
+                                No patients found.
+                            @endif
+                        </td>
                     </tr>
                 @endforelse
             </tbody>

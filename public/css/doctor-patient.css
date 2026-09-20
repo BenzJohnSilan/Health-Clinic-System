@@ -22,6 +22,12 @@ body {
     color: #111827;
 }
 
+.page-subtitle {
+    font-size: 14px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
 /* ================= ALERTS ================= */
 .alert-success {
     background: #d1fae5;
@@ -41,6 +47,116 @@ body {
     padding: 10px 16px;
     margin-bottom: 16px;
     font-size: 14px;
+}
+
+/* ================= SEARCH & FILTERS ================= */
+.filters-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    border: 1px solid #f0e6ff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+}
+
+.filter-field {
+    display: flex;
+    align-items: center;
+}
+
+.filter-field-search {
+    position: relative;
+    flex: 1 1 240px;
+    min-width: 200px;
+}
+
+.filter-search-icon {
+    position: absolute;
+    left: 12px;
+    color: #9ca3af;
+    font-size: 13px;
+    pointer-events: none;
+}
+
+.filter-input {
+    font-family: "Poppins", Arial, sans-serif;
+    font-size: 13.5px;
+    color: #374151;
+    border: 1.5px solid #e5d6fa;
+    border-radius: 8px;
+    background: #fbf9ff;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.filter-input:focus {
+    border-color: #6a0dad;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(106, 13, 173, 0.12);
+}
+
+.filter-search-input {
+    width: 100%;
+    padding: 9px 12px 9px 34px;
+}
+
+.filter-select {
+    padding: 9px 12px;
+    min-width: 160px;
+    cursor: pointer;
+}
+
+.filter-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.btn-filter-apply {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #6a0dad;
+    color: #fff;
+    border: none;
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    font-family: "Poppins", Arial, sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-filter-apply:hover {
+    background: #560aaf;
+    box-shadow: 0 4px 10px rgba(106, 13, 173, 0.3);
+}
+
+.btn-filter-clear {
+    display: inline-flex;
+    align-items: center;
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1.5px solid #d1d5db;
+    color: #374151;
+    font-size: 13.5px;
+    font-weight: 500;
+    font-family: "Poppins", Arial, sans-serif;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.btn-filter-clear:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
 }
 
 /* ================= TABLE WRAPPER ================= */
@@ -101,6 +217,33 @@ body {
 .patient-table td:last-child,
 .patient-table th:last-child {
     text-align: center;
+}
+
+/* ================= PATIENT ID COLUMN ================= */
+.patient-id-cell {
+    font-weight: 600;
+    color: #6a0dad;
+    white-space: nowrap;
+}
+
+/* ================= PATIENT TYPE BADGE ================= */
+.patient-type-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+
+.patient-type-badge.registered {
+    background-color: #ede9fe;
+    color: #6a0dad;
+}
+
+.patient-type-badge.walkin {
+    background-color: #e0f2fe;
+    color: #0369a1;
 }
 
 /* ================= ACTION BUTTONS ================= */
@@ -245,5 +388,30 @@ body {
     .pagination-wrapper {
         flex-direction: column;
         align-items: center;
+    }
+
+    .filters-bar {
+        padding: 12px;
+    }
+
+    .filter-field-search,
+    .filter-field {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+
+    .filter-select {
+        width: 100%;
+    }
+
+    .filter-actions {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .btn-filter-apply,
+    .btn-filter-clear {
+        flex: 1;
+        justify-content: center;
     }
 }

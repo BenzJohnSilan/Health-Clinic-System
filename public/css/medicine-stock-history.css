@@ -1,0 +1,39 @@
+/* Note: .back-btn, .badge-movement, .qty-change, and .muted live in
+   medicine-inventory-actions.css since they're shared with the
+   Inventory Reports page's Recent Stock Activity table. */
+
+/* ================= HEADER SUBTITLE ================= */
+.history-subtitle {
+    margin-top: 4px;
+    font-size: 13.5px;
+    color: #6b7280;
+}
+.history-subtitle strong {
+    color: #374151;
+}
+
+/* ================= HISTORY TABLE ================= */
+.history-table th,
+.history-table td {
+    white-space: nowrap;
+}
+.history-table td:nth-child(6) {
+    white-space: normal;
+    min-width: 160px;
+}
+
+/* Disabled pagination arrows (span, not a real disabled <button>) */
+.page-btn.disabled {
+    color: #d1d5db;
+    border-color: #f3f4f6;
+    background: #f9fafb;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+@media screen and (max-width: 700px) {
+    .history-table th,
+    .history-table td {
+        white-space: normal;
+    }
+}

@@ -1,0 +1,426 @@
+/* =========================================================
+   STAFF - PATIENT APPOINTMENT HISTORY
+   Same token system as the appointment details page, with a
+   patient identity card and a restyled table + pagination.
+   ========================================================= */
+
+:root {
+    --violet: #6c1fb0;
+    --violet-dark: #4c1483;
+    --violet-tint: #f6f1fc;
+    --violet-line: #e4d6f7;
+    --ink: #14121b;
+    --muted: #767a8a;
+    --border: #ece7f4;
+    --surface: #ffffff;
+    --page-bg: #f7f5fb;
+}
+
+body {
+    background: var(--page-bg);
+}
+
+.container {
+    padding: 14px 34px 44px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* ================= BACK BUTTON ================= */
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 12px;
+    padding: 8px 13px;
+    border-radius: 9px;
+    text-decoration: none;
+    color: var(--violet);
+    background: var(--violet-tint);
+    font-size: 14px;
+    font-weight: 650;
+    transition: background .2s ease, transform .2s ease, color .2s ease;
+}
+
+.back-btn i {
+    font-size: 13px;
+}
+
+.back-btn:hover {
+    background: var(--violet-line);
+    color: var(--violet-dark);
+    transform: translateX(-2px);
+}
+
+.back-btn:focus-visible {
+    outline: 2px solid var(--violet);
+    outline-offset: 2px;
+}
+
+/* ================= PAGE HEADING ================= */
+
+.page-heading {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.page-heading-icon {
+    width: 54px;
+    height: 54px;
+    flex: 0 0 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 15px;
+    background: linear-gradient(145deg, var(--violet-line), var(--violet-tint));
+    color: var(--violet-dark);
+    font-size: 22px;
+}
+
+.page-title {
+    margin: 0;
+    color: #111827;
+    font-size: 28px;
+    line-height: 1.15;
+    font-weight: 750;
+    letter-spacing: -.4px;
+}
+
+.page-subtitle {
+    margin: 5px 0 0;
+    color: var(--muted);
+    font-size: 13.5px;
+}
+
+/* ================= CARD ================= */
+
+.details-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    box-shadow: 0 5px 18px rgba(31, 18, 50, .055);
+}
+
+.card-header {
+    padding: 17px 22px;
+    background: linear-gradient(90deg, #fbf9fe 0%, #fff 75%);
+    border-bottom: 1px solid var(--border);
+}
+
+.card-header h2 {
+    margin: 0;
+    color: #3f0f78;
+    font-size: 17px;
+    line-height: 1.2;
+    font-weight: 720;
+}
+
+/* ================= PATIENT SUMMARY CARD ================= */
+
+.patient-summary-card {
+    padding: 20px 22px;
+}
+
+.patient-info-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.patient-identity {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+.avatar {
+    width: 50px;
+    height: 50px;
+    flex: 0 0 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(145deg, var(--violet), var(--violet-dark));
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: .3px;
+}
+
+.patient-name {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.patient-id {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-top: 2px;
+}
+
+.type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-weight: 650;
+    font-size: 12px;
+    letter-spacing: .2px;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.type-badge i {
+    font-size: 11px;
+}
+
+.type-badge.walkin {
+    background: #fff4e8;
+    color: #b56412;
+    border-color: #fbe3c4;
+}
+
+.type-badge.registered {
+    background: #eef4ff;
+    color: #2952b0;
+    border-color: #d7e4fb;
+}
+
+/* ================= TABLE ================= */
+
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.patient-appointments-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+}
+
+.patient-appointments-table th,
+.patient-appointments-table td {
+    padding: 14px 22px;
+    text-align: left;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+.patient-appointments-table th {
+    background: var(--violet-tint);
+    color: var(--violet-dark);
+    font-weight: 700;
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    white-space: nowrap;
+}
+
+.patient-appointments-table tbody tr:hover td {
+    background-color: var(--violet-tint);
+    transition: background-color .2s ease;
+}
+
+.patient-appointments-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Reason column stays a fixed width so long text can't stretch the table or
+   overlap other columns; other columns get a min-width and stay on one
+   line — same pattern used on the Staff Appointments table. */
+.patient-appointments-table .col-datetime { min-width: 160px; }
+.patient-appointments-table .col-doctor   { min-width: 140px; }
+.patient-appointments-table .col-reason   { width: 280px; max-width: 280px; }
+.patient-appointments-table .col-status   { min-width: 130px; }
+
+.patient-appointments-table td:nth-child(1),
+.patient-appointments-table td:nth-child(2),
+.patient-appointments-table td:nth-child(4) {
+    white-space: nowrap;
+}
+
+.time-inline {
+    margin-left: 8px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.reason-preview {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    max-width: 280px;
+    white-space: normal;
+    word-break: break-word;
+    color: var(--ink);
+}
+
+/* ================= EMPTY ROW ================= */
+
+.empty-row {
+    text-align: center !important;
+    color: #9ca3af;
+    padding: 40px 0 !important;
+    background-color: #fff !important;
+    font-size: 14px;
+}
+
+.empty-row i {
+    display: block;
+    font-size: 22px;
+    margin-bottom: 8px;
+    color: #d5cde6;
+}
+
+/* ================= STATUS BADGE ================= */
+
+.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status i {
+    font-size: 6px;
+}
+
+.status.pending      { background-color: #f59e0b; }
+.status.approved     { background-color: #10b981; }
+.status.rejected     { background-color: #ef4444; }
+.status.rescheduled  { background-color: #3b82f6; }
+.status.cancelled    { background-color: #6b7280; }
+.status.completed    { background-color: #8b5cf6; }
+.status.no-show      { background-color: #f97316; }
+
+/* ================= PAGINATION ================= */
+
+.pagination-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px 22px;
+    background: #fff;
+    border-top: 1px solid var(--border);
+}
+
+.pagination-info {
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.pagination-info strong {
+    color: var(--ink);
+    font-weight: 650;
+}
+
+.pagination-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 8px;
+    border: 1.5px solid var(--violet-line);
+    background: #fff;
+    color: var(--violet);
+    font-size: 13px;
+    font-weight: 650;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all .2s ease;
+    line-height: 1;
+}
+
+.page-btn:hover {
+    background: var(--violet-tint);
+    border-color: var(--violet);
+    color: var(--violet-dark);
+}
+
+.page-btn.active {
+    background: var(--violet);
+    border-color: var(--violet);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(108, 31, 176, .3);
+    cursor: default;
+    pointer-events: none;
+}
+
+.page-btn.disabled {
+    color: #d1d5db;
+    border-color: #f3f4f6;
+    background: #f9fafb;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.page-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    font-size: 13px;
+    color: #9ca3af;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 768px) {
+    .container {
+        padding: 14px 16px 32px;
+    }
+
+    .page-title {
+        font-size: 22px;
+    }
+
+    .patient-appointments-table th,
+    .patient-appointments-table td {
+        padding: 12px 16px;
+    }
+
+    .reason-preview,
+    .patient-appointments-table .col-reason {
+        max-width: 160px;
+        width: 160px;
+    }
+
+    .pagination-wrapper {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

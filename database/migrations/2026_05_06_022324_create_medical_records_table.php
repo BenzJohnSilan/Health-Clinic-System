@@ -34,6 +34,13 @@ return new class extends Migration
 
             // Medical info
             $table->text('chief_complaint')->nullable();
+
+            // History of Present Illness at Physical Examination — bahagi
+            // ng bagong Staff Check-In -> Consultation workflow. Nullable
+            // dahil pwede mag-Save Draft na hindi pa kumpleto ang fields.
+            $table->text('history_of_present_illness')->nullable();
+            $table->text('physical_examination')->nullable();
+
             $table->text('diagnosis')->nullable();
             $table->text('treatment')->nullable();
             $table->text('notes')->nullable();
