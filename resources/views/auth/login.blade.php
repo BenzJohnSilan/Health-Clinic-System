@@ -7,10 +7,11 @@
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ asset('css/login.css') }}">
+<link rel="stylesheet" href="{{ asset('css/auth-extras.css') }}">
 
 </head>
 
-<body>
+<body class="page-login">
 
 <!-- ===== BACK TO HOME BUTTON (fixed top-left) ===== -->
 <a href="/" class="back-home">
@@ -26,14 +27,6 @@
 
     <!-- ===== LEFT ===== -->
     <div class="left">
-
-        <!-- Floating badges -->
-        <div class="left-badge left-badge-1">
-            <i class='bx bxs-shield-check'></i> Secure Access
-        </div>
-        <div class="left-badge left-badge-2">
-            <i class='bx bxs-calendar-check'></i> Easy Booking
-        </div>
 
         <div class="left-inner">
             <div class="left-icon">
@@ -63,83 +56,92 @@
             <p>Sign in to your account to continue.</p>
         </div>
 
-        <!-- ERROR / SUCCESS MESSAGES -->
+        <!-- ACCOUNT-LEVEL MESSAGES (wrong credentials, lockout, pending approval, etc.) -->
         <div class="messages">
             @error('login')
-                <div class="alert-error"><i class='bx bx-error-circle'></i> {{ $message }}</div>
-            @enderror
-            @error('password')
-                <div class="alert-error"><i class='bx bx-error-circle'></i> {{ $message }}</div>
+                <div class="alert-error" role="alert"><i class='bx bx-error-circle'></i> {{ $message }}</div>
             @enderror
             @error('role')
-                <div class="alert-error"><i class='bx bx-error-circle'></i> {{ $message }}</div>
+                <div class="alert-error" role="alert"><i class='bx bx-error-circle'></i> {{ $message }}</div>
             @enderror
             @if(session('error'))
-                <div class="alert-error"><i class='bx bx-error-circle'></i> {{ session('error') }}</div>
+                <div class="alert-error" role="alert"><i class='bx bx-error-circle'></i> {{ session('error') }}</div>
             @endif
             @if(session('success'))
-                <div class="alert-success"><i class='bx bx-check-circle'></i> {{ session('success') }}</div>
+                <div class="alert-success" data-auto-dismiss role="status"><i class='bx bx-check-circle'></i> {{ session('success') }}</div>
             @endif
         </div>
 
-        <form method="POST" action="{{ route('login.authenticate') }}">
+        {{-- data-prevent-double-submit stops the double-click 419 error --}}
+        <form method="POST" action="{{ route('login.authenticate') }}" data-prevent-double-submit>
             @csrf
 
             <!-- Username / Email -->
-            <label class="input-label">Username or Email</label>
+            <label class="input-label" for="login">Username or Email</label>
             <div class="input-wrap">
                 <i class='bx bxs-user input-icon'></i>
-                {{-- ✅ FIX: Added old('login') so value persists after failed login --}}
-                <input type="text" name="login" value="{{ old('login') }}" placeholder="Enter your username or email" required>
+                <input type="text" id="login" name="login" value="{{ old('login') }}"
+                       placeholder="Enter your username or email"
+                       autocomplete="username" autocapitalize="none" spellcheck="false"
+                       @unless($errors->any() || session('error')) autofocus @endunless
+                       required>
             </div>
 
             <!-- Password -->
-            <label class="input-label">Password</label>
+            <label class="input-label" for="password">Password</label>
             <div class="input-wrap">
                 <i class='bx bxs-lock-alt input-icon'></i>
-                <input type="password" id="password" name="password" placeholder="Enter your password" required>
-                <i class='bx bxs-show input-toggle' id="togglePassword"></i>
+                <input type="password" id="password" name="password"
+                       placeholder="Enter your password"
+                       autocomplete="current-password"
+                       @class(['is-invalid' => $errors->has('password')])
+                       @error('password') aria-invalid="true" aria-describedby="password-error" @enderror
+                       required>
+                <button type="button" class="input-toggle" id="togglePassword"
+                        aria-label="Show password" aria-pressed="false">
+                    <i class='bx bxs-show'></i>
+                </button>
             </div>
+            <x-auth.field-error name="password" />
 
             <!-- Options -->
             <div class="options">
                 <label>
-                    {{-- ✅ FIX: Added name="remember" and value="1" so controller can read it --}}
                     <input type="checkbox" name="remember" value="1" {{ old('remember') ? 'checked' : '' }}> Remember Me
                 </label>
                 <a href="{{ route('password.request') }}" class="forgot-link">Forgot Password?</a>
             </div>
 
             <!-- Submit -->
-            <button type="submit" class="login-btn">
+            <button type="submit" class="login-btn" data-loading-text="Logging in...">
                 <i class='bx bx-log-in'></i> Login
             </button>
         </form>
 
-        <!-- Divider -->
-        <div class="divider">or continue with</div>
-
-        <!-- Social -->
-        {{-- ✅ FIX: Added type="button" to prevent accidental form submission --}}
-        <div class="social-row">
-            <button type="button" class="social-btn" title="Google"><i class='bx bxl-google'></i></button>
-            <button type="button" class="social-btn" title="Facebook"><i class='bx bxl-facebook'></i></button>
-            <button type="button" class="social-btn" title="GitHub"><i class='bx bxl-github'></i></button>
-            <button type="button" class="social-btn" title="LinkedIn"><i class='bx bxl-linkedin'></i></button>
-        </div>
-
     </div>
 </div>
 
+<script src="{{ asset('js/prevent-double-submit.js') }}"></script>
 <script>
-const toggle   = document.getElementById('togglePassword');
-const password = document.getElementById('password');
+const toggleBtn = document.getElementById('togglePassword');
+const password  = document.getElementById('password');
+const toggleIcon = toggleBtn.querySelector('i');
 
-toggle.addEventListener('click', () => {
-    const isHidden = password.type === 'password';
-    password.type  = isHidden ? 'text' : 'password';
-    toggle.classList.toggle('bxs-show', !isHidden);
-    toggle.classList.toggle('bxs-hide',  isHidden);
+toggleBtn.addEventListener('click', () => {
+    const show = password.type === 'password';
+    password.type = show ? 'text' : 'password';
+    toggleIcon.className = show ? 'bx bxs-hide' : 'bx bxs-show';
+    toggleBtn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    toggleBtn.setAttribute('aria-pressed', String(show));
+});
+
+// Auto-hide success messages (e.g. "You have been logged out.") after a few seconds.
+// Error messages are never auto-hidden.
+document.querySelectorAll('.alert-success[data-auto-dismiss]').forEach(el => {
+    setTimeout(() => {
+        el.classList.add('is-hiding');
+        setTimeout(() => el.remove(), 600);
+    }, 4000);
 });
 </script>
 

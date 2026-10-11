@@ -3,8 +3,12 @@
 namespace App\Providers;
 
 use App\Services\AdminNotificationService;
+use App\Services\DoctorNotificationService;
 use App\Services\PatientNotificationService;
 use App\Services\StaffNotificationService;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -18,6 +22,21 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // ===================== REGISTRATION RATE LIMIT =====================
+        // Per IP: 5 attempts a minute and 20 an hour (failed validations count
+        // too). Plenty for a patient fixing typos; far too slow for bots
+        // creating accounts or spamming OTP emails.
+        RateLimiter::for('register', function (Request $request) {
+            $tooMany = fn () => back()
+                ->withInput($request->except(['password', 'password_confirmation']))
+                ->withErrors(['registration' => 'Too many registration attempts. Please wait a few minutes and try again.']);
+
+            return [
+                Limit::perMinute(5)->by('register:minute:' . $request->ip())->response($tooMany),
+                Limit::perHour(20)->by('register:hour:' . $request->ip())->response($tooMany),
+            ];
+        });
+
         // ===================== PASSWORD POLICY =====================
         Password::defaults(function () {
             return Password::min(8)
@@ -102,6 +121,32 @@ class AppServiceProvider extends ServiceProvider
             $view->with([
                 'staffNotifications' => $notifications,
                 'staffUnreadCount'   => $notifications->where('unread', true)->count(),
+            ]);
+        });
+
+        // ===================== DOCTOR LAYOUT VIEW COMPOSER =====================
+        // Injects $doctorNotifications (each with a persistent 'unread' flag
+        // from the database) and $doctorUnreadCount into every view that
+        // extends layouts.doctor — so the notification bell/panel works the
+        // same way regardless of which doctor page is loaded. Completely
+        // independent from the Admin/Staff/Patient composers: its own
+        // service, its own read-state table (doctor_notification_reads),
+        // and every source query is filtered server-side by the
+        // authenticated doctor's id.
+        View::composer('layouts.doctor', function ($view) {
+            $doctor = auth()->user();
+
+            if (!$doctor) {
+                $view->with(['doctorNotifications' => collect(), 'doctorUnreadCount' => 0]);
+                return;
+            }
+
+            $service = app(DoctorNotificationService::class);
+            $notifications = $service->build($doctor);
+
+            $view->with([
+                'doctorNotifications' => $notifications,
+                'doctorUnreadCount'   => $notifications->where('unread', true)->count(),
             ]);
         });
     }

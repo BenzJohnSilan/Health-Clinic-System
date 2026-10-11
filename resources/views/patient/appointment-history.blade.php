@@ -13,6 +13,26 @@
         <h2>Appointment History</h2>
     </div>
 
+    {{-- ================= SEARCH + FILTER ================= --}}
+    <form method="GET" action="{{ route('patient.appointment.history') }}" class="lab-toolbar">
+        <div class="lab-search-box">
+            <i class='bx bx-search'></i>
+            <input type="text" name="search" placeholder="Search by reference no. or doctor name..." value="{{ $search }}">
+        </div>
+
+        <select name="status" class="lab-select" onchange="this.form.submit()">
+            <option value="All" {{ $statusFilter === 'All' ? 'selected' : '' }}>All Statuses</option>
+            <option value="Completed" {{ $statusFilter === 'Completed' ? 'selected' : '' }}>Completed</option>
+            <option value="Cancelled" {{ $statusFilter === 'Cancelled' ? 'selected' : '' }}>Cancelled</option>
+            <option value="Rejected" {{ $statusFilter === 'Rejected' ? 'selected' : '' }}>Rejected</option>
+            <option value="No Show" {{ $statusFilter === 'No Show' ? 'selected' : '' }}>No Show</option>
+        </select>
+
+        <button type="submit" class="lab-search-btn">
+            <i class='bx bx-filter-alt'></i> Filter
+        </button>
+    </form>
+
     <!-- ================= TABLE ================= -->
     <div class="table-wrapper">
 
@@ -46,7 +66,7 @@
                         </td>
 
                         <td>
-                            {{ \Carbon\Carbon::parse($appointment->appointment_time)->format('h:i A') }}
+                            {{ $appointment->timeLabel('h:i A') }}
                         </td>
 
                         <td>
@@ -68,9 +88,9 @@
 
                                 <div class="action-buttons">
 
-                                    <a href="{{ route('patient.medical-report.show', $appointment->id) }}"
+                                    <a href="{{ route('patient.appointment.show', $appointment->id) }}"
                                     class="btn-view">
-                                        Report
+                                        View
                                     </a>
 
                                 </div>
@@ -90,7 +110,11 @@
 
                     <tr>
                         <td colspan="6" class="no-data">
-                            No medical records found.
+                            @if($search !== '' || $statusFilter !== 'All')
+                                No appointment records match your search or filter.
+                            @else
+                                No medical records found.
+                            @endif
                         </td>
                     </tr>
 

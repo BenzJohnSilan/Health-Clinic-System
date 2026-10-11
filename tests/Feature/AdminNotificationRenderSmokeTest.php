@@ -13,7 +13,7 @@ class AdminNotificationRenderSmokeTest extends TestCase
 
     protected function makeUser(string $role, string $email, array $overrides = []): User
     {
-        return User::create(array_merge([
+        return User::forceCreate(array_merge([
             'first_name'        => 'Test',
             'last_name'         => ucfirst(strtolower($role)),
             'birthdate'         => '1995-01-01',

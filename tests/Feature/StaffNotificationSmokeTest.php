@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Appointment;
 use App\Models\Patient;
+use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -14,7 +15,7 @@ class StaffNotificationSmokeTest extends TestCase
 
     protected function makeUser(string $role, string $email): User
     {
-        return User::create([
+        $user = User::forceCreate([
             'first_name'        => 'Test',
             'last_name'         => ucfirst(strtolower($role)),
             'birthdate'         => '1995-01-01',
@@ -29,6 +30,19 @@ class StaffNotificationSmokeTest extends TestCase
             'approval_status'   => 'Approved',
             'email_verified_at' => now(),
         ]);
+
+        // The Staff notification feed is appointment activity, which only
+        // Staff holding view_appointments can see (a billing-only Cashier
+        // gets an empty feed) — so the Staff used in these tests get it.
+        if ($role === 'Staff') {
+            $permission = Permission::firstOrCreate(
+                ['slug' => 'view_appointments'],
+                ['name' => 'View Appointments', 'module' => 'Appointments']
+            );
+            $user->permissions()->attach($permission->id);
+        }
+
+        return $user;
     }
 
     protected function makeWalkinPatient(): Patient

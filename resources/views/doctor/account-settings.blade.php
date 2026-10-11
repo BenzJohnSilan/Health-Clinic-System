@@ -135,11 +135,6 @@
                     <span>Change Password</span>
                     <i class='bx bx-chevron-right arrow'></i>
                 </button>
-                <button class="tab-btn" data-tab="signature">
-                    <i class='bx bx-pen'></i>
-                    <span>Digital Signature</span>
-                    <i class='bx bx-chevron-right arrow'></i>
-                </button>
             </nav>
 
         </div>{{-- end settings-sidebar --}}
@@ -419,62 +414,6 @@
                 </form>
             </div>{{-- end tab-password --}}
 
-            {{-- ===== TAB: DIGITAL SIGNATURE ===== --}}
-            <div class="tab-content" id="tab-signature">
-
-                <div class="panel-header">
-                    <h2><i class='bx bx-pen'></i> Digital Signature</h2>
-                    <p>Upload the signature that will appear on medical certificates you sign and issue</p>
-                </div>
-
-                <div class="form-section">
-                    <h3 class="section-label">
-                        <i class='bx bx-image'></i> Current Signature
-                    </h3>
-
-                    @if($doctor->signature)
-                        <div class="signature-preview-box">
-                            <img src="{{ asset('storage/'.$doctor->signature) }}" alt="Current Signature">
-                        </div>
-                    @else
-                        <div class="signature-preview-box signature-preview-empty">
-                            No signature uploaded yet.
-                        </div>
-                    @endif
-                </div>
-
-                <form action="{{ route('doctor.signature.update') }}" method="POST" enctype="multipart/form-data" class="form-section">
-                    @csrf
-                    @method('PUT')
-
-                    <div class="form-group">
-                        <label>Upload Signature (PNG or JPG, transparent PNG recommended)</label>
-                        <input type="file" name="signature" accept="image/png,image/jpeg" required>
-                        @error('signature')<span class="field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>@enderror
-                    </div>
-
-                    <div class="form-actions signature-actions">
-                        <button type="submit" class="btn-save">
-                            <i class='bx bx-upload'></i> {{ $doctor->signature ? 'Replace Signature' : 'Upload Signature' }}
-                        </button>
-                    </div>
-                </form>
-
-                @if($doctor->signature)
-                    <form action="{{ route('doctor.signature.remove') }}" method="POST"
-                          onsubmit="return confirm('Remove your saved signature?');">
-                        @csrf
-                        @method('DELETE')
-                        <div class="form-actions signature-actions">
-                            <button type="submit" class="btn-save btn-signature-remove">
-                                <i class='bx bx-trash'></i> Remove Signature
-                            </button>
-                        </div>
-                    </form>
-                @endif
-
-            </div>{{-- end tab-signature --}}
-
         </div>{{-- end settings-panel --}}
     </div>{{-- end settings-container --}}
 </div>{{-- end settings-wrapper --}}
@@ -486,10 +425,6 @@ const tabContents = document.querySelectorAll('.tab-content');
 
 @if($errors->has('current_password') || $errors->has('password'))
     document.addEventListener('DOMContentLoaded', () => switchTab('password'));
-@endif
-
-@if($errors->has('signature'))
-    document.addEventListener('DOMContentLoaded', () => switchTab('signature'));
 @endif
 
 tabBtns.forEach(btn => {

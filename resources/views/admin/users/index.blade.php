@@ -250,8 +250,23 @@
                         </div>
                         <div class="form-group">
                             <label>Position <span class="required">*</span></label>
-                            <input type="text" name="position" value="{{ old('position') }}"
-                                   placeholder="e.g. Nurse, Receptionist">
+                            <input type="text" id="position_field" name="position" value="{{ old('position') }}"
+                                   placeholder="e.g. Nurse, Receptionist, Cashier">
+                        </div>
+                        <div class="form-group">
+                            <label>Permission Preset</label>
+                            <select id="permission_preset_field" name="permission_preset">
+                                @foreach(\App\Models\Permission::presets() as $presetKey => $preset)
+                                    <option value="{{ $presetKey }}"
+                                            {{ old('permission_preset', 'standard') === $presetKey ? 'selected' : '' }}>
+                                        {{ $preset['label'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <small style="color:#6b7280; font-size:12px;">
+                                The Position is only a label. Access comes from the permissions given here;
+                                you can fine-tune them later in Manage Permissions.
+                            </small>
                         </div>
                     </div>
                 </div>
@@ -709,6 +724,26 @@ document.getElementById('closeAddModal').onclick = () => {
 document.getElementById('closeEditModal').onclick = () => {
     editModal.style.display = 'none';
 };
+
+/* ===========================================================
+   POSITION -> PRESET (convenience only)
+   Typing "Cashier" as the Position pre-selects the Cashier
+   permission preset so it is not forgotten. The Position never
+   grants access by itself — whatever preset is selected in the
+   dropdown (and later edited in Manage Permissions) is what the
+   account actually receives.
+   =========================================================== */
+(function () {
+    const positionField = document.getElementById('position_field');
+    const presetField   = document.getElementById('permission_preset_field');
+    if (!positionField || !presetField) return;
+
+    positionField.addEventListener('input', () => {
+        if (positionField.value.trim().toLowerCase() === 'cashier') {
+            presetField.value = 'cashier';
+        }
+    });
+})();
 
 /* ------------------------------------------------------------------
    ROLE CARDS  –  clicking a card moves to Step 2

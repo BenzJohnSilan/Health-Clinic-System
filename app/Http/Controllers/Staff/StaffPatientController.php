@@ -8,7 +8,9 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use App\Models\User;
 use App\Models\Patient;
 use App\Models\Appointment;
+use App\Models\LaboratoryRequest;
 use App\Models\UserLog;
+use App\Services\DoctorAvailabilityService;
 use Carbon\Carbon;
 
 class StaffPatientController extends Controller
@@ -156,8 +158,25 @@ class StaffPatientController extends Controller
             'appointment_date',
             'appointment_time'
         )
+        // Walk-ins have no reserved time (NULL) and never occupy a slot.
+        ->whereNotNull('appointment_time')
         ->whereNotIn('status', ['Cancelled', 'Rejected'])
         ->get();
+
+        // ── Walk-in Queue (Add to Queue action) ──────────────────────────
+        // Active doctors who are working today (existing availability
+        // rules) — re-validated server-side by
+        // StaffAppointmentController::addToQueue().
+        $walkInDoctors = DoctorAvailabilityService::availableDoctorsOn(now()->toDateString());
+
+        // "user_{id}" / "patient_{id}" => queue number, for patients already
+        // in today's ACTIVE queue, so the menu can show them as In Queue
+        // instead of letting Staff queue them twice.
+        $queuedToday = Appointment::activeWalkInQueue()
+            ->get(['patient_id', 'walkin_patient_id', 'queue_number'])
+            ->mapWithKeys(fn ($a) => [
+                ($a->walkin_patient_id ? 'patient_' . $a->walkin_patient_id : 'user_' . $a->patient_id) => $a->queue_number,
+            ]);
 
         $relationships = self::RELATIONSHIPS;
 
@@ -171,8 +190,67 @@ class StaffPatientController extends Controller
         $canEditPatient         = $user->hasPermission('edit_patient');
         $canViewAppointments    = $user->hasPermission('view_patient_appointments');
         $canScheduleAppointment = $user->hasPermission('schedule_patient_appointment');
+        // Adding someone to today's walk-in queue is walk-in intake, so it
+        // reuses the existing `add_walk_in_patient` permission.
+        $canAddToQueue          = $canAddWalkIn;
+
+        // ── Follow-up Consultation recommendations (Laboratory results) ──
+        // Reviewed laboratory requests where the Doctor recommended a
+        // follow-up that hasn't been booked yet, keyed the same way as
+        // the patient rows ("user_{id}" / "patient_{id}"), so Staff can
+        // see it on the patient row and pick it in the existing
+        // Schedule Appointment modal. Scoped to the patients on this page.
+        $pageUserIds   = $pageItems->where('type', 'user')->pluck('raw_id')->all();
+        $pageWalkinIds = $pageItems->where('type', 'patient')->pluck('raw_id')->all();
+
+        $followUpsByPatient = LaboratoryRequest::with(['doctor', 'tests'])
+            ->awaitingFollowUpBooking()
+            ->where(function ($q) use ($pageUserIds, $pageWalkinIds) {
+                $q->whereIn('patient_id', $pageUserIds ?: [0])
+                  ->orWhereIn('walkin_patient_id', $pageWalkinIds ?: [0]);
+            })
+            ->orderByDesc('reviewed_at')
+            ->get()
+            ->groupBy(fn ($lab) => $lab->walkin_patient_id ? 'patient_' . $lab->walkin_patient_id : 'user_' . $lab->patient_id)
+            ->map(fn ($labs) => $labs->map(fn ($lab) => [
+                'id'           => $lab->id,
+                'reference_no' => $lab->reference_no,
+                'tests'        => $lab->testsDisplay(),
+                'doctor_id'    => $lab->doctor_id,
+                'doctor_name'  => $lab->doctor ? trim($lab->doctor->first_name . ' ' . $lab->doctor->last_name) : null,
+                'instructions' => $lab->follow_up_instructions,
+            ])->values());
+
+        // Deep link from the Staff Laboratory Results page
+        // (?follow_up={labRequestId}) — reopens the Schedule Appointment
+        // modal for that patient with Follow-up preselected. Still fully
+        // re-validated by StaffAppointmentController::store().
+        $autoFollowUp = null;
+        if ($canScheduleAppointment && $request->filled('follow_up')) {
+            $lab = LaboratoryRequest::awaitingFollowUpBooking()->find((int) $request->query('follow_up'));
+            if ($lab) {
+                $autoFollowUp = [
+                    'lab_id'       => $lab->id,
+                    'patient_id'   => $lab->walkin_patient_id ?? $lab->patient_id,
+                    'patient_type' => $lab->walkin_patient_id ? 'patient' : 'user',
+                ];
+                $key = $autoFollowUp['patient_type'] . '_' . $autoFollowUp['patient_id'];
+                if (!$followUpsByPatient->has($key)) {
+                    $followUpsByPatient->put($key, collect([[
+                        'id'           => $lab->id,
+                        'reference_no' => $lab->reference_no,
+                        'tests'        => $lab->testsDisplay(),
+                        'doctor_id'    => $lab->doctor_id,
+                        'doctor_name'  => $lab->doctor ? trim($lab->doctor->first_name . ' ' . $lab->doctor->last_name) : null,
+                        'instructions' => $lab->follow_up_instructions,
+                    ]]));
+                }
+            }
+        }
 
         return view('staff.patient', compact(
+            'followUpsByPatient',
+            'autoFollowUp',
             'patients',
             'doctors',
             'bookedSlots',
@@ -182,7 +260,10 @@ class StaffPatientController extends Controller
             'canAddWalkIn',
             'canEditPatient',
             'canViewAppointments',
-            'canScheduleAppointment'
+            'canScheduleAppointment',
+            'canAddToQueue',
+            'walkInDoctors',
+            'queuedToday'
         ));
     }
 
@@ -359,8 +440,15 @@ class StaffPatientController extends Controller
             'details' => 'Added patient ' . $patient->full_name . ' to the clinic records.',
         ]);
 
+        // Lets Staff add the newly saved patient straight to today's
+        // walk-in queue (the Patients page opens the Add to Queue modal).
         return redirect()->route('staff.patients.index', $request->only(['search', 'type']))
-            ->with('success', 'Walk-in patient added successfully.');
+            ->with('success', 'Walk-in patient added successfully.')
+            ->with('queue_prompt', [
+                'id'   => $patient->id,
+                'type' => 'patient',
+                'name' => $patient->full_name,
+            ]);
     }
 
     // ================= UPDATE PATIENT (from View Patient → Edit Patient) =================

@@ -80,11 +80,11 @@
         <h3><i class='bx bx-file-blank'></i> Current Medical Certificate</h3>
 
         <div class="detail-row">
-            <span class="detail-label">Medical Statement</span>
+            <span class="detail-label">Final Diagnosis</span>
             <span class="detail-value">{{ $medicalCertificate->medical_statement }}</span>
         </div>
         <div class="detail-row">
-            <span class="detail-label">Recommendation</span>
+            <span class="detail-label">Remarks</span>
             <span class="detail-value">{{ $medicalCertificate->recommendation }}</span>
         </div>
         @if($medicalCertificate->rest_start_date && $medicalCertificate->rest_end_date)
@@ -110,7 +110,7 @@
             <button type="button" class="btn-reject" onclick="openRejectModal()">
                 <i class='bx bx-x-circle'></i> Reject Correction
             </button>
-            <a href="{{ route('doctor.medical-certificates.create', $medicalCertificate->id) }}" class="btn-create">
+            <a href="{{ route('doctor.medical-certificates.correction.edit', $medicalCertificate->id) }}" class="btn-create">
                 <i class='bx bx-edit'></i> Edit &amp; Correct Certificate
             </a>
             <a href="{{ route('doctor.medical-certificates.index') }}" class="btn-cancel">Back</a>

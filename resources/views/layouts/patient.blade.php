@@ -67,15 +67,23 @@
             <span>Appointments</span>
         </a>
         <a href="{{ route('patient.appointment.history') }}"
-           class="{{ request()->routeIs('patient.appointment.history') ? 'active' : '' }}">
+           class="{{ request()->routeIs('patient.appointment.history', 'patient.appointment.show') ? 'active' : '' }}">
             <i class='bx bx-history'></i>
             <span>Appointment History</span>
         </a>
+
+        <span class="nav-section-label">Records</span>
         <a href="{{ route('patient.medical-certificates.index') }}"
            class="{{ request()->routeIs('patient.medical-certificates.*') ? 'active' : '' }}">
             <i class='bx bx-file-blank'></i>
             <span>Medical Certificates</span>
         </a>
+        <a href="{{ route('patient.laboratory-results.index') }}"
+           class="{{ request()->routeIs('patient.laboratory-results.*') ? 'active' : '' }}">
+            <i class='bx bxs-flask'></i>
+            <span>Laboratory Results</span>
+        </a>
+
         @if($patient->hasPermission('view_billing'))
         <span class="nav-section-label">Billing</span>
         <a href="{{ route('patient.billing.index') }}"
@@ -335,19 +343,28 @@
 <!-- END MAIN CONTENT -->
 
 
-<!-- ================= LOGOUT MODAL ================= -->
-<div class="logout-modal" id="logoutModal">
-    <div class="logout-box">
-        <div class="logout-icon">
-            <i class="fas fa-sign-out-alt"></i>
+<!-- ================= LOGOUT MODAL =================
+     Uses its own "lg-" class prefix on purpose: generic names like
+     .btn-cancel / .btn-confirm are also defined by page stylesheets
+     (appointments, laboratory, medical certificates) and used to
+     override this modal, so it looked different on every page. -->
+<div class="lg-modal" id="logoutModal" role="dialog" aria-modal="true"
+     aria-labelledby="lgTitle" aria-describedby="lgText" aria-hidden="true">
+    <div class="lg-box">
+        <div class="lg-icon">
+            <i class='bx bx-log-out'></i>
         </div>
-        <h3>Ready to Leave?</h3>
-        <p>Are you sure you want to logout from your account?</p>
-        <div class="logout-buttons">
-            <button class="btn-cancel" onclick="closeLogoutModal()">Cancel</button>
-            <form method="POST" action="{{ route('logout') }}">
+        <h3 class="lg-title" id="lgTitle">Ready to Leave?</h3>
+        <p class="lg-text" id="lgText">Are you sure you want to logout from your account?</p>
+        <div class="lg-actions">
+            <button type="button" class="lg-btn lg-btn--cancel" id="lgCancelBtn" onclick="closeLogoutModal()">
+                Cancel
+            </button>
+            <form method="POST" action="{{ route('logout') }}" id="lgLogoutForm">
                 @csrf
-                <button type="submit" class="btn-confirm">Logout</button>
+                <button type="submit" class="lg-btn lg-btn--confirm" id="lgConfirmBtn">
+                    <i class='bx bx-log-out'></i><span>Logout</span>
+                </button>
             </form>
         </div>
     </div>
@@ -533,7 +550,9 @@ setInterval(updateDateTime, 1000);
         'dashboard':           'Dashboard',
         'appointments':        'Appointments',
         'appointment/history': 'Appointment History',
+        'appointment-history': 'Appointment History',
         'medical-certificates':'Medical Certificates',
+        'laboratory-results':  'Laboratory Results',
         'activity':            'Activity Logs',
         'settings':            'Account Settings',
     };
@@ -546,8 +565,69 @@ setInterval(updateDateTime, 1000);
 })();
 
 /* ---- Logout modal ---- */
-function openLogoutModal()  { document.getElementById('logoutModal').classList.add('active'); }
-function closeLogoutModal() { document.getElementById('logoutModal').classList.remove('active'); }
+(function () {
+    const modal      = document.getElementById('logoutModal');
+    const cancelBtn  = document.getElementById('lgCancelBtn');
+    const form       = document.getElementById('lgLogoutForm');
+    const confirmBtn = document.getElementById('lgConfirmBtn');
+    let lastFocused  = null;
+
+    window.openLogoutModal = function () {
+        lastFocused = document.activeElement;
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden', 'false');
+        // Focus "Cancel" first so an accidental Enter never logs the user out.
+        setTimeout(function () { cancelBtn.focus(); }, 50);
+    };
+
+    window.closeLogoutModal = function () {
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
+        if (lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
+    };
+
+    // Click on the dark backdrop closes the modal
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) closeLogoutModal();
+    });
+
+    // Escape closes it; Tab stays inside the dialog
+    document.addEventListener('keydown', function (e) {
+        if (!modal.classList.contains('active')) return;
+
+        if (e.key === 'Escape') {
+            closeLogoutModal();
+            return;
+        }
+
+        if (e.key === 'Tab') {
+            const focusables = modal.querySelectorAll('button:not([disabled])');
+            const first = focusables[0];
+            const last  = focusables[focusables.length - 1];
+
+            if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+            } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
+            }
+        }
+    });
+
+    // Prevent double-submit and give visual feedback
+    function setLoading(isLoading) {
+        confirmBtn.disabled = isLoading;
+        confirmBtn.querySelector('i').className = isLoading ? 'bx bx-loader-alt bx-spin' : 'bx bx-log-out';
+        confirmBtn.querySelector('span').textContent = isLoading ? 'Logging out...' : 'Logout';
+    }
+
+    form.addEventListener('submit', function () { setLoading(true); });
+
+    // If the user comes back via the browser's back button (bfcache),
+    // make sure the button isn't stuck in the loading state.
+    window.addEventListener('pageshow', function () { setLoading(false); });
+})();
 </script>
 
 @yield('scripts')

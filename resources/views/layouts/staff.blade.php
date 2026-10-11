@@ -58,14 +58,20 @@
             <span>Dashboard</span>
         </a>
 
+        @if($staff->hasPermission('view_appointments'))
         <span class="nav-section-label">Appointments</span>
         <a href="{{ route('staff.appointments.index') }}"
            class="{{ request()->routeIs('staff.appointments.*') || request()->routeIs('staff.pending-appointments') ? 'active' : '' }}">
             <i class='bx bx-calendar'></i>
             <span>Appointments</span>
         </a>
+        @endif
 
+        {{-- RECORDS heading only when at least one record module is visible,
+             so a billing-only Staff (Cashier) gets no empty section. --}}
+        @if($staff->hasPermission('view_patients') || $staff->hasPermission('view_laboratory_requests') || $staff->hasPermission('view_medical_certificates'))
         <span class="nav-section-label">Records</span>
+        @endif
         @if($staff->hasPermission('view_patients'))
         <a href="{{ route('staff.patients.index') }}"
            class="{{ request()->routeIs('staff.patients.*') ? 'active' : '' }}">
@@ -73,7 +79,24 @@
             <span>Patients</span>
         </a>
         @endif
+        @if($staff->hasPermission('view_laboratory_requests'))
+        <a href="{{ route('staff.laboratory-requests.index') }}"
+           class="{{ request()->routeIs('staff.laboratory-requests.*') ? 'active' : '' }}">
+            <i class='bx bxs-flask'></i>
+            <span>Laboratory Results</span>
+        </a>
+        @endif
+
+        @if($staff->hasPermission('view_medical_certificates'))
+        <a href="{{ route('staff.medical-certificates.index') }}"
+           class="{{ request()->routeIs('staff.medical-certificates.*') ? 'active' : '' }}">
+            <i class='bx bx-file-blank'></i>
+            <span>Medical Certificates</span>
+        </a>
+        @endif
+
         @if($staff->hasPermission('view_billing'))
+        <span class="nav-section-label">Billing</span>
         <a href="{{ route('staff.billing.index') }}"
            class="{{ request()->routeIs('staff.billing.*') ? 'active' : '' }}">
             <i class='bx bx-receipt'></i>
@@ -268,7 +291,7 @@
 
                     </div>
 
-                    @if($staffNotifications->isNotEmpty())
+                    @if($staffNotifications->isNotEmpty() && $staff->hasPermission('view_appointments'))
                         <div class="notif-panel-footer">
                             <a href="{{ route('staff.appointments.index', ['status' => 'Pending']) }}" class="notif-view-all">
                                 View all pending appointments
@@ -528,7 +551,9 @@ setInterval(updateDateTime, 1000);
         'dashboard':            'Dashboard',
         'appointments':         'Appointments',
         'patients':             'Patients',
+        'laboratory-requests':  'Laboratory Results',
         'billing':              'Billing & Payments',
+        'medical-certificates': 'Medical Certificates',
         'medicines':            'Medicine',
         'records':              'Records',
         'activity-logs':        'Activity Logs',

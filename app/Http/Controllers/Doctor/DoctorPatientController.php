@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Carbon\Carbon;
 
 class DoctorPatientController extends Controller
 {
@@ -130,22 +131,15 @@ class DoctorPatientController extends Controller
             // ── Registered patient ──────────────────────────────────────
             $userModel = User::findOrFail($rawId);
 
-            $patient = [
-                'first_name'     => $userModel->first_name,
-                'last_name'      => $userModel->last_name,
-                'age'            => $userModel->age            ?? null,
-                'gender'         => $userModel->gender         ?? null,
-                'contact_number' => $userModel->contact_number ?? null,
-                'address'        => $userModel->address        ?? null,
-                'is_walk_in'     => false,
-            ];
+            $patient = $this->buildPatientInfo($userModel, false);
 
             $appointmentsQuery = Appointment::where('patient_id', $userModel->id)
                 ->where('doctor_id', $doctorId);
 
             $allAppointmentIds = (clone $appointmentsQuery)->pluck('id');
 
-            $records = MedicalRecord::where('patient_id', $userModel->id)
+            $records = MedicalRecord::withConsultation()
+                ->where('patient_id', $userModel->id)
                 ->with('appointment')
                 ->latest()
                 ->get();
@@ -154,22 +148,15 @@ class DoctorPatientController extends Controller
             // ── Walk-in patient ──────────────────────────────────────────
             $walkIn = Patient::findOrFail($rawId);
 
-            $patient = [
-                'first_name'     => $walkIn->first_name,
-                'last_name'      => $walkIn->last_name,
-                'age'            => $walkIn->age            ?? null,
-                'gender'         => $walkIn->gender         ?? null,
-                'contact_number' => $walkIn->contact_number ?? null,
-                'address'        => $walkIn->address        ?? null,
-                'is_walk_in'     => true,
-            ];
+            $patient = $this->buildPatientInfo($walkIn, true);
 
             $appointmentsQuery = Appointment::where('walkin_patient_id', $walkIn->id)
                 ->where('doctor_id', $doctorId);
 
             $allAppointmentIds = (clone $appointmentsQuery)->pluck('id');
 
-            $records = MedicalRecord::whereIn('appointment_id', $allAppointmentIds)
+            $records = MedicalRecord::withConsultation()
+                ->whereIn('appointment_id', $allAppointmentIds)
                 ->with('appointment')
                 ->latest()
                 ->get();
@@ -203,5 +190,43 @@ class DoctorPatientController extends Controller
             'records',
             'prescriptions'
         ));
+    }
+
+    /**
+     * Complete, display-ready patient information for the Patient Records
+     * page. Registered patients (users table) and walk-in patients
+     * (patients table) are normalized to the same keys; the only column
+     * whose name differs is the emergency contact number
+     * (users.emergency_contact_number vs patients.emergency_contact).
+     */
+    private function buildPatientInfo($model, bool $isWalkIn): array
+    {
+        $birthdate = $model->birthdate ? Carbon::parse($model->birthdate) : null;
+
+        $prefix = $isWalkIn ? 'WLK-' : 'REG-';
+
+        return [
+            'patient_id'        => $prefix . str_pad((string) $model->id, 5, '0', STR_PAD_LEFT),
+            'first_name'        => $model->first_name,
+            'middle_name'       => $model->middle_name ?? null,
+            'last_name'         => $model->last_name,
+            'suffix'            => $model->suffix ?? null,
+            'birthdate'         => $birthdate ? $birthdate->format('F d, Y') : null,
+            'age'               => $birthdate ? $birthdate->age : ($model->age ?? null),
+            'gender'            => $model->gender ?? null,
+            'civil_status'      => $model->civil_status ?? null,
+            'contact_number'    => $model->contact_number ?? null,
+            'email'             => $isWalkIn ? null : ($model->email ?? null),
+            'address'           => $model->address ?? null,
+            'blood_type'        => $model->blood_type ?? null,
+            'allergies'         => $model->allergies ?? null,
+            'emergency_name'    => $model->emergency_name ?? null,
+            'emergency_contact' => $isWalkIn
+                                    ? ($model->emergency_contact ?? null)
+                                    : ($model->emergency_contact_number ?? null),
+            'relationship'      => $model->relationship ?? null,
+            'emergency_address' => $model->emergency_address ?? null,
+            'is_walk_in'        => $isWalkIn,
+        ];
     }
 }

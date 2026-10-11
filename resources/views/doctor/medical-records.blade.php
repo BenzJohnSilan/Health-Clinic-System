@@ -8,69 +8,104 @@
 
 <div class="container">
 
-    <!-- ================= PAGE HEADER ================= -->
-    <div class="page-header">
-        <h1 class="page-title">Medical Records</h1>
+    <!-- ================= HERO ================= -->
+    <div class="mr-hero">
+        <div class="mr-hero__main">
+            <div class="mr-hero__icon"><i class='bx bx-folder-open'></i></div>
+            <div>
+                <h1 class="mr-hero__title">Medical Records</h1>
+                <p class="mr-hero__sub">Browse the clinical records of your consultations.</p>
+            </div>
+        </div>
+        <div class="mr-hero__count">
+            <span class="mr-hero__count-num">{{ $records->total() }}</span>
+            <span class="mr-hero__count-label">Total Record{{ $records->total() !== 1 ? 's' : '' }}</span>
+        </div>
     </div>
 
     <!-- ================= ALERTS ================= -->
     @if(session('success'))
-        <div class="alert-success">{{ session('success') }}</div>
+        <div class="alert-success"><i class='bx bx-check-circle'></i> {{ session('success') }}</div>
     @endif
     @if(session('error'))
-        <div class="alert-error">{{ session('error') }}</div>
+        <div class="alert-error"><i class='bx bx-error-circle'></i> {{ session('error') }}</div>
     @endif
 
-    <!-- ================= TABLE ================= -->
-    <div class="table-container">
+    <!-- ================= RECORDS CARD ================= -->
+    <div class="info-card">
 
-        <table class="record-table">
+        <div class="info-card-header">
+            <div class="info-card-title">
+                <span class="info-card-icon"><i class='bx bx-list-ul'></i></span>
+                <h3>Consultation Records</h3>
+            </div>
+        </div>
 
-            <thead>
-                <tr>
-                    <th>Patient Name</th>
-                    <th>Appointment Date</th>
-                    <th>Diagnosis</th>
-                    <th>Treatment</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                @forelse($records as $record)
+        <div class="table-container">
+            <table class="record-table">
+                <thead>
                     <tr>
-                        <td>
-                            {{ $record->appointment->patientName() ?? 'N/A' }}
-                        </td>
-
-                        <td>
-                            @if(optional($record->appointment)->appointment_date)
-                                {{ \Carbon\Carbon::parse($record->appointment->appointment_date)->format('M d, Y') }}
-                            @else
-                                N/A
-                            @endif
-                        </td>
-
-                        <td>{{ $record->diagnosis ?? 'N/A' }}</td>
-
-                        <td>{{ $record->treatment ?? 'N/A' }}</td>
-
-                        <td>
-                            <a href="{{ route('doctor.medical-records.show', $record->appointment->id) }}" class="btn-view">
-                                View
-                            </a>
-                        </td>
+                        <th>Patient Name</th>
+                        <th>Appointment Date</th>
+                        <th>Diagnosis</th>
+                        <th>Treatment</th>
+                        <th>Action</th>
                     </tr>
-                @empty
-                    <tr>
-                        <td colspan="5" class="no-data">No medical records found.</td>
-                    </tr>
-                @endforelse
-            </tbody>
+                </thead>
 
-        </table>
+                <tbody>
+                    @forelse($records as $record)
+                        @php
+                            $mrName = optional($record->appointment)->patientName() ?? 'N/A';
+                            $mrInitials = collect(explode(' ', $mrName))
+                                ->filter()
+                                ->map(fn($w) => strtoupper(substr($w, 0, 1)))
+                                ->take(2)
+                                ->implode('');
+                        @endphp
+                        <tr>
+                            <td>
+                                <div class="cell-patient">
+                                    <span class="cell-avatar">{{ $mrInitials ?: 'P' }}</span>
+                                    <span class="cell-name">{{ $mrName }}</span>
+                                </div>
+                            </td>
 
-    </div>
+                            <td class="cell-date">
+                                @if(optional($record->appointment)->appointment_date)
+                                    {{ \Carbon\Carbon::parse($record->appointment->appointment_date)->format('M d, Y') }}
+                                @else
+                                    N/A
+                                @endif
+                            </td>
+
+                            <td><div class="cell-clamp">{{ $record->diagnosis ?? 'N/A' }}</div></td>
+
+                            <td><div class="cell-clamp">{{ $record->treatment ?? 'N/A' }}</div></td>
+
+                            <td>
+                                @if($record->appointment)
+                                    <a href="{{ route('doctor.medical-records.show', $record->appointment->id) }}" class="btn-view">
+                                        <i class='bx bx-show'></i> View
+                                    </a>
+                                @else
+                                    <span class="text-muted">N/A</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="no-data">
+                                <div class="empty-block">
+                                    <i class='bx bx-folder-open'></i>
+                                    <p>No medical records found.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
 
     <!-- ================= PAGINATION ================= -->
     <div class="pagination-wrapper">
@@ -88,11 +123,11 @@
             {{-- Previous --}}
             @if($records->onFirstPage())
                 <span class="page-btn disabled">
-                    <i class="fa-solid fa-chevron-left"></i>
+                    <i class='bx bx-chevron-left'></i>
                 </span>
             @else
                 <a class="page-btn" href="{{ $records->previousPageUrl() }}">
-                    <i class="fa-solid fa-chevron-left"></i>
+                    <i class='bx bx-chevron-left'></i>
                 </a>
             @endif
 
@@ -126,20 +161,19 @@
             {{-- Next --}}
             @if($records->hasMorePages())
                 <a class="page-btn" href="{{ $records->nextPageUrl() }}">
-                    <i class="fa-solid fa-chevron-right"></i>
+                    <i class='bx bx-chevron-right'></i>
                 </a>
             @else
                 <span class="page-btn disabled">
-                    <i class="fa-solid fa-chevron-right"></i>
+                    <i class='bx bx-chevron-right'></i>
                 </span>
             @endif
 
         </nav>
     </div>
 
-</div>
+    </div>{{-- end info-card --}}
 
-<!-- ================= FONT AWESOME ================= -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</div>
 
 @endsection

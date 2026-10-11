@@ -2,18 +2,68 @@
 
 @section('head')
 <link rel="stylesheet" href="{{ asset('css/staff-billing.css') }}">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="{{ asset('css/staff-billing-show.css') }}">
+<style>
+    /* Doctor-only bits that the Staff stylesheet does not cover */
+    .bs-page .item-type-chip--medical_certificate { background: var(--amber-bg); color: var(--amber); }
+
+    .bs-page .billing-card__header-row { margin-bottom: 18px; }
+    .bs-page .billing-card__header-row .billing-card__title { margin: 0; }
+
+    .bs-page .btn-edit-charges {
+        background: #fff;
+        color: var(--primary);
+        border: 1.5px solid var(--primary);
+        border-radius: var(--radius-sm);
+        padding: 8px 16px;
+        font-size: 13px;
+        font-weight: 700;
+        transition: all .22s ease;
+    }
+    .bs-page .btn-edit-charges:hover { background: var(--primary); color: #fff; }
+
+    .bs-page .edit-charges-panel { margin-top: 0; }
+
+    .bs-page .charge-row { border: 1.5px solid #e5dcf2; border-radius: 10px; }
+    .bs-page .charge-row:has(input:checked) { border-color: var(--primary); background: var(--primary-soft); }
+    .bs-page .charge-name { font-weight: 700; color: var(--text-dark); }
+    .bs-page .charge-qty { border: 1.5px solid #e5dcf2; border-radius: 8px; }
+    .bs-page .charge-medicine-row { border-radius: 10px; }
+    .bs-page .charge-est-total { border-top: 1px solid var(--border); }
+
+    .bs-page .edit-charges-actions .btn-confirm-payment {
+        width: auto;
+        flex: 1;
+        padding: 11px 16px;
+        font-size: 13.5px;
+        box-shadow: none;
+    }
+    .bs-page .btn-cancel-charges { border-radius: var(--radius-sm); padding: 11px 18px; font-weight: 700; }
+</style>
 @endsection
 
 @section('content')
-<div class="container">
+<div class="container bs-page">
 
-    <div class="page-header">
-        <div>
-            <a href="{{ route('doctor.billing.index') }}" class="billing-back-link">
-                <i class="fa-solid fa-arrow-left"></i> Back to Billing
-            </a>
-            <h1 class="page-title">Invoice {{ $invoice->invoice_no }}</h1>
+    {{-- BACK LINK — on top of the hero, same as the Staff invoice page --}}
+    <a href="{{ route('doctor.billing.index') }}" class="billing-back-link">
+        <i class='bx bx-arrow-back'></i> Back to Billing
+    </a>
+
+    {{-- HERO — same gradient card style as the Staff invoice page --}}
+    <div class="bs-hero">
+        <div class="bs-hero__left">
+            <div class="bs-hero__icon"><i class='bx bx-receipt'></i></div>
+            <div>
+                <h1 class="page-title">Invoice {{ $invoice->invoice_no }}</h1>
+                <p class="bs-hero__sub">{{ $invoice->patientName() }}</p>
+                @if($invoice->appointment)
+                    <div class="bs-hero__chips">
+                        <span class="bs-chip"><i class='bx bx-calendar-check'></i> {{ $invoice->appointment->reference_no }}</span>
+                        <span class="bs-chip"><i class='bx bx-calendar'></i> {{ \Carbon\Carbon::parse($invoice->appointment->appointment_date)->format('F d, Y') }}</span>
+                    </div>
+                @endif
+            </div>
         </div>
         <span class="status-badge status-badge--{{ $invoice->statusBadgeClass() }} status-badge--lg">
             {{ $invoice->status }}
@@ -33,20 +83,41 @@
         </div>
     @endif
 
+    {{-- SUMMARY CARDS --}}
+    <div class="bs-summary">
+        <div class="bs-stat">
+            <div class="bs-stat__icon"><i class='bx bx-receipt'></i></div>
+            <div>
+                <p>Total Amount</p>
+                <h2>₱{{ number_format($invoice->total_amount, 2) }}</h2>
+            </div>
+        </div>
+        <div class="bs-stat bs-stat--green">
+            <div class="bs-stat__icon"><i class='bx bx-check-circle'></i></div>
+            <div>
+                <p>Amount Paid</p>
+                <h2>₱{{ number_format($invoice->amount_paid, 2) }}</h2>
+            </div>
+        </div>
+        <div class="bs-stat bs-stat--amber">
+            <div class="bs-stat__icon"><i class='bx bx-wallet'></i></div>
+            <div>
+                <p>Remaining Balance</p>
+                <h2>₱{{ number_format($invoice->balance, 2) }}</h2>
+            </div>
+        </div>
+    </div>
+
     <div class="billing-grid">
 
         <!-- ============ LEFT: INVOICE DETAILS ============ -->
         <div class="billing-col-left">
 
             <div class="billing-card">
-                <h2 class="billing-card__title"><i class="fa-solid fa-user"></i> Patient</h2>
+                <h2 class="billing-card__title"><span class="bs-icon"><i class='bx bx-user'></i></span> Patient</h2>
                 <dl class="billing-info-list">
                     <div><dt>Name</dt><dd>{{ $invoice->patientName() }}</dd></div>
                     <div><dt>Type</dt><dd>{{ $invoice->walkin_patient_id ? 'Walk-in' : 'Registered' }}</dd></div>
-                    @if($invoice->appointment)
-                        <div><dt>Appointment</dt><dd>{{ $invoice->appointment->reference_no }}</dd></div>
-                        <div><dt>Consultation Date</dt><dd>{{ \Carbon\Carbon::parse($invoice->appointment->appointment_date)->format('F d, Y') }}</dd></div>
-                    @endif
                 </dl>
             </div>
 
@@ -59,44 +130,56 @@
 
             <div class="billing-card">
                 <div class="billing-card__header-row">
-                    <h2 class="billing-card__title"><i class="fa-solid fa-file-invoice"></i> Bill / Invoice</h2>
+                    <h2 class="billing-card__title"><span class="bs-icon"><i class='bx bx-file'></i></span> Bill / Invoice</h2>
                     @if($canEditCharges)
                         <button type="button" id="editChargesToggle" class="btn-edit-charges">
-                            <i class="fa-solid fa-pen"></i> Edit Charges
+                            <i class='bx bx-pencil'></i> Edit Charges
                         </button>
                     @endif
                 </div>
 
-                <table class="billing-items-table" id="invoiceItemsTable">
+                <div class="bs-table-wrap" id="invoiceItemsTable">
+                <table class="billing-items-table">
                     <thead>
                         <tr>
                             <th>Item</th>
                             <th>Type</th>
                             <th class="num">Qty</th>
                             <th class="num">Unit Price</th>
-                            <th class="num">Amount</th>
+                            <th>Discount</th>
+                            <th class="num">Net Amount</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($invoice->items as $item)
                             <tr>
                                 <td>{{ $item->description }}</td>
-                                <td><span class="item-type-chip item-type-chip--{{ $item->item_type }}">{{ ucfirst($item->item_type) }}</span></td>
+                                <td><span class="item-type-chip item-type-chip--{{ $item->item_type }}">{{ ucfirst(str_replace('_', ' ', $item->item_type)) }}</span></td>
                                 <td class="num">{{ $item->quantity }}</td>
                                 <td class="num">₱{{ number_format($item->unit_price, 2) }}</td>
-                                <td class="num">₱{{ number_format($item->amount, 2) }}</td>
+                                <td>
+                                    @if($item->discount_type)
+                                        <span>{{ $item->discountLabel() }} · {{ rtrim(rtrim(number_format((float) $item->discount_rate, 2), '0'), '.') }}%</span>
+                                        <div class="discount-hint">-₱{{ number_format($item->discount_amount, 2) }}</div>
+                                    @else
+                                        <span class="discount-none">—</span>
+                                    @endif
+                                </td>
+                                <td class="num item-net">₱{{ number_format($item->netAmount(), 2) }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="5" class="empty-row">No items on this invoice yet.</td></tr>
+                            <tr><td colspan="6" class="empty-row">No items on this invoice yet.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
+                </div>
 
                 <div class="billing-totals">
                     <div><span>Subtotal</span><span>₱{{ number_format($invoice->subtotal, 2) }}</span></div>
-                    @if($invoice->discount > 0)
-                        <div><span>Discount</span><span>-₱{{ number_format($invoice->discount, 2) }}</span></div>
-                    @endif
+                    <div>
+                        <span>Total Discount</span>
+                        <span>{{ $invoice->discount > 0 ? '-' : '' }}₱{{ number_format($invoice->discount, 2) }}</span>
+                    </div>
                     <div class="billing-totals__bold"><span>Total Amount</span><span>₱{{ number_format($invoice->total_amount, 2) }}</span></div>
                     <div><span>Amount Paid</span><span>₱{{ number_format($invoice->amount_paid, 2) }}</span></div>
                     <div class="billing-totals__bold"><span>Remaining Balance</span><span>₱{{ number_format($invoice->balance, 2) }}</span></div>
@@ -150,7 +233,7 @@
                             <div class="edit-charges-actions">
                                 <button type="button" id="cancelEditCharges" class="btn-cancel-charges">Cancel</button>
                                 <button type="submit" class="btn-confirm-payment" {{ $services->isEmpty() && $dispensedMedicines->isEmpty() ? 'disabled' : '' }}>
-                                    <i class="fa-solid fa-check"></i> Save Changes
+                                    <i class='bx bx-check'></i> Save Changes
                                 </button>
                             </div>
                         </form>
@@ -158,52 +241,19 @@
                 @endif
             </div>
 
-            <div class="billing-card">
-                <h2 class="billing-card__title"><i class="fa-solid fa-clock-rotate-left"></i> Payment History</h2>
-
-                @if(!auth()->user()->hasPermission('view_payment_history'))
-                    <p class="billing-empty">You do not have permission to view payment history.</p>
-                @else
-                    @forelse($invoice->payments as $payment)
-                        <div class="payment-row">
-                            <div class="payment-row__main">
-                                <span class="payment-method-chip payment-method-chip--{{ strtolower($payment->payment_method) }}">
-                                    {{ $payment->payment_method }}
-                                </span>
-                                <span class="payment-amount">₱{{ number_format($payment->amount, 2) }}</span>
-                            </div>
-                            <div class="payment-row__meta">
-                                {{ $payment->paid_at->format('M d, Y · h:i A') }}
-                                · Received by {{ $payment->receivedBy->first_name ?? '—' }}
-                                @if($payment->payment_method === 'GCash')
-                                    · Ref# {{ $payment->reference_number }}
-                                @endif
-                            </div>
-                            @if(auth()->user()->hasPermission('view_payment_history'))
-                                <a href="{{ route('doctor.billing.receipt', ['invoice' => $invoice->id, 'payment' => $payment->id]) }}"
-                                   class="btn-view-receipt" target="_blank">
-                                    <i class="fa-solid fa-receipt"></i> View Receipt
-                                </a>
-                            @endif
-                        </div>
-                    @empty
-                        <p class="billing-empty">No payments recorded yet.</p>
-                    @endforelse
-                @endif
-            </div>
-
         </div>
 
-        <!-- ============ RIGHT: RECORD PAYMENT (record_payment only) ============ -->
-        @if(auth()->user()->hasPermission('record_payment'))
+        <!-- ============ RIGHT: RECORD PAYMENT (record_payment only) + PAYMENT HISTORY ============ -->
         <div class="billing-col-right">
-            <div class="billing-card billing-card--sticky">
-                <h2 class="billing-card__title"><i class="fa-solid fa-cash-register"></i> Record Payment</h2>
+
+            @if(auth()->user()->hasPermission('record_payment'))
+            <div class="billing-card">
+                <h2 class="billing-card__title"><span class="bs-icon"><i class='bx bx-wallet'></i></span> Record Payment</h2>
 
                 @if($invoice->status === 'Paid')
-                    <p class="billing-empty">This invoice is fully paid. No further payment needed.</p>
+                    <p class="bs-state"><i class='bx bx-check-circle'></i><span>This invoice is fully paid. No further payment needed.</span></p>
                 @elseif($invoice->status === 'Cancelled')
-                    <p class="billing-empty">This invoice has been cancelled.</p>
+                    <p class="bs-state bs-state--muted"><i class='bx bx-x-circle'></i><span>This invoice has been cancelled.</span></p>
                 @else
                     <form method="POST" action="{{ route('doctor.billing.payments.store', $invoice->id) }}" id="paymentForm">
                         @csrf
@@ -220,11 +270,11 @@
                             <div class="pay-method-toggle">
                                 <label class="pay-method-option">
                                     <input type="radio" name="payment_method" value="Cash" checked>
-                                    <span><i class="fa-solid fa-money-bill-wave"></i> Cash</span>
+                                    <span><i class='bx bx-money'></i> Cash</span>
                                 </label>
                                 <label class="pay-method-option">
                                     <input type="radio" name="payment_method" value="GCash">
-                                    <span><i class="fa-solid fa-mobile-screen-button"></i> GCash</span>
+                                    <span><i class='bx bx-mobile-alt'></i> GCash</span>
                                 </label>
                             </div>
                         </div>
@@ -248,13 +298,48 @@
                         </div>
 
                         <button type="submit" class="btn-confirm-payment" id="confirmPaymentBtn">
-                            <i class="fa-solid fa-check"></i> Confirm Payment
+                            <i class='bx bx-check'></i> Confirm Payment
                         </button>
                     </form>
                 @endif
             </div>
+            @endif
+
+            <div class="billing-card">
+                <h2 class="billing-card__title"><span class="bs-icon"><i class='bx bx-history'></i></span> Payment History</h2>
+
+                @if(!auth()->user()->hasPermission('view_payment_history'))
+                    <p class="billing-empty">You do not have permission to view payment history.</p>
+                @else
+                    @forelse($invoice->payments as $payment)
+                        <div class="payment-row">
+                            <div class="payment-row__main">
+                                <span class="payment-method-chip payment-method-chip--{{ strtolower($payment->payment_method) }}">
+                                    {{ $payment->payment_method }}
+                                </span>
+                                <span class="payment-amount">₱{{ number_format($payment->amount, 2) }}</span>
+                            </div>
+                            <div class="payment-row__meta">
+                                {{ $payment->paid_at->format('M d, Y · h:i A') }}
+                                · Received by {{ $payment->receivedBy->first_name ?? '—' }}
+                                @if($payment->payment_method === 'GCash')
+                                    · Ref# {{ $payment->reference_number }}
+                                @endif
+                            </div>
+                            @if(auth()->user()->hasPermission('view_payment_history'))
+                                <a href="{{ route('doctor.billing.receipt', ['invoice' => $invoice->id, 'payment' => $payment->id]) }}"
+                                   class="btn-view-receipt" target="_blank">
+                                    <i class='bx bx-receipt'></i> View Receipt
+                                </a>
+                            @endif
+                        </div>
+                    @empty
+                        <p class="billing-empty">No payments recorded yet.</p>
+                    @endforelse
+                @endif
+            </div>
+
         </div>
-        @endif
 
     </div>
 </div>
@@ -290,7 +375,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     paymentForm.addEventListener('submit', function () {
         confirmBtn.disabled = true;
-        confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing…';
+        confirmBtn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Processing…';
     });
 });
 

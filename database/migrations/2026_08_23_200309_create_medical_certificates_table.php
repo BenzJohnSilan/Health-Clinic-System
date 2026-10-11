@@ -33,6 +33,14 @@ return new class extends Migration
                 ->constrained('users')
                 ->nullOnDelete();
 
+            // ================= BILLING =================
+            // Invoice that carries this certificate's fee: either the
+            // consultation invoice it was added to (still unpaid, same
+            // visit) or its own separate invoice. The `invoices` table is
+            // created by a LATER migration, so the foreign key is added
+            // there (see create_invoices_table.php), not here.
+            $table->unsignedBigInteger('invoice_id')->nullable();
+
             // ================= CERTIFICATE NUMBER =================
             // Only assigned at the moment of issuance.
             $table->string('certificate_number', 30)->nullable()->unique();
@@ -52,12 +60,21 @@ return new class extends Migration
             $table->text('additional_remarks')->nullable();
 
             // ================= STATUS =================
-            $table->enum('status', ['pending', 'issued', 'rejected', 'correction_requested'])
+            // pending -> issued (Doctor) -> released (Staff, after payment
+            // and the Doctor's physical signature).
+            $table->enum('status', ['pending', 'issued', 'rejected', 'correction_requested', 'released'])
                 ->default('pending');
 
             $table->timestamp('requested_at')->nullable();
             $table->timestamp('issued_at')->nullable();
             $table->timestamp('rejected_at')->nullable();
+
+            // Who handed the signed certificate to the patient, and when.
+            $table->timestamp('released_at')->nullable();
+            $table->foreignId('released_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
             $table->text('rejection_reason')->nullable();
 

@@ -41,7 +41,7 @@
                                     <td>
                                         <p><strong>Doctor:</strong> {{ $appointment->doctor->first_name }} {{ $appointment->doctor->last_name }}</p>
                                         <p><strong>Date:</strong> {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('F j, Y') }}</p>
-                                        <p><strong>Time:</strong> {{ \Carbon\Carbon::parse($appointment->appointment_time)->format('g:i A') }}</p>
+                                        <p><strong>Time:</strong> {{ $appointment->timeLabel('g:i A') }}</p>
 
                                         @if($status == 'Rejected')
                                             <p><strong>Reason:</strong> {{ $appointment->rejection_reason ?? $appointment->reason }}</p>

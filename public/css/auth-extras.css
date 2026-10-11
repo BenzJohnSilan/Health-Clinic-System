@@ -1,0 +1,433 @@
+/* =====================================================================
+   auth-extras.css — shared by login & register.
+   Load AFTER login.css / register.css.
+   ===================================================================== */
+
+/* ---------- Show/hide password (now a real <button>) ---------- */
+button.input-toggle {
+    background: none;
+    border: 0;
+    padding: 6px;
+    margin-right: -6px;          /* keeps the icon where it was before */
+    line-height: 1;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+/* room for the toggle so long passwords don't run under the icon */
+.input-wrap:has(.input-toggle) input { padding-right: 46px; }
+
+/* keyboard focus rings */
+button.input-toggle:focus-visible,
+.link-btn:focus-visible,
+.consent-label input:focus-visible,
+.privacy-close:focus-visible,
+.privacy-ok:focus-visible,
+.wizard-step-btn:focus-visible,
+.wizard-btn:focus-visible {
+    outline: 2px solid var(--purple-dark);
+    outline-offset: 2px;
+}
+
+/* ---------- Inline field errors ---------- */
+.input-wrap input.is-invalid,
+.input-wrap select.is-invalid {
+    border-color: #ef4444;
+    background: #fff7f7;
+}
+.input-wrap input.is-invalid:focus,
+.input-wrap select.is-invalid:focus {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
+}
+.file-label.is-invalid {
+    border-color: #ef4444;
+    background: #fff7f7;
+}
+
+.field-error {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #b91c1c;
+}
+.field-error[hidden] { display: none; }
+.field-error div { display: flex; align-items: flex-start; gap: 6px; }
+.field-error i { font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+
+/* login: its .input-wrap has a bottom margin, so pull the error up under the field */
+.page-login .input-wrap + .field-error { margin: -10px 0 16px; }
+
+/* ---------- Live hint (password match) ---------- */
+.field-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    font-size: 12px;
+}
+.field-hint:empty { display: none; }
+.field-hint.is-ok  { color: #15803d; }
+.field-hint.is-bad { color: #b91c1c; }
+
+/* ---------- Consent checkbox ---------- */
+.consent-group { margin: 6px 0 4px; }
+
+.consent-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-dark);
+    cursor: pointer;
+}
+.consent-label input {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    flex-shrink: 0;
+    accent-color: var(--purple-dark);
+    cursor: pointer;
+}
+
+.link-btn {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    font-weight: 500;
+    color: var(--purple-dark);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* ---------- Privacy Notice dialog ---------- */
+.privacy-dialog {
+    border: 0;
+    border-radius: 20px;
+    padding: 0;
+    /* register.css starts with `* { margin: 0 }`, which wipes the dialog's
+       default `margin: auto` and pinned it to the top-left corner of the
+       screen. Restoring it centers the dialog again. */
+    margin: auto;
+    width: min(560px, calc(100% - 32px));
+    max-height: min(80vh, 640px);
+    max-height: min(80dvh, 640px);   /* phones: ignore the collapsing address bar */
+    color: var(--text-dark);
+    font-family: 'DM Sans', sans-serif;
+    box-shadow: 0 24px 60px rgba(26, 26, 46, 0.35);
+}
+.privacy-dialog::backdrop {
+    background: rgba(26, 26, 46, 0.55);
+    backdrop-filter: blur(3px);
+}
+.privacy-dialog[open] {
+    display: flex;
+    flex-direction: column;
+}
+.privacy-dialog-inner {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: inherit;
+}
+
+.privacy-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    border-bottom: 1px solid rgba(106, 17, 203, 0.1);
+}
+.privacy-header h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+}
+.privacy-close {
+    background: none;
+    border: 0;
+    font-size: 24px;
+    line-height: 1;
+    color: #888;
+    cursor: pointer;
+    border-radius: 8px;
+    padding: 2px;
+}
+.privacy-close:hover { color: var(--purple-dark); }
+
+.privacy-body {
+    padding: 18px 22px;
+    overflow-y: auto;
+    overscroll-behavior: contain;    /* scrolling to the end does not scroll the page behind */
+    font-size: 13.5px;
+    line-height: 1.65;
+}
+.privacy-body h4 { font-size: 13.5px; margin: 14px 0 4px; }
+.privacy-body h4:first-child { margin-top: 0; }
+.privacy-body p, .privacy-body ul { color: #444; }
+.privacy-body ul { padding-left: 18px; }
+
+/* Legal Basis: first block of the notice, softly highlighted so it is easy to find */
+.privacy-legal {
+    margin-bottom: 4px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(106, 17, 203, 0.05);
+    border-left: 3px solid var(--purple-dark);
+}
+.privacy-legal h4 { margin-top: 0; color: var(--purple-dark); }
+.privacy-legal p { margin: 0; }
+
+.privacy-footer {
+    padding: 14px 22px 18px;
+    border-top: 1px solid rgba(106, 17, 203, 0.1);
+    display: flex;
+    justify-content: flex-end;
+}
+.privacy-ok {
+    border: 0;
+    border-radius: 12px;
+    padding: 10px 24px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    color: #fff;
+    background: linear-gradient(135deg, var(--purple-dark), var(--purple-light));
+    cursor: pointer;
+}
+
+/* Privacy Notice on phones: roomier tap targets */
+@media (max-width: 520px) {
+    .privacy-header { padding: 14px 18px; }
+    .privacy-header h3 { font-size: 18px; }
+    .privacy-close {
+        width: 40px;
+        height: 40px;
+        display: grid;
+        place-items: center;
+        font-size: 26px;
+    }
+    .privacy-body   { padding: 16px 18px; }
+    .privacy-footer { padding: 12px 18px 16px; }
+    .privacy-ok     { width: 100%; min-height: 46px; }
+}
+
+/* ---------- Screen-reader-only text ---------- */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* The wizard's live region lives at the END of the form, inside the scrolling
+   .right panel. As position:absolute its containing block is .wrapper (not
+   .right), so it stuck out ~700px below the card and made .wrapper itself
+   scrollable. scrollIntoView() / focus() then shoved the whole card upward.
+   Keeping it in normal flow fixes that. */
+#wizardLive { position: static; }
+
+/* =====================================================================
+   REGISTER WIZARD (multi-step)
+   Everything below only applies when JavaScript is on (<html class="js">),
+   so without JS the whole form is simply shown at once.
+   ===================================================================== */
+
+/* ---------- Stepper ---------- */
+.wizard-stepper {
+    display: none;
+    list-style: none;
+    margin: 0 0 22px;
+    padding: 0;
+}
+.js .wizard-stepper { display: flex; }
+
+.wizard-stepper li {
+    flex: 1;
+    position: relative;
+}
+/* connecting line between the circles */
+.wizard-stepper li:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 15px;
+    left: calc(50% + 20px);
+    right: calc(-50% + 20px);
+    height: 2px;
+    background: rgba(106, 17, 203, 0.15);
+    transition: 0.25s;
+}
+.wizard-stepper li.is-done:not(:last-child)::after { background: var(--purple-dark); }
+
+.wizard-step-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    background: none;
+    border: 0;
+    padding: 0;
+    font-family: inherit;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+.wizard-step-btn:disabled { cursor: default; opacity: 0.55; }
+
+.wizard-dot {
+    position: relative;
+    z-index: 1;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    background: #fff;
+    color: var(--purple-dark);
+    border: 2px solid rgba(106, 17, 203, 0.25);
+    transition: 0.25s;
+}
+.wizard-dot i { font-size: 16px; }
+
+.wizard-label { font-size: 12px; font-weight: 500; }
+
+.wizard-stepper li.is-current .wizard-dot {
+    background: linear-gradient(135deg, var(--purple-dark), var(--purple-light));
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(106, 17, 203, 0.35);
+}
+.wizard-stepper li.is-current .wizard-label { color: var(--text-dark); }
+
+.wizard-stepper li.is-done .wizard-dot {
+    background: var(--purple-dark);
+    border-color: var(--purple-dark);
+    color: #fff;
+}
+.wizard-stepper li.is-done .wizard-label { color: var(--purple-dark); }
+
+/* a step that still has a server-side error */
+.wizard-stepper li.has-error .wizard-dot {
+    background: #fff7f7;
+    border-color: #ef4444;
+    color: #b91c1c;
+}
+.wizard-stepper li.has-error .wizard-label { color: #b91c1c; }
+
+/* ---------- Steps ---------- */
+.wizard-step:focus { outline: none; }
+
+.js .wizard-step:not(.is-active) { display: none; }
+.js .wizard-step.is-active { animation: wizardIn 0.25s ease; }
+
+@keyframes wizardIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.wizard-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(106, 17, 203, 0.05);
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+.wizard-note i { font-size: 16px; margin-top: 1px; color: var(--purple-dark); }
+
+/* ---------- Back / Next buttons ---------- */
+.wizard-nav {
+    display: none;
+    gap: 12px;
+    margin-top: 20px;
+}
+.js .wizard-nav { display: flex; }
+
+.wizard-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 46px;
+    padding: 0 22px;
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.wizard-btn[hidden] { display: none; }
+.wizard-btn i { font-size: 20px; }
+
+.wizard-btn-back {
+    background: transparent;
+    color: var(--purple-dark);
+    border: 1.5px solid rgba(106, 17, 203, 0.25);
+}
+.wizard-btn-back:hover { background: rgba(106, 17, 203, 0.05); }
+
+.wizard-btn-next {
+    margin-left: auto;
+    border: 0;
+    color: #fff;
+    background: linear-gradient(135deg, var(--purple-dark), var(--purple-light));
+    box-shadow: 0 8px 22px rgba(106, 17, 203, 0.3);
+}
+.wizard-btn-next:hover { transform: translateY(-2px); }
+
+/* the real submit button only shows on the last step (JS on) */
+.js [data-wizard-submit]:not(.is-visible) { display: none; }
+
+@media (max-width: 520px) {
+    .wizard-label { font-size: 11px; }
+    .wizard-btn { flex: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .js .wizard-step.is-active { animation: none; }
+}
+
+/* =====================================================================
+   REGISTER — mobile: keep the Step 1 pairs side by side (shorter form)
+   register.css stacks every .form-row below 860px. This puts the pairs
+   back into two columns, except on very narrow phones (< 360px), where
+   they stay stacked so the text does not get cramped.
+   Only Step 1 is affected; Username / Email in Step 3 stay stacked.
+   ===================================================================== */
+@media (max-width: 860px) and (min-width: 360px) {
+    .wizard-step[data-step="1"] .form-row {
+        flex-direction: row;
+        gap: 10px;
+    }
+
+    /* let each column shrink instead of overflowing */
+    .wizard-step[data-step="1"] .form-row .input-group { min-width: 0; }
+
+    /* two narrow columns: hide the left icon and tighten the padding so the
+       text (e.g. "Select gender", "mm/dd/yyyy") has room */
+    .wizard-step[data-step="1"] .form-row .input-icon { display: none; }
+    .wizard-step[data-step="1"] .form-row .input-wrap input,
+    .wizard-step[data-step="1"] .form-row .input-wrap select {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+}

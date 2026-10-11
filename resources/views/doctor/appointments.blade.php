@@ -87,7 +87,9 @@
 
                 @php
                     $date          = \Carbon\Carbon::parse($appointment->appointment_date);
-                    $time          = \Carbon\Carbon::parse($appointment->appointment_time);
+                    $time          = $appointment->appointment_time
+                        ? \Carbon\Carbon::parse($appointment->appointment_time)
+                        : $date->copy()->startOfDay(); // walk-in placeholder, never displayed
                     $isToday       = $date->isToday();
                     $appointmentEnd = $time->copy()->addMinutes(30);
 
@@ -135,13 +137,27 @@
                         @else
                             N/A
                         @endif
+                        <div style="margin-top:4px;">
+                            @if($appointment->isFollowUp())
+                                <span class="appt-type-followup"
+                                      title="Follow-up for laboratory result {{ $appointment->followUpLaboratoryRequest->reference_no ?? '' }}">
+                                    🔵 Follow-up
+                                </span>
+                            @else
+                                <span class="appt-type-regular">Regular Consultation</span>
+                            @endif
+                        </div>
                     </td>
 
                     <!-- Schedule -->
                     <td>
                         {{ $date->format('M d, Y') }}
                         <span style="margin-left:6px; color:#6b7280; font-size:13px;">
-                            {{ $time->format('h:i A') }} – {{ $appointmentEnd->format('h:i A') }}
+                            @if($appointment->isWalkIn())
+                                Walk-in {{ $appointment->queue_number }}
+                            @else
+                                {{ $time->format('h:i A') }} – {{ $appointmentEnd->format('h:i A') }}
+                            @endif
                         </span>
                     </td>
 

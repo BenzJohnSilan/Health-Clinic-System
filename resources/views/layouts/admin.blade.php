@@ -100,11 +100,23 @@
             <span>Manage Permissions</span>
         </a>
 
+        <span class="nav-section-label">Website</span>
+        <a href="{{ route('admin.website.index') }}"
+           class="{{ request()->routeIs('admin.website.*') ? 'active' : '' }}">
+            <i class='bx bx-globe'></i>
+            <span>Website Management</span>
+        </a>
+
         <span class="nav-section-label">System</span>
         <a href="{{ route('admin.user-logs') }}"
            class="{{ request()->routeIs('admin.user-logs') ? 'active' : '' }}">
             <i class='bx bx-history'></i>
             <span>User Logs</span>
+        </a>
+        <a href="{{ route('admin.backups.index') }}"
+           class="{{ request()->routeIs('admin.backups.*') ? 'active' : '' }}">
+            <i class='bx bx-data'></i>
+            <span>Backup &amp; Recovery</span>
         </a>
 
         <span class="nav-section-label">Account</span>
@@ -563,6 +575,7 @@ setInterval(updateDateTime, 1000);
         'medicines':            'Medicine',
         'permissions':          'Manage Permissions',
         'user-logs':            'User Logs',
+        'backups':              'Backup & Recovery',
         'account-settings':     'Account Settings',
         'dashboard':            'Dashboard',
     };

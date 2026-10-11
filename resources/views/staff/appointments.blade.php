@@ -11,6 +11,14 @@
     <!-- ================= PAGE HEADER ================= -->
     <div class="page-header">
         <h1 class="page-title">Appointments</h1>
+
+        {{-- Compact text link (not a card / not a status tab) — opens the
+             Walk-in Queue modal. Adding someone to the queue happens from
+             Patients -> action menu -> Add to Queue. --}}
+        <button type="button" class="walkin-queue-link" id="openWalkInQueue">
+            <i class="fa-solid fa-person-walking" aria-hidden="true"></i>
+            Walk-in Queue ({{ $walkInQueue->count() }})
+        </button>
     </div>
 
     <!-- ================= ALERTS ================= -->
@@ -114,7 +122,14 @@
 
                 @php
                     $date = \Carbon\Carbon::parse($appointment->appointment_date);
-                    $time = \Carbon\Carbon::parse($appointment->appointment_time);
+                    $isWalkIn = $appointment->isWalkIn();
+
+                    // A walk-in has NO reserved time. $time is only a
+                    // placeholder for the slot maths below (which are all
+                    // false for walk-ins) and is never printed for them.
+                    $time = $appointment->appointment_time
+                        ? \Carbon\Carbon::parse($appointment->appointment_time)
+                        : $date->copy()->startOfDay();
 
                     // Same eligibility rules enforced server-side in
                     // StaffAppointmentController::reschedule()/noShow().
@@ -142,9 +157,18 @@
                     <!-- Schedule -->
                     <td>
                         {{ $date->format('F d, Y') }}
-                        <span style="margin-left:8px; color:#555; font-size:13px;">
-                            {{ $time->format('h:i A') }}
-                        </span>
+                        @if($isWalkIn)
+                            <span class="appt-type-walkin" title="Walk-in — no reserved appointment time">Walk-in {{ $appointment->queue_number }}</span>
+                            @if($appointment->arrived_at)
+                                <span style="margin-left:6px; color:#555; font-size:13px;">
+                                    Arrived {{ $appointment->arrived_at->format('h:i A') }}
+                                </span>
+                            @endif
+                        @else
+                            <span style="margin-left:8px; color:#555; font-size:13px;">
+                                {{ $time->format('h:i A') }}
+                            </span>
+                        @endif
                     </td>
 
                     <!-- Doctor -->
@@ -154,6 +178,9 @@
 
                     <!-- Reason -->
                     <td>
+                        @if($appointment->isFollowUp())
+                            <span class="appt-type-followup">Follow-up</span>
+                        @endif
                         <span class="reason-preview">{{ $appointment->reason ?? '-' }}</span>
                     </td>
 
@@ -338,6 +365,84 @@
         </nav>
     </div>
 
+</div>
+
+<!-- ================= WALK-IN QUEUE MODAL ================= -->
+<div id="walkInQueueModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box modal-box--queue">
+
+        <button class="modal-close-btn" id="closeWalkInQueue" aria-label="Close">&times;</button>
+        <h3 class="modal-title">Walk-in Queue</h3>
+        <p class="modal-subtitle">Today's walk-in patients</p>
+
+        @if($walkInQueue->isEmpty())
+            <p class="walkin-queue-empty">No walk-in patients in the queue right now.</p>
+        @else
+            <div class="walkin-queue-table-wrap">
+                <table class="walkin-queue-table">
+                    <thead>
+                        <tr>
+                            <th>Queue</th>
+                            <th>Patient</th>
+                            <th>Arrival</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($walkInQueue as $entry)
+                            @php $stage = $entry->queueStage(); @endphp
+                            <tr>
+                                <td><strong>{{ $entry->queue_number }}</strong></td>
+                                <td>
+                                    {{ $entry->patientName() }}
+                                    <span class="walkin-queue-doctor">
+                                        Dr. {{ trim(($entry->doctor->first_name ?? '') . ' ' . ($entry->doctor->last_name ?? '')) }}
+                                    </span>
+                                </td>
+                                <td>{{ $entry->arrived_at?->format('h:i A') ?? '—' }}</td>
+                                <td>
+                                    <span class="walkin-stage walkin-stage--{{ \Illuminate\Support\Str::slug($stage) }}">{{ $stage }}</span>
+                                </td>
+                                <td>
+                                    @if($stage === 'Waiting')
+                                        @if($canCheckIn)
+                                            <form action="{{ route('staff.appointments.checkIn', $entry->id) }}" method="POST" class="walkin-queue-form">
+                                                @csrf
+                                                <input type="hidden" name="from_queue" value="1">
+                                                <button type="submit" class="walkin-queue-btn">Check In</button>
+                                            </form>
+                                        @else
+                                            <span class="walkin-queue-note">Waiting for Check In</span>
+                                        @endif
+
+                                        {{-- Waiting walk-ins only: removed from the queue before check-in. --}}
+                                        @if($canRemoveFromQueue)
+                                            <form action="{{ route('staff.walk-in-queue.remove', $entry->id) }}" method="POST" class="walkin-queue-form"
+                                                  onsubmit="return confirm('Remove {{ $entry->queue_number }} from the walk-in queue?')">
+                                                @csrf
+                                                <button type="submit" class="walkin-queue-btn walkin-queue-btn--remove">Remove</button>
+                                            </form>
+                                        @endif
+                                    @elseif($stage === 'Checked In')
+                                        @if($canRecordVitals && $canViewDetails)
+                                            <a href="{{ route('staff.appointments.show', $entry->id) }}#vital-signs" class="walkin-queue-btn">Record Vital Signs</a>
+                                        @else
+                                            <span class="walkin-queue-note">Needs Vital Signs</span>
+                                        @endif
+                                    @elseif($stage === 'Vitals Taken')
+                                        <span class="walkin-queue-note">Waiting for Doctor</span>
+                                    @else
+                                        <span class="walkin-queue-note">With Doctor</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+    </div>
 </div>
 
 <!-- ================= REJECT MODAL ================= -->
@@ -558,6 +663,31 @@ document.addEventListener('DOMContentLoaded', function () {
     noShowModal.addEventListener('click', function (e) {
         if (e.target === this) closeNoShowModal();
     });
+
+    // ================= WALK-IN QUEUE MODAL =================
+    const walkInModal = document.getElementById('walkInQueueModal');
+
+    function openWalkInQueue() {
+        walkInModal.style.display = 'flex';
+        void walkInModal.offsetWidth;   // let the fade-in transition run
+        walkInModal.classList.add('modal-visible');
+    }
+
+    function closeWalkInQueue() {
+        walkInModal.classList.remove('modal-visible');
+        walkInModal.style.display = 'none';
+    }
+
+    document.getElementById('openWalkInQueue').addEventListener('click', openWalkInQueue);
+    document.getElementById('closeWalkInQueue').addEventListener('click', closeWalkInQueue);
+    walkInModal.addEventListener('click', function (e) {
+        if (e.target === this) closeWalkInQueue();
+    });
+
+    // Re-open right after Check In was pressed from inside the modal.
+    @if(request()->boolean('queue'))
+    openWalkInQueue();
+    @endif
 
     // ================= ACTION MENU (three-dot dropdown) =================
     // While open, each dropdown is switched to position:fixed and placed via

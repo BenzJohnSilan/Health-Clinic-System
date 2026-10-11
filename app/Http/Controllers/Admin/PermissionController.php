@@ -66,6 +66,10 @@ class PermissionController extends Controller
             'users'               => $users,
             'groupedPermissions'  => $groupedPermissions,
             'userPermissionSlugs' => $userPermissionSlugs,
+            // Staff quick-fill presets (Standard Staff / Cashier) for the
+            // Manage modal. Client-side only — nothing is saved until the
+            // Admin presses Save Changes, which goes through update().
+            'presets'             => Permission::presets(),
             'search'              => $search,
             'role'                => $role,
         ]);

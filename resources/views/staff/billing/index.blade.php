@@ -4,6 +4,150 @@
 <link rel="stylesheet" href="{{ asset('css/staff-billing.css') }}">
 <link rel="stylesheet" href="{{ asset('css/admin-billing.css') }}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    /* ===== Invoices table — same look as the Patient List table ===== */
+    .table-container .patients-table {
+        border-radius: 12px 12px 0 0;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+    }
+
+    .patients-table thead { background: #6a0dad; }
+
+    .patients-table th {
+        background: #6a0dad;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        text-transform: none;
+        letter-spacing: 0;
+        padding: 13px 16px;
+        white-space: nowrap;
+        border-bottom: 1px solid #f0e6ff;
+    }
+
+    .patients-table td {
+        padding: 13px 16px;
+        font-size: 14px;
+        color: #1f2937;
+        border-bottom: 1px solid #f0e6ff;
+        vertical-align: middle;
+    }
+
+    .patients-table tbody tr:nth-child(even) td { background-color: #f9f5ff; }
+    .patients-table tbody tr:nth-child(odd) td  { background-color: #ffffff; }
+
+    .patients-table tbody tr:hover td {
+        background-color: #ede9f7;
+        transition: background-color 0.2s ease;
+    }
+
+    .patients-table tbody tr:last-child td { border-bottom: none; }
+
+    .empty-row {
+        text-align: center !important;
+        font-style: italic;
+        color: #9ca3af;
+        padding: 32px 0 !important;
+        background-color: #fff !important;
+    }
+
+    /* View button — solid purple like the Patient List */
+    .patients-table .btn-view {
+        background-color: #6a0dad;
+        color: #fff;
+        padding: 7px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        white-space: nowrap;
+        transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    }
+
+    .patients-table .btn-view:hover {
+        background-color: #560aaf;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(106, 13, 173, 0.3);
+    }
+
+    /* ===== Pagination — attached to the table, like the Patient List ===== */
+    .pagination-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 0;
+        padding: 14px 18px;
+        background: #fff;
+        border: 1px solid #f0e6ff;
+        border-top: none;
+        border-radius: 0 0 12px 12px;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+        margin-bottom: 30px;
+    }
+
+    .pagination-info { font-size: 13px; color: #6b7280; }
+    .pagination-info strong { color: #374151; font-weight: 600; }
+
+    .pagination-nav { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+
+    .page-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 34px;
+        height: 34px;
+        padding: 0 10px;
+        border-radius: 8px;
+        border: 1.5px solid #e9d5ff;
+        background: #fff;
+        color: #6a0dad;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        line-height: 1;
+    }
+
+    .page-btn:hover { background: #f3e8ff; border-color: #c084fc; color: #6a0dad; }
+
+    .page-btn.active {
+        background: #6a0dad;
+        border-color: #6a0dad;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(106, 13, 173, 0.3);
+        cursor: default;
+        pointer-events: none;
+    }
+
+    .page-btn.disabled {
+        color: #d1d5db;
+        border-color: #f3f4f6;
+        background: #f9fafb;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    .page-ellipsis {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 34px;
+        height: 34px;
+        font-size: 13px;
+        color: #9ca3af;
+    }
+
+    @media screen and (max-width: 900px) {
+        .patients-table th,
+        .patients-table td { padding: 10px 12px; font-size: 13px; }
+    }
+
+    @media screen and (max-width: 600px) {
+        .pagination-wrapper { flex-direction: column; align-items: center; }
+    }
+</style>
 @endsection
 
 @section('content')
@@ -14,34 +158,73 @@
     </div>
 
     @if($reportTotals)
-    <!-- ================= REPORT TOTALS (view_billing_reports) ================= -->
-    <div class="ab-stats-grid">
+    <!-- ================= REPORT CARDS (view_billing_reports) ================= -->
+    <form method="GET" action="{{ route('staff.billing.index') }}" class="billing-filters report-range-form" id="rangeForm">
+        @if(request('search'))<input type="hidden" name="search" value="{{ request('search') }}">@endif
+        @if(request('status'))<input type="hidden" name="status" value="{{ request('status') }}">@endif
+
+        <div class="report-range-tabs">
+            @foreach(['today' => 'Today', 'week' => 'This Week', 'month' => 'This Month', 'custom' => 'Custom'] as $key => $label)
+                <label class="report-range-tab {{ $reportRange['range'] === $key ? 'active' : '' }}">
+                    <input type="radio" name="range" value="{{ $key }}" {{ $reportRange['range'] === $key ? 'checked' : '' }}
+                           onchange="{{ $key === 'custom' ? "document.getElementById('customRange').style.display='flex'" : 'this.form.submit()' }}">
+                    {{ $label }}
+                </label>
+            @endforeach
+        </div>
+
+        <div class="report-range-custom" id="customRange" style="display: {{ $reportRange['range'] === 'custom' ? 'flex' : 'none' }};">
+            <input type="date" name="from" class="billing-filter-select" value="{{ $reportRange['from'] }}">
+            <span>to</span>
+            <input type="date" name="to" class="billing-filter-select" value="{{ $reportRange['to'] }}">
+            <button type="submit" class="btn-filter-apply">Apply</button>
+        </div>
+
+        <span class="report-range-label">Showing: <strong>{{ $reportRange['label'] }}</strong></span>
+    </form>
+
+    <div class="ab-stats-grid ab-stats-grid--six">
         <div class="ab-stat-card ab-stat-card--purple">
             <div class="ab-stat-icon"><i class="fa-solid fa-sack-dollar"></i></div>
             <div>
-                <p>Total Collected</p>
-                <h3>₱{{ number_format($reportTotals['totalCollected'], 2) }}</h3>
+                <p>Gross Sales</p>
+                <h3>₱{{ number_format($reportTotals['grossSales'], 2) }}</h3>
             </div>
         </div>
         <div class="ab-stat-card ab-stat-card--red">
-            <div class="ab-stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+            <div class="ab-stat-icon"><i class="fa-solid fa-tags"></i></div>
             <div>
-                <p>Outstanding Balance</p>
-                <h3>₱{{ number_format($reportTotals['totalOutstanding'], 2) }}</h3>
+                <p>Total Discount</p>
+                <h3>₱{{ number_format($reportTotals['totalDiscount'], 2) }}</h3>
+            </div>
+        </div>
+        <div class="ab-stat-card ab-stat-card--purple">
+            <div class="ab-stat-icon"><i class="fa-solid fa-chart-line"></i></div>
+            <div>
+                <p>Net Sales</p>
+                <h3>₱{{ number_format($reportTotals['netSales'], 2) }}</h3>
             </div>
         </div>
         <div class="ab-stat-card ab-stat-card--green">
             <div class="ab-stat-icon"><i class="fa-solid fa-money-bill-wave"></i></div>
             <div>
-                <p>Cash Collected</p>
-                <h3>₱{{ number_format($reportTotals['cashCollected'], 2) }}</h3>
+                <p>Cash Payments</p>
+                <h3>₱{{ number_format($reportTotals['cashPayments'], 2) }}</h3>
             </div>
         </div>
         <div class="ab-stat-card ab-stat-card--blue">
             <div class="ab-stat-icon"><i class="fa-solid fa-mobile-screen-button"></i></div>
             <div>
-                <p>GCash Collected</p>
-                <h3>₱{{ number_format($reportTotals['gcashCollected'], 2) }}</h3>
+                <p>Non-Cash Payments</p>
+                <h3>₱{{ number_format($reportTotals['nonCashPayments'], 2) }}</h3>
+            </div>
+        </div>
+        {{-- Not date-filtered: what is still owed right now (unpaid & partially paid) --}}
+        <div class="ab-stat-card ab-stat-card--red">
+            <div class="ab-stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+            <div>
+                <p>Outstanding Balance <small>(unpaid &amp; partially paid, all dates)</small></p>
+                <h3>₱{{ number_format($reportTotals['totalOutstanding'], 2) }}</h3>
             </div>
         </div>
     </div>
@@ -56,6 +239,13 @@
 
     <!-- ================= FILTERS ================= -->
     <form method="GET" action="{{ route('staff.billing.index') }}" class="billing-filters">
+        @if($reportTotals)
+            <input type="hidden" name="range" value="{{ $reportRange['range'] }}">
+            @if($reportRange['range'] === 'custom')
+                <input type="hidden" name="from" value="{{ $reportRange['from'] }}">
+                <input type="hidden" name="to" value="{{ $reportRange['to'] }}">
+            @endif
+        @endif
         <div class="billing-filter-field">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input type="text" name="search" placeholder="Search patient or invoice no."
@@ -106,7 +296,14 @@
                     </td>
                     <td>{{ $invoice->created_at->format('M d, Y') }}</td>
                     <td>
-                        <a href="{{ route('staff.billing.show', $invoice->id) }}" class="btn-view">View</a>
+                        {{-- Unpaid / Partially Paid -> Collect Payment (opens the invoice
+                             straight at its existing payment form). Paid / Cancelled — or
+                             a Staff member without record_payment — -> View. --}}
+                        @if(in_array($invoice->status, ['Unpaid', 'Partially Paid'], true) && auth()->user()->hasPermission('record_payment'))
+                            <a href="{{ route('staff.billing.show', $invoice->id) }}#paymentForm" class="btn-view">Collect Payment</a>
+                        @else
+                            <a href="{{ route('staff.billing.show', $invoice->id) }}" class="btn-view">View</a>
+                        @endif
                     </td>
                 </tr>
                 @empty

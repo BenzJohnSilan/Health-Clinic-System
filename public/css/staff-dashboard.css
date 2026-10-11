@@ -12,9 +12,12 @@
     --primary-light:  #9b30ff;
     --primary-soft:   #f3e8ff;
     --accent-amber:   #f59e0b;
+    --accent-amber-bg:#fffbeb;
+    --accent-green-bg:#f0fbf6;
+    --accent-blue-bg: #f0f2ff;
     --accent-amber-d: #d97706;
     --accent-green:   #10b981;
-    --accent-blue:    #3b82f6;
+    --accent-blue:    #4f46e5;
     --accent-red:     #ef4444;
 
     --text-dark:   #1a1a2e;
@@ -50,10 +53,7 @@ body {
 }
 
 /* ============================================================
-   HERO — Dynamic Greeting Card
-   Same grid-stacking crossfade mechanic as the stat/today/side
-   sections below: skeleton and real content share the exact same
-   grid cell so revealing never shifts the layout.
+   HERO — Greeting card (same purple gradient as Patient Dashboard)
    ============================================================ */
 .hero-wrapper {
     display: grid;
@@ -63,6 +63,7 @@ body {
 .hero-wrapper .hero-section {
     grid-row: 1;
     grid-column: 1;
+    min-width: 0;
     transition: opacity 0.3s ease;
 }
 
@@ -74,42 +75,214 @@ body {
 .real-hero.fade-in { opacity: 1; z-index: 2; pointer-events: auto; }
 
 .dashboard-hero {
-    background: var(--bg-card);
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    padding: 26px 28px;
+    box-shadow: 0 12px 30px rgba(106,13,173,0.28);
+    padding: 30px 34px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
     transition: box-shadow var(--transition);
 }
 
-.dashboard-hero:hover { box-shadow: var(--shadow-md); }
+.dashboard-hero::before,
+.dashboard-hero::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.10);
+    pointer-events: none;
+}
+
+.dashboard-hero::before { width: 240px; height: 240px; top: -90px; right: -50px; }
+.dashboard-hero::after  { width: 150px; height: 150px; bottom: -70px; right: 160px; background: rgba(255,255,255,0.07); }
+
+.dashboard-hero:hover { box-shadow: 0 16px 36px rgba(106,13,173,0.34); }
+
+.hero-greeting-group {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+}
+
+.hero-icon-badge {
+    width: 54px;
+    height: 54px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.35);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 25px;
+    color: #fff;
+}
 
 .greeting-text {
-    font-size: 23px;
+    font-size: 24px;
     font-weight: 800;
-    color: var(--text-dark);
+    color: #fff;
     letter-spacing: -0.4px;
     margin: 0 0 4px;
 }
 
 .greeting-subtitle {
     font-size: 14px;
-    color: var(--text-light);
+    color: rgba(255,255,255,0.85);
     margin: 0;
 }
 
-.skeleton-greeting-title {
-    width: 280px;
-    max-width: 60%;
-    height: 24px;
-    margin-bottom: 10px;
+.skeleton-hero .skeleton-line {
+    background: linear-gradient(90deg, rgba(255,255,255,0.22) 25%, rgba(255,255,255,0.4) 37%, rgba(255,255,255,0.22) 63%);
+    background-size: 800px 100%;
 }
 
-.skeleton-greeting-subtitle {
-    width: 340px;
-    max-width: 80%;
-    height: 14px;
+.skeleton-hero-icon { width: 54px; height: 54px; border-radius: 50%; flex-shrink: 0; }
+.skeleton-greeting-title { width: 300px; max-width: 60%; height: 26px; margin-bottom: 10px; }
+.skeleton-greeting-subtitle { width: 360px; max-width: 80%; height: 14px; }
+
+/* ============================================================
+   SHARED CARD SYSTEM (mirrors .info-card from Patient Dashboard)
+   ============================================================ */
+.info-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow var(--transition), transform var(--transition);
 }
+
+.info-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-3px);
+}
+
+.info-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.info-card-title { display: flex; align-items: center; gap: 12px; }
+
+.info-card-title h3 {
+    font-size: 15.5px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin: 0;
+}
+
+.info-card-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+}
+
+.info-card-icon--purple { background: var(--primary-soft); color: var(--primary); }
+
+.info-card-body { flex: 1; }
+
+.info-card-footer {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.card-view-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    background: #fff;
+    border: 1.5px solid var(--primary);
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all var(--transition);
+}
+
+.card-view-btn:hover,
+.card-view-btn:focus-visible { background: var(--primary); color: #fff; }
+
+.card-view-btn:focus-visible { outline: 3px solid var(--primary-light); outline-offset: 2px; }
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    padding: 5px 13px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.status-pill i { font-size: 13px; }
+.status-pill--green { background: var(--accent-green-bg); color: var(--accent-green); }
+.status-pill--amber { background: var(--accent-amber-bg); color: var(--accent-amber); }
+
+.info-card-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 12px;
+    padding: 24px 10px;
+    color: var(--text-light);
+}
+
+.info-card-empty i {
+    width: 54px;
+    height: 54px;
+    line-height: 54px;
+    text-align: center;
+    border-radius: 50%;
+    background: var(--primary-soft);
+    color: var(--primary-light);
+    font-size: 24px;
+}
+
+.info-card-empty p {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-mid);
+    margin: 0;
+}
+
+/* Skeleton shapes for the shared card header */
+.sk-icon  { width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; }
+.sk-title { width: 170px; max-width: 100%; height: 16px; }
+.sk-pill  { width: 84px; height: 26px; border-radius: 999px; flex-shrink: 0; }
+.sk-btn   { width: 96px; height: 36px; border-radius: var(--radius-sm); flex-shrink: 0; }
 
 /* ============================================================
    APPOINTMENT SUMMARY — 5 clickable filter cards
@@ -122,6 +295,7 @@ body {
 .stats-wrapper .stats-section {
     grid-row: 1;
     grid-column: 1;
+    min-width: 0;
     transition: opacity 0.3s ease;
 }
 
@@ -134,88 +308,77 @@ body {
 
 .stats-section {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 20px;
 }
 
 .appt-card {
     background: var(--bg-card);
-    border-radius: var(--radius-md);
-    padding: 18px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
+    padding: 18px 20px;
     display: flex;
     align-items: center;
     gap: 14px;
-    border: 1px solid var(--border);
-    border-left: 5px solid transparent;
-    transition: transform var(--transition), box-shadow var(--transition);
-    position: relative;
-    overflow: hidden;
+    min-width: 0;
     text-decoration: none;
     color: inherit;
     cursor: pointer;
+    transition: box-shadow var(--transition), transform var(--transition);
 }
 
 .appt-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-3px);
     box-shadow: var(--shadow-md);
 }
 
 .appt-card:focus-visible {
-    outline: 3px solid var(--primary);
+    outline: 3px solid var(--primary-light);
     outline-offset: 2px;
 }
 
 .appt-card .appt-icon {
-    width: 44px; height: 44px;
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
+    width: 40px;
+    height: 40px;
     flex-shrink: 0;
+    border-radius: 12px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
 }
+
+.appt-card .appt-info { min-width: 0; }
 
 .appt-card .appt-info p {
     margin: 0;
-    font-size: 10px;
+    font-size: 12.5px;
+    font-weight: 600;
     color: var(--text-light);
-    letter-spacing: 0.9px;
-    font-weight: 800;
-    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .appt-card .appt-info h2 {
-    margin: 4px 0 0;
-    font-size: 28px;
-    font-weight: 900;
+    margin: 2px 0 0;
+    font-size: 26px;
+    font-weight: 800;
     color: var(--text-dark);
-    line-height: 1;
+    line-height: 1.1;
 }
-
-.appt-total     { border-left-color: var(--primary); }
-.appt-total     .appt-icon { background: var(--primary-soft); color: var(--primary); }
-
-.appt-pending   { border-left-color: var(--accent-amber); }
-.appt-pending   .appt-icon { background: #fef3c7; color: var(--accent-amber); }
-
-.appt-approved  { border-left-color: var(--accent-green); }
-.appt-approved  .appt-icon { background: #d1fae5; color: var(--accent-green); }
-
-.appt-completed { border-left-color: var(--accent-blue); }
-.appt-completed .appt-icon { background: #dbeafe; color: var(--accent-blue); }
-
-.appt-cancelled { border-left-color: var(--accent-red); }
-.appt-cancelled .appt-icon { background: #fee2e2; color: var(--accent-red); }
 
 /* Skeleton summary cards */
-.appt-card.skeleton-card {
-    background: #fdfcff;
-    border-left-color: transparent;
-    cursor: default;
-}
+.appt-card.skeleton-card { cursor: default; }
+.appt-card.skeleton-card:hover { transform: none; box-shadow: var(--shadow-sm); }
 
 .appt-card.skeleton-card .skeleton-icon {
-    width: 44px; height: 44px;
-    border-radius: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
     flex-shrink: 0;
 }
 
@@ -224,31 +387,41 @@ body {
    ============================================================ */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
     gap: 20px;
-    align-items: start;
+    align-items: stretch;
 }
 
-.grid-main { min-width: 0; }
+.grid-main {
+    min-width: 0;
+    display: flex;
+}
 
 .grid-side {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    min-width: 0;
 }
 
 /* ============================================================
    TODAY'S APPOINTMENTS
    ============================================================ */
 .today-wrapper {
+    flex: 1;
     display: grid;
+    min-width: 0;
 }
 
 .today-wrapper .today-section {
     grid-row: 1;
     grid-column: 1;
+    min-width: 0;
+    display: flex;
     transition: opacity 0.3s ease;
 }
+
+.today-section > .info-card { flex: 1; min-width: 0; }
 
 .skeleton-today { opacity: 1; z-index: 2; }
 .skeleton-today.fade-out { opacity: 0; pointer-events: none; z-index: 1; }
@@ -257,63 +430,30 @@ body {
 .real-today { opacity: 0; z-index: 1; pointer-events: none; }
 .real-today.fade-in { opacity: 1; z-index: 2; pointer-events: auto; }
 
-.appt-table-wrap {
-    background: var(--bg-card);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    overflow: hidden;
-    border: 1px solid var(--border);
-}
-
-.table-header-row {
-    padding: 18px 22px;
-    font-weight: 800;
-    font-size: 15px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--bg-card);
-    color: var(--text-dark);
-}
-
-.table-header-row a {
-    font-size: 12.5px;
-    color: var(--primary);
-    text-decoration: none;
-    font-weight: 700;
-    transition: opacity var(--transition);
-}
-
-.table-header-row a:hover,
-.table-header-row a:focus-visible { opacity: 0.7; }
-
-/* FIX: reserved min-height so the card doesn't collapse/shrink when
-   there are 0 appointments today — matches ~5 rows worth of space,
-   same height the skeleton reserves, so there's no layout jump
-   between skeleton → real, or between "has data" → "empty". */
+/* Reserve ~5 rows so the card never jumps between skeleton, data and
+   empty states. */
 .today-list {
-    padding: 6px 0;
-    min-height: 336px;
+    flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 250px;
 }
 
 .today-row {
     display: grid;
-    grid-template-columns: 90px 1fr auto;
+    grid-template-columns: 90px minmax(0, 1fr) auto;
     align-items: center;
-    gap: 16px;
-    padding: 16px 22px;
-    border-bottom: 1px solid #f8f4fe;
+    gap: 14px;
+    padding: 13px 6px;
+    border-bottom: 1px solid var(--border);
     transition: background var(--transition);
 }
 
 .today-row:last-child { border-bottom: none; }
-.today-row:hover { background: #faf5ff; }
+.today-row:hover { background: var(--bg-page); }
 
 .today-time {
-    font-size: 16px;
+    font-size: 14.5px;
     font-weight: 800;
     color: var(--primary);
     letter-spacing: -0.2px;
@@ -323,7 +463,7 @@ body {
 
 .today-patient {
     margin: 0;
-    font-size: 14px;
+    font-size: 13.5px;
     font-weight: 700;
     color: var(--text-dark);
     white-space: nowrap;
@@ -333,134 +473,68 @@ body {
 
 .today-meta {
     margin: 2px 0 0;
-    font-size: 12px;
+    font-size: 12.5px;
     color: var(--text-light);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* Status badges */
+/* Status badges — pill style shared with Patient status pills */
 .status-badge {
     display: inline-block;
-    padding: 3px 10px;
+    padding: 5px 13px;
     border-radius: 999px;
-    font-size: 10.5px;
+    font-size: 11.5px;
     font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
+    letter-spacing: 0.2px;
     white-space: nowrap;
 }
 
-.status-badge.pending {
-    background: #fef3c7;
-    color: #92400e;
-}
+.status-badge.pending      { background: var(--accent-amber-bg); color: var(--accent-amber-d); }
+.status-badge.approved     { background: var(--accent-green-bg); color: var(--accent-green); }
+.status-badge.checked-in   { background: #ccfbf1; color: #0f766e; }
+.status-badge.in-progress  { background: #ffedd5; color: #c2410c; }
+.status-badge.completed    { background: var(--accent-blue-bg);  color: var(--accent-blue); }
+.status-badge.cancelled,
+.status-badge.rejected     { background: #f3f4f6; color: #6b7280; }
+.status-badge.rescheduled  { background: var(--primary-soft); color: var(--primary); }
 
-.status-badge.approved {
-    background: #d1fae5;
-    color: #065f46;
-}
-
-.status-badge.checked-in {
-    background: #ccfbf1;
-    color: #0f766e;
-}
-
-.status-badge.in-progress {
-    background: #ffedd5;
-    color: #c2410c;
-}
-
-.status-badge.completed {
-    background: #dbeafe;
-    color: #1e3a8a;
-}
-
-.status-badge.cancelled {
-    background: #fee2e2;
-    color: #b91c1c;
-}
-
-.status-badge.rescheduled {
-    background: #ede9fe;
-    color: #5b21b6;
-}
-
-.status-badge.rejected {
-    background: #fee2e2;
-    color: #b91c1c;
-}
-
-/* Empty state — FIX: now flex-fills the reserved .today-list
-   min-height and centers vertically, instead of sitting cramped
-   at the top with a tiny 48px padding. */
-.empty-state {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 24px;
-    color: var(--text-xlight);
-}
-
-.empty-state i {
-    font-size: 30px;
-    color: #d1d5db;
-    display: block;
-    margin-bottom: 10px;
-}
-
-.empty-state p {
-    margin: 0;
-    font-size: 13.5px;
-    color: var(--text-light);
-    font-weight: 600;
-}
-
-/* "Showing X of Y appointments" — only rendered when today's
-   appointments exceed the 5 shown on the dashboard card. Sits
-   inside .appt-table-wrap, under the row list, so it never adds
-   height beyond one compact caption line. */
+/* "Showing X of Y appointments" caption */
 .appointments-summary {
-    padding: 12px 22px;
-    font-size: 12px;
-    color: var(--text-xlight);
+    margin-top: 12px;
+    padding-top: 12px;
+    font-size: 12.5px;
+    color: var(--text-light);
     text-align: right;
     border-top: 1px solid var(--border);
 }
 
-/* Skeleton today rows — FIX: same row count (5) as the real max,
-   so skeleton height === real content height. */
+/* Skeleton today rows */
 .today-row-skeleton {
     display: grid;
-    grid-template-columns: 90px 1fr auto;
+    grid-template-columns: 90px minmax(0, 1fr) auto;
     align-items: center;
-    gap: 16px;
-    padding: 16px 22px;
-    border-bottom: 1px solid #f8f4fe;
+    gap: 14px;
+    padding: 13px 6px;
+    border-bottom: 1px solid var(--border);
 }
 
 .today-row-skeleton:last-child { border-bottom: none; }
 
 .skeleton-time { width: 60px; height: 16px; }
 .skeleton-name { width: 70%; height: 14px; }
-.skeleton-badge-sm { width: 60px; height: 18px; border-radius: 999px; justify-self: end; }
-.skeleton-th-title { width: 180px; height: 16px; }
-.skeleton-th-link { width: 70px; height: 12px; }
+.skeleton-badge-sm { width: 70px; height: 24px; border-radius: 999px; justify-self: end; }
 
 /* ============================================================
    SIDE COLUMN — Needs Attention & Quick Actions
    ============================================================ */
-.side-wrapper {
-    display: grid;
-}
+.side-wrapper { display: grid; }
 
 .side-wrapper .side-section {
     grid-row: 1;
     grid-column: 1;
+    min-width: 0;
     transition: opacity 0.3s ease;
 }
 
@@ -479,37 +553,15 @@ body {
 .real-attention.fade-in,
 .real-actions.fade-in { opacity: 1; z-index: 2; pointer-events: auto; }
 
-.side-card {
-    background: var(--bg-card);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border);
-    padding: 22px;
-    transition: box-shadow var(--transition);
-}
+.side-section > .info-card { height: 100%; }
 
-.side-card:hover { box-shadow: var(--shadow-md); }
-
-.side-card-title {
-    font-size: 15px;
-    font-weight: 800;
-    color: var(--text-dark);
-    margin: 0 0 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.side-card-title i { color: var(--accent-amber); }
-
-.skeleton-side-title { width: 60%; height: 16px; margin-bottom: 14px; }
-.skeleton-side-body { width: 80%; height: 12px; margin-bottom: 16px; }
-.skeleton-side-btn { width: 100px; height: 34px; border-radius: var(--radius-sm); }
+.skeleton-side-body { width: 80%; height: 13px; margin-bottom: 14px; }
+.skeleton-side-btn { width: 110px; height: 36px; border-radius: var(--radius-sm); }
 
 /* ── Needs Attention content ── */
 .attention-count {
     margin: 0 0 4px;
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 800;
     color: var(--text-dark);
 }
@@ -522,37 +574,9 @@ body {
 }
 
 .attention-desc {
-    margin: 0 0 18px;
-    font-size: 13px;
-    color: var(--text-light);
-}
-
-.side-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 13px;
-    padding: 9px 18px;
-    border-radius: var(--radius-sm);
-    transition: all var(--transition);
-}
-
-.side-btn.amber {
-    background: var(--accent-amber);
-    color: #fff;
-}
-
-.side-btn.amber:hover,
-.side-btn.amber:focus-visible {
-    background: var(--accent-amber-d);
-    transform: translateY(-1px);
-}
-
-.side-btn:focus-visible {
-    outline: 3px solid var(--primary);
-    outline-offset: 2px;
+    margin: 0;
+    font-size: 13.5px;
+    color: var(--text-mid);
 }
 
 /* ── Quick Actions content ── */
@@ -560,8 +584,8 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px 10px;
-    border-radius: var(--radius-sm);
+    padding: 10px 6px;
+    border-bottom: 1px solid var(--border);
     text-decoration: none;
     color: var(--text-dark);
     font-size: 13.5px;
@@ -569,42 +593,41 @@ body {
     transition: background var(--transition);
 }
 
-.quick-action-item:not(:last-child) { margin-bottom: 4px; }
+.quick-action-item:last-child { border-bottom: none; }
 
 .quick-action-item:hover,
-.quick-action-item:focus-visible {
-    background: var(--primary-soft);
-}
+.quick-action-item:focus-visible { background: var(--bg-page); }
 
 .quick-action-item:focus-visible {
-    outline: 3px solid var(--primary);
-    outline-offset: -1px;
+    outline: 3px solid var(--primary-light);
+    outline-offset: -2px;
 }
 
 .qa-icon {
-    width: 34px; height: 34px;
-    border-radius: 9px;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 10px;
     background: var(--primary-soft);
     color: var(--primary);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
-    flex-shrink: 0;
+    font-size: 17px;
 }
 
 .quick-action-item span:nth-child(2) { flex: 1; }
 
 .qa-arrow {
-    font-size: 11px;
+    font-size: 18px;
     color: var(--text-xlight);
 }
 
 .skeleton-action-row {
     width: 100%;
-    height: 46px;
+    height: 40px;
     border-radius: var(--radius-sm);
-    margin-top: 8px;
+    margin-top: 10px;
 }
 
 /* ============================================================
@@ -627,59 +650,95 @@ body {
 .skeleton-value { width: 50%; height: 22px; }
 
 /* ============================================================
-   RESPONSIVE
+   PERMISSION-AWARE ADDITIONS — billing / cashier sections.
+   Reuses the existing card, row, badge and button styles; only the
+   few pieces the appointment-only dashboard did not need are added.
    ============================================================ */
-@media (max-width: 1100px) {
-    .dashboard-grid {
-        grid-template-columns: 1fr;
-    }
+
+/* Two main cards (appointments + transactions) stacked in the left column.
+   Margin (not gap) so it also works when the grid collapses to block. */
+.grid-main--stack { flex-direction: column; }
+.grid-main--stack > .today-wrapper + .today-wrapper { margin-top: 20px; }
+
+/* Display-only metric card: not a link, so no pointer cursor — but it keeps
+   the same hover lift as the other dashboard cards (inherited from .appt-card:hover). */
+.appt-card.appt-card--static { cursor: default; }
+
+/* Money figures are wider than counts — keep them inside the card. */
+.appt-card--money .appt-info h2 { font-size: 20px; }
+
+/* Invoice status badges (Today's Transactions) */
+.status-badge.paid           { background: var(--accent-green-bg); color: var(--accent-green); }
+.status-badge.partially-paid { background: var(--accent-amber-bg); color: var(--accent-amber-d); }
+.status-badge.unpaid         { background: #fef2f2; color: var(--accent-red); }
+
+/* Transaction row is a link to the receipt */
+a.today-row { text-decoration: none; color: inherit; }
+a.today-row:focus-visible { outline: 3px solid var(--primary-light); outline-offset: -2px; }
+
+.txn-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
 }
 
-@media (max-width: 900px) {
-    .stats-section { grid-template-columns: repeat(3, 1fr); }
+.txn-amount {
+    font-size: 14.5px;
+    font-weight: 800;
+    color: var(--text-dark);
+    white-space: nowrap;
+}
+
+/* Needs Attention with more than one item */
+.attention-item + .attention-item { margin-top: 20px; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1280px) {
+    .stats-section { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 1100px) {
+    .dashboard-grid { grid-template-columns: minmax(0, 1fr); }
+    .grid-main { display: block; }
+    .today-list { min-height: 0; }
 }
 
 @media (max-width: 768px) {
-    .stats-section { grid-template-columns: repeat(2, 1fr); }
-
-    .today-row,
-    .today-row-skeleton {
-        grid-template-columns: 70px 1fr auto;
-        gap: 10px;
-        padding: 14px 16px;
-    }
-
-    .table-header-row { padding: 14px 16px; }
+    .stats-section { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .stats-section > :last-child:nth-child(odd) { grid-column: 1 / -1; }
 }
 
 @media (max-width: 600px) {
-    .stats-section { grid-template-columns: 1fr; }
+    .stats-section { grid-template-columns: minmax(0, 1fr); }
 
     .dashboard-hero { padding: 18px; }
     .greeting-text { font-size: 19px; }
+    .hero-icon-badge,
+    .skeleton-hero-icon { width: 46px; height: 46px; font-size: 22px; }
 
-    .today-list { min-height: 260px; }
+    .info-card { padding: 18px; }
 
-    .today-row {
-        grid-template-columns: 1fr;
-        gap: 6px;
-    }
-
-    .today-time { font-size: 14px; }
-
+    .today-row,
     .today-row-skeleton {
-        grid-template-columns: 1fr;
-        gap: 8px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 4px 10px;
     }
 
-    .skeleton-badge-sm { justify-self: start; }
+    .today-time { grid-column: 1 / -1; font-size: 13.5px; }
+    .today-row-skeleton .skeleton-time { grid-column: 1 / -1; }
 
-    .side-card { padding: 18px; }
+    .today-patient,
+    .today-meta { white-space: normal; }
 }
 
 @media (max-width: 480px) {
     .greeting-text { font-size: 17px; }
     .dashboard-hero { padding: 16px; }
-    .appt-card { padding: 16px 14px; }
-    .appt-card .appt-info h2 { font-size: 24px; }
+    .info-card { padding: 16px; }
+    .info-card-title h3 { font-size: 14px; }
+    .info-card-icon,
+    .sk-icon { width: 34px; height: 34px; font-size: 16px; }
 }

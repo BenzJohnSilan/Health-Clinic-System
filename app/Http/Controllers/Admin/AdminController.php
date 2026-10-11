@@ -5,8 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
-use App\Models\Appointment;
-use App\Models\Medicine;
 use App\Models\UserLog;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
@@ -14,104 +12,37 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use App\Mail\AccountApproved;
 use App\Mail\AccountRejected;
+use App\Services\AdminDashboardService;
 use Carbon\Carbon;
 
 class AdminController extends Controller
 {
     /**
      * ================= DASHBOARD =================
+     *
+     * All metrics/lists are built in AdminDashboardService (read-only
+     * queries over the existing appointment, patient, medicine, billing
+     * and activity-log data). The controller only adds the greeting and
+     * hands everything to the view.
      */
-    public function dashboard()
+    public function dashboard(AdminDashboardService $dashboard)
     {
-        $today = Carbon::today();
+        // Same greeting time bands as the Staff/Patient dashboards.
+        $hour = Carbon::now()->hour;
+        if ($hour >= 5 && $hour < 12) {
+            $greeting = 'Good Morning';
+        } elseif ($hour >= 12 && $hour < 18) {
+            $greeting = 'Good Afternoon';
+        } else {
+            $greeting = 'Good Evening';
+        }
 
-        // ===== USER STATS =====
-        $totalUsers = User::where('approval_status', 'Approved')
-            ->where('status', 'Active')
-            ->count();
-
-        $totalDoctors = User::where('role', 'Doctor')
-            ->where('approval_status', 'Approved')
-            ->where('status', 'Active')
-            ->count();
-
-        // ✅ ADDED: Staff count for charts
-        $totalStaff = User::where('role', 'Staff')
-            ->where('approval_status', 'Approved')
-            ->where('status', 'Active')
-            ->count();
-
-        $totalPatients = User::where('role', 'Patient')
-            ->where('approval_status', 'Approved')
-            ->where('status', 'Active')
-            ->count();
-
-        $totalPending = User::where('approval_status', 'Pending')
-            ->where('role', '!=', 'Admin')
-            ->count();
-
-        // ===== APPOINTMENT STATS =====
-        $todaysAppointments = Appointment::whereDate('appointment_date', $today)->count();
-
-        $pendingAppointments = Appointment::where('status', 'Pending')->count();
-
-        $approvedAppointments = Appointment::where('status', 'Approved')->count();
-
-        $completedAppointments = Appointment::where('status', 'Completed')->count();
-
-        $cancelledAppointments = Appointment::where('status', 'Cancelled')->count();
-
-        // Today's appointment list (for table preview)
-        $todaysAppointmentList = Appointment::with(['patient', 'doctor'])
-            ->whereDate('appointment_date', $today)
-            ->orderBy('appointment_time')
-            ->take(5)
-            ->get();
-
-        // ===== MEDICINE / INVENTORY ALERTS =====
-        $lowStockMedicines = Medicine::where('status', 'Low Stock')->count();
-
-        $outOfStockMedicines = Medicine::where('status', 'Out of Stock')->count();
-
-        // Expiring within 30 days
-        $expiringMedicines = Medicine::whereBetween('expiration_date', [
-            $today,
-            $today->copy()->addDays(30),
-        ])->count();
-
-        // Expired already
-        $expiredMedicines = Medicine::where('expiration_date', '<', $today)->count();
-
-        // Medicine alert list (low stock + expiring soon)
-        $medicineAlertList = Medicine::where(function ($q) use ($today) {
-            $q->whereIn('status', ['Low Stock', 'Out of Stock'])
-              ->orWhereBetween('expiration_date', [$today, $today->copy()->addDays(30)])
-              ->orWhere('expiration_date', '<', $today);
-        })
-        ->orderBy('expiration_date')
-        ->take(5)
-        ->get();
-
-        return view('admin.dashboard', compact(
-            // User stats
-            'totalUsers',
-            'totalDoctors',
-            'totalStaff',       // ✅ ADDED
-            'totalPatients',
-            'totalPending',
-            // Appointment stats
-            'todaysAppointments',
-            'pendingAppointments',
-            'approvedAppointments',
-            'completedAppointments',
-            'cancelledAppointments',
-            'todaysAppointmentList',
-            // Medicine alerts
-            'lowStockMedicines',
-            'outOfStockMedicines',
-            'expiringMedicines',
-            'expiredMedicines',
-            'medicineAlertList'
+        return view('admin.dashboard', array_merge(
+            [
+                'adminUser' => Auth::user(),
+                'greeting'  => $greeting,
+            ],
+            $dashboard->build()
         ));
     }
 
@@ -334,12 +265,21 @@ class AdminController extends Controller
     /**
      * ================= PENDING ACCOUNTS =================
      */
-    public function pendingAccounts()
+    public function pendingAccounts(Request $request)
     {
         $pendingUsers = User::where('approval_status', 'Pending')
             ->where('role', '!=', 'Admin')
             ->latest()
-            ->get();
+            ->orderByDesc('id') // stable order so a row never jumps between pages
+            ->paginate(10)
+            ->withQueryString();
+
+        // After approving/rejecting the last account on the last page, the
+        // redirect-back lands on a page that no longer exists. Send the
+        // admin to the new last page instead of showing an empty table.
+        if ($pendingUsers->isEmpty() && $pendingUsers->currentPage() > 1) {
+            return redirect()->route('admin.pending', ['page' => $pendingUsers->lastPage()]);
+        }
 
         return view('admin.pending-accounts', compact('pendingUsers'));
     }
@@ -384,7 +324,17 @@ class AdminController extends Controller
 
         Mail::to($user->email)->send(new AccountRejected($user, $request->reason));
 
+        // A rejected registration is deleted, so its Valid ID must not be
+        // left behind in storage. Check both the private disk and the
+        // pre-migration public location.
+        $validId = $user->valid_id;
+
         $user->delete();
+
+        if (is_string($validId) && preg_match('#^valid_ids/[A-Za-z0-9._-]+$#', $validId) === 1) {
+            \Illuminate\Support\Facades\Storage::disk('private')->delete($validId);
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($validId);
+        }
 
         return back()->with('success', 'User rejected and deleted successfully.');
     }

@@ -110,6 +110,7 @@ body { background: #f4f6f8; color: #333; }
 }
 .status.pending               { background-color: #f59e0b; }
 .status.issued                { background-color: #10b981; }
+.status.released              { background-color: #059669; }
 .status.rejected              { background-color: #ef4444; }
 .status.correction_requested  { background-color: #3b82f6; }
 
@@ -306,16 +307,6 @@ body { background: #f4f6f8; color: #333; }
     cursor: pointer;
 }
 .btn-sign-issue:hover { background: #047857; }
-
-.no-signature-warning {
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    color: #92400e;
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 13px;
-    margin-bottom: 16px;
-}
 
 /* ================= LIVE PREVIEW ================= */
 #certPreviewModal {

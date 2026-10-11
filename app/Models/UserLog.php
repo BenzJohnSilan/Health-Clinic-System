@@ -17,6 +17,7 @@ class UserLog extends Model
         'Billing & Payments',
         'Medicine Inventory',
         'Medical Records',
+        'Laboratory',
         'Services',
         'Account',
     ];

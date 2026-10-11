@@ -80,7 +80,7 @@ class DoctorBillingController extends Controller
         // resources/views/doctor/billing/show.blade.php). Cheap to
         // compute and harmless to pass even when the button won't show
         // (permission/paid/cancelled), since the Blade guards render it.
-        $services = Service::where('is_active', true)->orderBy('name')->get();
+        $services = Service::forConsultation()->where('is_active', true)->orderBy('name')->get();
 
         $dispensedMedicines = $invoice->appointment
             ? Prescription::where('appointment_id', $invoice->appointment_id)

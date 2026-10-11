@@ -1,0 +1,383 @@
+/* =============================================
+   patient-print-medical-report.css
+   Printable Medical Report — A4 portrait.
+   Standalone page (no patient layout / sidebar).
+   Typography and clinic header follow the
+   Prescription print (patient-prescription.css).
+============================================= */
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: #e9e8e4;
+    font-family: 'DM Sans', Arial, sans-serif;
+    color: #1a1a1a;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+/* ── Screen-only action bar ── */
+.pr-action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 210mm;
+    max-width: 100%;
+    margin: 24px auto 12px;
+    padding: 0 4px;
+}
+
+.pr-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 20px;
+    border-radius: 5px;
+    border: 1.5px solid #1a1a2e;
+    font-family: 'DM Sans', Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.pr-btn--outline { background: #ffffff; color: #1a1a2e; }
+.pr-btn--outline:hover { background: #1a1a2e; color: #ffffff; }
+
+.pr-btn--solid { background: #1a1a2e; color: #ffffff; }
+.pr-btn--solid:hover { background: #2d2d4a; border-color: #2d2d4a; }
+
+/* ══════════════════════════════════════════
+   THE SHEET (on screen: an A4 paper preview)
+══════════════════════════════════════════ */
+.pr-sheet {
+    width: 210mm;
+    max-width: 100%;
+    min-height: 297mm;
+    margin: 0 auto 48px;
+    padding: 16mm 18mm 18mm;
+    background: #ffffff;
+    border: 1px solid #d0cdc8;
+    box-shadow: 0 6px 28px rgba(0, 0, 0, 0.10);
+    font-size: 10.5pt;
+    line-height: 1.5;
+}
+
+/* ── Clinic header (same content/structure as Prescription) ── */
+.pr-clinic-header {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.pr-clinic-name {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 30pt;
+    font-weight: 600;
+    color: #1a1a2e;
+    letter-spacing: 0.5px;
+    line-height: 1.1;
+}
+
+.pr-clinic-specialty {
+    font-size: 9pt;
+    font-weight: 600;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #555;
+    margin-top: 3px;
+}
+
+.pr-clinic-address {
+    font-size: 10pt;
+    color: #666;
+    margin-top: 4px;
+    font-style: italic;
+}
+
+.pr-clinic-hours {
+    display: flex;
+    justify-content: center;
+    gap: 6px 14px;
+    flex-wrap: wrap;
+    font-size: 9pt;
+    color: #888;
+    margin-top: 6px;
+}
+
+.pr-divider-thick {
+    border: none;
+    border-top: 2px solid #1a1a2e;
+    margin: 10px 0 14px;
+}
+
+/* ── Document title ── */
+.pr-title {
+    margin: 0 0 16px;
+    text-align: center;
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 20pt;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #1a1a2e;
+}
+
+/* ── Sections ── */
+.pr-section {
+    margin-bottom: 14px;
+}
+
+.pr-heading {
+    margin: 0 0 8px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid #1a1a2e;
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 12.5pt;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #1a1a2e;
+    break-after: avoid;
+    page-break-after: avoid;
+}
+
+/* ── Label / value rows (underlined like the Prescription fields) ── */
+.pr-row {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    margin-bottom: 8px;
+}
+
+.pr-field {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.pr-field--sm   { flex: 0 0 34mm; }
+.pr-field--half { flex: 0 0 calc(50% - 9px); }
+
+.pr-label {
+    flex-shrink: 0;
+    font-size: 9.5pt;
+    font-weight: 600;
+    color: #444;
+    white-space: nowrap;
+}
+
+.pr-value {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 1.4em;
+    padding-bottom: 1px;
+    border-bottom: 1px solid #999;
+    font-size: 10.5pt;
+    color: #1a1a2e;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
+
+/* ── Free-text content (diagnosis, treatment, notes …) ── */
+.pr-text {
+    font-size: 10.5pt;
+    color: #222;
+    line-height: 1.55;
+    white-space: pre-line;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    orphans: 3;
+    widows: 3;
+}
+
+.pr-text--spaced { margin-top: 8px; }
+
+.pr-subblock { margin-top: 8px; }
+.pr-subblock:first-of-type { margin-top: 0; }
+
+.pr-sublabel {
+    font-size: 9.5pt;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 2px;
+    break-after: avoid;
+    page-break-after: avoid;
+}
+
+/* ── Tables ── */
+.pr-table {
+    width: 100%;
+    max-width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 10pt;
+}
+
+.pr-table th,
+.pr-table td {
+    padding: 5px 8px;
+    border: 1px solid #b9b7b2;
+    text-align: left;
+    vertical-align: top;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
+
+.pr-table thead th {
+    background: #efeeea;
+    color: #1a1a2e;
+    font-size: 9pt;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.pr-table thead { display: table-header-group; }
+
+.pr-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.pr-table--vitals td { font-size: 10.5pt; }
+
+.pr-table--rx .col-medicine { width: 34%; }
+.pr-table--rx .col-qty      { width: 9%; text-align: center; }
+
+.pr-table--lab .col-test { width: 32%; }
+
+/* ── Laboratory blocks ── */
+.pr-lab + .pr-lab {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed #b9b7b2;
+}
+
+.pr-lab-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 18px;
+    margin-bottom: 6px;
+    font-size: 9.5pt;
+    color: #444;
+    break-after: avoid;
+    page-break-after: avoid;
+}
+
+.pr-lab .pr-table { margin-bottom: 8px; }
+
+.pr-lab-reviewed {
+    margin-top: 6px;
+    font-size: 9pt;
+    font-style: italic;
+    color: #666;
+}
+
+/* ── Attending physician / signature ── */
+.pr-physician {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 26px;
+    padding-top: 12px;
+    border-top: 1px solid #ccc;
+}
+
+.pr-sig-block {
+    min-width: 62mm;
+    text-align: center;
+}
+
+.pr-sig-line {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    height: 16mm;
+    margin-bottom: 6px;
+    border-bottom: 1.5px solid #1a1a2e;
+}
+
+.pr-sig-line img {
+    max-width: 55mm;
+    max-height: 15mm;
+    object-fit: contain;
+}
+
+.pr-sig-name {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 13pt;
+    font-weight: 600;
+    color: #1a1a2e;
+    line-height: 1.3;
+}
+
+.pr-sig-role {
+    font-size: 9pt;
+    font-style: italic;
+    color: #555;
+}
+
+.pr-sig-meta {
+    margin-top: 1px;
+    font-size: 9pt;
+    color: #666;
+    letter-spacing: 0.3px;
+}
+
+/* Keep short sections together, never split a heading from its content */
+.pr-keep {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+/* ══════════════════════════════════════════
+   SMALL SCREENS (preview only)
+══════════════════════════════════════════ */
+@media screen and (max-width: 800px) {
+    .pr-sheet { padding: 20px 16px; min-height: 0; }
+    .pr-row { flex-wrap: wrap; gap: 8px 18px; }
+    .pr-field--sm { flex: 1 1 40%; }
+    .pr-clinic-name { font-size: 24pt; }
+    .pr-action-bar { padding: 0 10px; }
+}
+
+/* ══════════════════════════════════════════
+   PRINT — A4 portrait
+   Margins come from @page, so the sheet's own
+   padding, border and shadow are removed.
+══════════════════════════════════════════ */
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 14mm 16mm 16mm;
+    }
+
+    html, body {
+        width: auto;
+        height: auto;
+        background: #ffffff !important;
+    }
+
+    .no-print { display: none !important; }
+
+    .pr-sheet {
+        width: auto;
+        max-width: none;
+        min-height: 0;
+        margin: 0;
+        padding: 0;
+        border: none;
+        box-shadow: none;
+        font-size: 10pt;
+    }
+
+    a { color: inherit; text-decoration: none; }
+}

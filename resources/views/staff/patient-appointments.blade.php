@@ -84,12 +84,14 @@
                     @forelse($appointments as $appointment)
                         @php
                             $date = \Carbon\Carbon::parse($appointment->appointment_date);
-                            $time = \Carbon\Carbon::parse($appointment->appointment_time);
+                            $time = $appointment->appointment_time
+                        ? \Carbon\Carbon::parse($appointment->appointment_time)
+                        : \Carbon\Carbon::parse($appointment->appointment_date)->startOfDay(); // walk-in placeholder, never displayed
                         @endphp
                         <tr>
                             <td>
                                 {{ $date->format('F d, Y') }}
-                                <span class="time-inline">{{ $time->format('h:i A') }}</span>
+                                <span class="time-inline">{{ $appointment->timeLabel('h:i A') }}</span>
                             </td>
                             <td>
                                 Dr. {{ $appointment->doctor->first_name ?? '' }} {{ $appointment->doctor->last_name ?? '' }}

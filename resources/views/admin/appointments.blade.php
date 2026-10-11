@@ -114,7 +114,9 @@
 
                 @php
                     $date = \Carbon\Carbon::parse($appointment->appointment_date);
-                    $time = \Carbon\Carbon::parse($appointment->appointment_time);
+                    $time = $appointment->appointment_time
+                        ? \Carbon\Carbon::parse($appointment->appointment_time)
+                        : \Carbon\Carbon::parse($appointment->appointment_date)->startOfDay(); // walk-in placeholder, never displayed
 
                     // Same eligibility rules enforced server-side in
                     // StaffAppointmentController::reschedule()/noShow()
@@ -141,7 +143,7 @@
                     <td>
                         {{ $date->format('F d, Y') }}
                         <span style="margin-left:8px; color:#555; font-size:13px;">
-                            {{ $time->format('h:i A') }}
+                            {{ $appointment->timeLabel('h:i A') }}
                         </span>
                     </td>
 

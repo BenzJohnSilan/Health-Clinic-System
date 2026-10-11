@@ -172,6 +172,7 @@ class AdminPatientController extends Controller
             'appointment_date',
             'appointment_time'
         )
+        ->whereNotNull('appointment_time')   // walk-ins have no reserved slot
         ->whereNotIn('status', ['Cancelled', 'Rejected'])
         ->get();
 

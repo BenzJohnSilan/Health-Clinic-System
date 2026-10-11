@@ -86,6 +86,10 @@ class UserController extends Controller
             'Staff'   => [
                 'employee_id' => 'required|string|max:20|unique:users,employee_id',
                 'position'    => 'required|string|max:50',
+                // Optional starting permission set (e.g. Cashier). The
+                // Position text above is only a label — it never grants
+                // access; the permissions assigned below do.
+                'permission_preset' => ['nullable', Rule::in(array_keys(\App\Models\Permission::presets()))],
             ],
             'Patient' => [
                 'blood_type'               => 'nullable|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
@@ -112,7 +116,8 @@ class UserController extends Controller
         }
 
         if ($request->hasFile('valid_id')) {
-            $validIdPath = $request->file('valid_id')->store('valid_ids', 'public');
+            // Valid IDs are sensitive: private disk only (never `public`).
+            $validIdPath = $request->file('valid_id')->store('valid_ids', 'private');
         }
 
         // --- 4. Auto-generated password ---
@@ -168,12 +173,16 @@ class UserController extends Controller
         // --- 8. Create user ---
         $user = User::create($data);
 
-        // --- 8b. Default feature permissions (Doctor gets none; Staff
-        // gets the default Medicine CRUD set). Admin can adjust these
-        // afterwards from Manage Permissions. Patient is never
-        // considered here — Permission::defaultSlugsForRole() returns
-        // nothing for it.
-        \App\Models\Permission::assignDefaultsTo($user);
+        // --- 8b. Default feature permissions. Staff gets the standard
+        // default set, or the preset Admin picked on the form (e.g.
+        // 'cashier' = billing permissions only). Admin can adjust these
+        // afterwards from Manage Permissions. The preset is only read for
+        // Staff — Permission::assignDefaultsTo() ignores it for every
+        // other role, and Patient is never considered here.
+        \App\Models\Permission::assignDefaultsTo(
+            $user,
+            $role === 'Staff' ? $request->input('permission_preset') : null
+        );
 
         // --- 9. Send email verification & credentials ---
         event(new Registered($user));

@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Models\DoctorScheduleException;
 use App\Models\DoctorWeeklySchedule;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Doctor availability rules — the single source of truth shared between
@@ -102,6 +104,82 @@ class DoctorAvailabilityService
         }
 
         return [false, "The selected time is outside the doctor's available hours for {$dayName}."];
+    }
+
+    /**
+     * Day-level availability, used for WALK-INS (they have no reserved slot,
+     * so the 30-minute slot-fit rule above does not apply). Same rules as
+     * isAvailable(), minus the time-of-day check:
+     *   1. no weekly schedule configured at all   -> unavailable
+     *   6. date exception "Unavailable"           -> unavailable
+     *      date exception "Custom Hours"          -> available (has hours)
+     *   2-4. weekly row missing / Unavailable / no slots -> unavailable
+     *
+     * @return array{0: bool, 1: ?string} [isAvailable, reasonIfNot]
+     */
+    public static function isAvailableOnDate(int $doctorId, string $date): array
+    {
+        try {
+            $date = Carbon::parse($date)->startOfDay();
+        } catch (\Exception $e) {
+            return [false, 'The selected date is invalid.'];
+        }
+
+        if (!DoctorWeeklySchedule::where('doctor_id', $doctorId)->exists()) {
+            return [false, 'This doctor has not set up a weekly schedule yet.'];
+        }
+
+        $exception = DoctorScheduleException::where('doctor_id', $doctorId)
+            ->whereDate('exception_date', $date->toDateString())
+            ->first();
+
+        if ($exception) {
+            if ($exception->type === 'Unavailable') {
+                return [false, 'The doctor is unavailable on this date.'];
+            }
+
+            return ($exception->start_time && $exception->end_time)
+                ? [true, null]
+                : [false, 'The doctor has no custom hours set for this date.'];
+        }
+
+        $dayName = $date->format('l');
+
+        $weekly = DoctorWeeklySchedule::with('slots')
+            ->where('doctor_id', $doctorId)
+            ->where('day_of_week', $dayName)
+            ->first();
+
+        if (!$weekly) {
+            return [false, "The doctor has no schedule configured for {$dayName}."];
+        }
+
+        if ($weekly->status !== 'Available') {
+            return [false, "The doctor is unavailable on {$dayName}."];
+        }
+
+        if ($weekly->slots->isEmpty()) {
+            return [false, "The doctor has no time slots configured for {$dayName}."];
+        }
+
+        return [true, null];
+    }
+
+    /**
+     * Doctors who can take a walk-in on $date: an ACTIVE doctor account
+     * (users.status = 'Active') that passes isAvailableOnDate().
+     *
+     * @return Collection<int, User>
+     */
+    public static function availableDoctorsOn(string $date): Collection
+    {
+        return User::where('role', 'Doctor')
+            ->where('status', 'Active')
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get()
+            ->filter(fn (User $doctor) => self::isAvailableOnDate($doctor->id, $date)[0])
+            ->values();
     }
 
     /**

@@ -42,22 +42,63 @@
         <div class="settings-sidebar">
 
             <div class="profile-card">
-                <div class="avatar-wrapper" id="avatarPreviewWrapper">
-                    @if($staff->avatar)
-                        <img src="{{ asset('storage/'.$staff->avatar) }}" alt="Avatar" id="avatarPreview">
-                    @else
-                        <img src="https://via.placeholder.com/84" alt="Avatar" id="avatarPreview">
-                    @endif
-                    <div class="avatar-overlay" onclick="document.getElementById('avatarInput').click()">
-                        <i class='bx bx-camera'></i>
+
+                {{-- ===== AVATAR (independent form — Choose = click avatar) ===== --}}
+                <form action="{{ route('staff.profile.avatar.update') }}"
+                      method="POST"
+                      enctype="multipart/form-data"
+                      id="avatarForm">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="avatar-wrapper" id="avatarPreviewWrapper" onclick="document.getElementById('avatarInput').click()">
+                        @if($staff->avatar)
+                            <img src="{{ asset('storage/'.$staff->avatar) }}" alt="Avatar" id="avatarPreview">
+                        @else
+                            <img src="https://via.placeholder.com/84" alt="Avatar" id="avatarPreview">
+                        @endif
+                        <div class="avatar-overlay">
+                            <i class='bx bx-camera'></i>
+                        </div>
                     </div>
-                </div>
-                <div class="profile-card-info">
-                    <strong>{{ $staff->first_name }} {{ $staff->last_name }}</strong>
-                    <span>{{ $staff->email }}</span>
-                    <span class="role-badge">{{ $staff->role }}</span>
-                </div>
-            </div>
+
+                    <input type="file" id="avatarInput" name="avatar" accept="image/jpg,image/jpeg,image/png"
+                           style="display:none" onchange="previewAvatar(event)">
+
+                    <div class="profile-card-info">
+                        <strong>{{ $staff->first_name }} {{ $staff->last_name }}</strong>
+                        <span>{{ $staff->email }}</span>
+                        <span class="role-badge">{{ $staff->role }}</span>
+                    </div>
+
+                    <div class="avatar-actions-sidebar">
+                        <button type="submit" class="btn-avatar-save" id="saveAvatarBtn" disabled>
+                            <i class='bx bx-save'></i> Save
+                        </button>
+
+                        @if($staff->avatar)
+                            <button type="button" class="btn-avatar-remove" onclick="confirmRemoveAvatar()">
+                                <i class='bx bx-trash'></i> Remove
+                            </button>
+                        @endif
+                    </div>
+
+                    @error('avatar')
+                        <span class="avatar-field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>
+                    @enderror
+                </form>
+
+                @if($staff->avatar)
+                <form action="{{ route('staff.profile.avatar.remove') }}"
+                      method="POST"
+                      id="removeAvatarForm"
+                      style="display:none;">
+                    @csrf
+                    @method('DELETE')
+                </form>
+                @endif
+
+            </div>{{-- end profile-card --}}
 
             <nav class="tab-nav">
                 <button class="tab-btn active" data-tab="profile">
@@ -77,7 +118,7 @@
         {{-- ===== MAIN PANEL ===== --}}
         <div class="settings-panel">
 
-            {{-- ===== TAB: PROFILE ===== --}}
+            {{-- ===== TAB: PROFILE (NO AVATAR HERE) ===== --}}
             <div class="tab-content active" id="tab-profile">
 
                 <div class="panel-header">
@@ -85,13 +126,9 @@
                     <p>Update your personal details and contact information</p>
                 </div>
 
-                <form action="{{ route('staff.profile.update') }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('staff.profile.update') }}" method="POST">
                     @csrf
                     @method('PUT')
-
-                    {{-- Hidden avatar input --}}
-                    <input type="file" id="avatarInput" name="avatar" accept="image/*"
-                           style="display:none" onchange="previewAvatar(event)">
 
                     {{-- ===== PERSONAL DETAILS ===== --}}
                     <div class="form-section">
@@ -372,11 +409,22 @@ function switchTab(tabName) {
 function previewAvatar(event) {
     const file = event.target.files[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onload = e => {
         document.getElementById('avatarPreview').src = e.target.result;
     };
     reader.readAsDataURL(file);
+
+    const saveBtn = document.getElementById('saveAvatarBtn');
+    if (saveBtn) saveBtn.disabled = false;
+}
+
+/* ===== PROFILE PICTURE — REMOVE CONFIRMATION ===== */
+function confirmRemoveAvatar() {
+    if (confirm('Are you sure you want to remove your profile picture?')) {
+        document.getElementById('removeAvatarForm').submit();
+    }
 }
 
 /* ===== TOGGLE PASSWORD VISIBILITY ===== */

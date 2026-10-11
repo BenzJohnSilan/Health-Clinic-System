@@ -196,31 +196,6 @@ body {
     margin: 0 auto 24px;
 }
 
-/* Password tips */
-.tips {
-    list-style: none;
-    text-align: left;
-    width: 100%;
-    margin: 0 0 28px;
-}
-
-.tips li {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    opacity: 0.85;
-    margin-bottom: 12px;
-    font-weight: 300;
-    line-height: 1.5;
-}
-
-.tips li i {
-    font-size: 16px;
-    opacity: 0.9;
-    flex-shrink: 0;
-}
-
 .btn-back-login {
     display: inline-flex;
     align-items: center;
@@ -241,28 +216,6 @@ body {
     background: white;
     color: var(--purple-dark);
     border-color: white;
-}
-
-/* Floating badges */
-.left-badge {
-    position: absolute;
-    background: rgba(255,255,255,0.15);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 30px;
-    padding: 6px 14px;
-    font-size: 11px;
-    font-weight: 500;
-    display: flex; align-items: center; gap: 6px;
-    animation: floatBadge 6s ease-in-out infinite;
-}
-
-.left-badge-1 { top: 18%; left: 10%; animation-delay: 0s; }
-.left-badge-2 { top: 72%; right: 8%; animation-delay: -3s; }
-
-@keyframes floatBadge {
-    0%, 100% { transform: translateY(0); }
-    50%       { transform: translateY(-8px); }
 }
 
 /* ===== RIGHT PANEL ===== */
@@ -495,7 +448,6 @@ body {
         border-radius: 0;
     }
 
-    .left-badge { display: none; }
 
     .right {
         width: 100%;
@@ -529,14 +481,6 @@ body {
     <!-- ===== LEFT ===== -->
     <div class="left">
 
-        <!-- Floating badges -->
-        <div class="left-badge left-badge-1">
-            <i class='bx bxs-shield-check'></i> Secure Reset
-        </div>
-        <div class="left-badge left-badge-2">
-            <i class='bx bxs-lock-alt'></i> New Password
-        </div>
-
         <div class="left-inner">
             <div class="left-icon">
                 <i class='bx bx-shield-quarter'></i>
@@ -548,14 +492,7 @@ body {
 
             <p>Make sure your new password<br>is strong and easy to remember.</p>
 
-            <br>
-
-            <ul class="tips">
-                <li><i class='bx bx-check-circle'></i> At least 8 characters long</li>
-                <li><i class='bx bx-check-circle'></i> Include uppercase &amp; lowercase letters</li>
-                <li><i class='bx bx-check-circle'></i> Add numbers or special characters</li>
-                <li><i class='bx bx-check-circle'></i> Don't reuse old passwords</li>
-            </ul>
+            <div style="height: 28px;"></div>
 
             <a href="{{ route('login') }}" class="btn-back-login">
                 <i class='bx bx-log-in'></i> Back to Login
@@ -584,7 +521,8 @@ body {
             @endif
         </div>
 
-        <form method="POST" action="{{ route('password.update') }}" id="resetForm">
+        {{-- data-prevent-double-submit stops repeated clicks while the password is being saved --}}
+        <form method="POST" action="{{ route('password.update') }}" id="resetForm" data-prevent-double-submit>
             @csrf
             <input type="hidden" name="token" value="{{ $token }}">
 
@@ -632,7 +570,7 @@ body {
                 <i class='bx bxs-show input-toggle' id="toggleConfirm"></i>
             </div>
 
-            <button type="submit" class="submit-btn" id="submitBtn">
+            <button type="submit" class="submit-btn" id="submitBtn" data-loading-text="Resetting...">
                 <i class='bx bx-check-shield'></i> Reset Password
             </button>
         </form>
@@ -640,6 +578,7 @@ body {
     </div>
 </div>
 
+<script src="{{ asset('js/prevent-double-submit.js') }}"></script>
 <script>
 /* ===== Toggle Password Visibility ===== */
 const togglePassword = document.getElementById('togglePassword');

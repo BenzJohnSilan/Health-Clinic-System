@@ -12,7 +12,7 @@ class NotificationSmokeTest extends TestCase
 
     protected function makePatient(string $email): User
     {
-        return User::create([
+        return User::forceCreate([
             'first_name'      => 'Test',
             'last_name'       => 'Patient',
             'birthdate'       => '1995-01-01',

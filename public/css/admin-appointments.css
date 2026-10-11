@@ -169,6 +169,10 @@
 .status.in-progress {
     background-color: #2563eb;
 }
+/* Walk-in in the queue, not yet checked in */
+.status.waiting {
+    background-color: #a855f7;
+}
 
 .reschedule-by {
     font-size: 12px;

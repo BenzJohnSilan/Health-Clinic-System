@@ -1,75 +1,121 @@
 @extends('layouts.patient')
 
 @section('head')
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ asset('css/patient-appointments.css') }}">
-<link rel="stylesheet" href="{{ asset('css/patient-appointment-details.css') }}">
+{{-- Same stylesheet as the Patient Dashboard / Consultation Summary: hero banner, info-cards, status pills. --}}
+<link rel="stylesheet" href="{{ asset('css/patient-dashboard.css') }}">
+<style>
+    /* Only what the dashboard styles don't already cover. Uses the dashboard's own colour variables. */
+    .ad-page .info-card { margin-bottom: 20px; }
+
+    .ad-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+    .ad-tile { background: var(--bg-page); border-radius: var(--radius-md); padding: 12px 16px; min-width: 0; }
+    .ad-tile-label { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: var(--text-light); margin-bottom: 4px; }
+    .ad-tile-value { display: block; font-size: 15px; font-weight: 800; color: var(--text-dark); word-break: break-word; }
+    .ad-tile-value a { color: var(--primary); text-decoration: none; }
+    .ad-tile-value a:hover { text-decoration: underline; }
+
+    .ad-text { font-size: 14px; line-height: 1.65; color: var(--text-mid); white-space: pre-line; margin: 0; }
+
+    .info-card-icon--red { background: var(--accent-red-bg); color: var(--accent-red); }
+</style>
 @endsection
 
 @section('content')
 
-<div class="ad-wrapper">
+@php
+    $doctor     = $appointment->doctor;
+    $doctorName = trim(($doctor->first_name ?? '') . ' ' . ($doctor->last_name ?? ''));
 
-    {{-- ================= BACK ROW (own row, above header) ================= --}}
-    <div class="ad-back-row">
-        <a href="{{ route('patient.appointments.index') }}" class="ad-btn-back">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                 stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
-            </svg>
-            Back to Appointments
-        </a>
-    </div>
+    // Same colour language as the Dashboard / Consultation Summary status pills.
+    [$pillClass, $pillIcon] = match($appointment->status) {
+        'Approved', 'Completed'      => ['status-pill--green', 'bx-check-circle'],
+        'Pending', 'Rescheduled'     => ['status-pill--amber', 'bx-time-five'],
+        'Checked In', 'In Progress'  => ['status-pill--blue',  'bx-info-circle'],
+        'Rejected', 'No Show'        => ['status-pill--red',   'bx-x-circle'],
+        default                      => ['status-pill--gray',  'bx-x-circle'],   // Cancelled
+    };
+@endphp
 
-    {{-- ================= PAGE HEADER ================= --}}
-    <div class="ad-page-header">
-        <div class="ad-page-header-text">
-            <h1>Appointment Details</h1>
-            <span class="ref-no">{{ $appointment->reference_no ?? '—' }}</span>
+{{-- ================= HERO (same banner as the Dashboard) ================= --}}
+<div class="hero-wrapper">
+    <div class="dashboard-hero">
+        <div class="hero-greeting-group">
+            <div class="hero-icon-badge"><i class='bx bx-calendar-check'></i></div>
+            <div class="hero-greeting">
+                <h2 class="greeting-text">Appointment Details</h2>
+                <p class="greeting-subtitle">{{ $appointment->reference_no ?? '—' }}</p>
+            </div>
         </div>
 
-        <span class="status {{ strtolower($appointment->status) }}">
-            {{ $appointment->status }}
-        </span>
+        <a href="{{ route('patient.appointments.index') }}" class="hero-cta-btn">
+            <i class='bx bx-arrow-back'></i> Back to Appointments
+        </a>
     </div>
+</div>
+
+<div class="ad-page">
 
     {{-- ================= APPOINTMENT INFORMATION ================= --}}
-    <div class="ad-card">
-        <div class="ad-card-heading">Appointment Information</div>
-        <div class="ad-grid ad-grid-3">
-            <div class="ad-field">
-                <span class="ad-label">Doctor</span>
-                <span class="ad-value">
-                    {{ $appointment->doctor->first_name ?? 'N/A' }}
-                    {{ $appointment->doctor->last_name ?? '' }}
-                </span>
+    <div class="info-card">
+        <div class="info-card-header">
+            <div class="info-card-title">
+                <span class="info-card-icon info-card-icon--purple"><i class='bx bx-calendar'></i></span>
+                <h3>Appointment Information</h3>
             </div>
-            <div class="ad-field">
-                <span class="ad-label">Date</span>
-                <span class="ad-value">
-                    {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('F d, Y') }}
-                </span>
-            </div>
-            <div class="ad-field">
-                <span class="ad-label">Time</span>
-                <span class="ad-value">
-                    {{ \Carbon\Carbon::parse($appointment->appointment_time)->format('h:i A') }}
-                </span>
+            <span class="status-pill {{ $pillClass }}"><i class='bx {{ $pillIcon }}'></i> {{ $appointment->status }}</span>
+        </div>
+
+        <div class="info-card-body">
+            <div class="ad-tiles">
+                <div class="ad-tile">
+                    <span class="ad-tile-label">Doctor</span>
+                    <span class="ad-tile-value">{{ $doctorName !== '' ? 'Dr. ' . $doctorName : 'N/A' }}</span>
+                </div>
+                <div class="ad-tile">
+                    <span class="ad-tile-label">Date</span>
+                    <span class="ad-tile-value">{{ \Carbon\Carbon::parse($appointment->appointment_date)->format('F d, Y') }}</span>
+                </div>
+                <div class="ad-tile">
+                    <span class="ad-tile-label">Time</span>
+                    <span class="ad-tile-value">{{ $appointment->timeLabel('h:i A') }}</span>
+                </div>
+                <div class="ad-tile">
+                    <span class="ad-tile-label">Consultation Type</span>
+                    <span class="ad-tile-value">{{ $appointment->isFollowUp() ? 'Follow-up Consultation' : 'Regular Consultation' }}</span>
+                </div>
+                @if($appointment->isFollowUp() && $appointment->followUpLaboratoryRequest)
+                <div class="ad-tile">
+                    <span class="ad-tile-label">Related Laboratory Result</span>
+                    <span class="ad-tile-value">
+                        <a href="{{ route('patient.laboratory-results.index') }}">{{ $appointment->followUpLaboratoryRequest->reference_no }}</a>
+                    </span>
+                </div>
+                @endif
             </div>
         </div>
     </div>
 
     {{-- ================= REASON / NOTES ================= --}}
-    <div class="ad-card">
-        <div class="ad-card-heading">Reason / Notes</div>
-        <div class="ad-text-box">{{ $appointment->reason }}</div>
+    <div class="info-card">
+        <div class="info-card-header">
+            <div class="info-card-title">
+                <span class="info-card-icon info-card-icon--blue"><i class='bx bx-clipboard'></i></span>
+                <h3>Reason / Notes</h3>
+            </div>
+        </div>
+        <div class="info-card-body"><p class="ad-text">{{ filled($appointment->reason) ? $appointment->reason : '—' }}</p></div>
     </div>
 
     @if($appointment->status === 'Rejected')
         {{-- ================= REASON FOR REJECTION ================= --}}
-        <div class="ad-card">
-            <div class="ad-card-heading">Reason for Rejection</div>
-            <div class="ad-text-box">{{ $appointment->rejection_reason ?? '-' }}</div>
+        <div class="info-card">
+            <div class="info-card-header">
+                <div class="info-card-title">
+                    <span class="info-card-icon info-card-icon--red"><i class='bx bx-x-circle'></i></span>
+                    <h3>Reason for Rejection</h3>
+                </div>
+            </div>
+            <div class="info-card-body"><p class="ad-text">{{ $appointment->rejection_reason ?? '-' }}</p></div>
         </div>
     @endif
 

@@ -10,20 +10,20 @@
     --white: #ffffff;
 }
 
-html, body {
-    height: 100%;
-}
+html { -webkit-text-size-adjust: 100%; }
 
 body {
     font-family: 'DM Sans', sans-serif;
     background: var(--bg);
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow-x: hidden;
     position: relative;
-    padding: 16px;
+    /* top padding keeps the fixed Back to Home pill clear of the card */
+    padding: 72px 16px 24px;
 }
 
 /* ===== BACK TO HOME (top-left fixed) ===== */
@@ -122,6 +122,7 @@ body {
 /* ===== LEFT PANEL ===== */
 .left {
     width: 46%;
+    min-width: 0;
     background: linear-gradient(145deg, #6a11cb 0%, #8b2fec 50%, #a044ff 100%);
     color: white;
     display: flex;
@@ -172,6 +173,7 @@ body {
 }
 
 .left h1 {
+    overflow-wrap: anywhere;
     font-family: 'Playfair Display', serif;
     font-size: 26px;
     line-height: 1.35;
@@ -239,29 +241,6 @@ body {
     gap: 10px;
 }
 
-/* Floating pill badges on left */
-.left-badge {
-    position: absolute;
-    background: rgba(255,255,255,0.15);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 30px;
-    padding: 6px 14px;
-    font-size: 11px;
-    font-weight: 500;
-    display: flex; align-items: center; gap: 6px;
-    animation: floatBadge 6s ease-in-out infinite;
-    white-space: nowrap;
-}
-
-.left-badge-1 { top: 18%; left: 10%; animation-delay: 0s; }
-.left-badge-2 { top: 72%; right: 8%; animation-delay: -3s; }
-
-@keyframes floatBadge {
-    0%, 100% { transform: translateY(0); }
-    50%       { transform: translateY(-8px); }
-}
-
 /* ===== RIGHT PANEL ===== */
 .right {
     width: 54%;
@@ -276,6 +255,7 @@ body {
 .right-header { margin-bottom: 28px; }
 
 .right-header h2 {
+    overflow-wrap: anywhere;
     font-family: 'Playfair Display', serif;
     font-size: 28px;
     color: var(--text-dark);
@@ -312,6 +292,27 @@ body {
     background: #f0fdf4;
     color: #15803d;
     border: 1px solid #bbf7d0;
+}
+
+/* Success messages (e.g. "You have been logged out.") fade out and collapse by themselves */
+.alert-success[data-auto-dismiss] {
+    max-height: 120px;
+    overflow: hidden;
+    transition: opacity 0.5s ease, max-height 0.5s ease, margin 0.5s ease, padding 0.5s ease, border-width 0.5s ease;
+}
+
+.alert-success[data-auto-dismiss].is-hiding {
+    opacity: 0;
+    max-height: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .alert-success[data-auto-dismiss] { transition: none; }
 }
 
 /* ===== INPUT GROUP ===== */
@@ -364,7 +365,9 @@ body {
 
 .input-toggle {
     position: absolute;
-    right: 16px;
+    right: 6px;
+    min-width: 40px; min-height: 40px;
+    display: inline-flex; align-items: center; justify-content: center;
     top: 50%; transform: translateY(-50%);
     color: #aaa;
     font-size: 17px;
@@ -387,16 +390,19 @@ body {
 }
 
 .options label {
-    display: flex; align-items: center; gap: 7px; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    min-height: 32px;
 }
 
 .options input[type="checkbox"] {
-    width: 15px; height: 15px;
+    width: 18px; height: 18px;
     accent-color: var(--purple-dark);
     cursor: pointer;
 }
 
 .forgot-link {
+    display: inline-block;
+    padding: 6px 0;
     text-decoration: none;
     color: var(--purple-dark);
     font-weight: 500;
@@ -421,6 +427,7 @@ body {
     box-shadow: 0 6px 20px rgba(106,17,203,0.32);
     display: flex; align-items: center; justify-content: center; gap: 8px;
     letter-spacing: 0.3px;
+    min-height: 48px;
 }
 
 .login-btn:hover {
@@ -521,16 +528,15 @@ body {
 /* ----- Mobile (stacked layout) ----- */
 @media (max-width: 768px) {
     body {
-        padding: 12px;
+        padding: 60px 12px 16px;
         align-items: flex-start;
-        overflow-y: auto;
     }
 
     .wrapper {
         flex-direction: column;
         width: 100%;
         max-width: 480px;
-        margin: 56px auto 16px;
+        margin: 0 auto;
         min-height: auto;
         border-radius: 20px;
     }
@@ -543,8 +549,6 @@ body {
 
     .left::before { width: 220px; height: 220px; top: -80px; right: -80px; }
     .left::after  { width: 160px; height: 160px; bottom: -50px; left: -50px; }
-
-    .left-badge { display: none; }
 
     .left h1 { font-size: 21px; }
 
@@ -566,7 +570,6 @@ body {
 /* ----- Small phones ----- */
 @media (max-width: 480px) {
     .wrapper {
-        margin-top: 50px;
         border-radius: 16px;
     }
 
@@ -632,6 +635,7 @@ body {
 
 /* ----- Short screens (landscape phones / small laptops) ----- */
 @media (max-height: 620px) and (min-width: 769px) {
+    body { padding-top: 64px; }
     .wrapper { min-height: auto; }
     .left, .right { padding-top: 32px; padding-bottom: 32px; }
 }

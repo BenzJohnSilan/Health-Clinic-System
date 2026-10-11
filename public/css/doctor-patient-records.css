@@ -1,386 +1,415 @@
-/* ================= RESET ================= */
-* {
-    box-sizing: border-box;
-    font-family: "Poppins", Arial, sans-serif;
+/* ==========================================================
+   DOCTOR — PATIENT RECORDS — doctor-patient-records.css
+   Same design system as the Doctor Dashboard: purple gradient
+   hero, rounded info-cards with icon badges, soft shadows.
+   Everything is scoped under .pr-page.
+   ========================================================== */
+
+body { background: #f4f0fa; }
+
+.pr-page {
+    --primary:        #6a0dad;
+    --primary-dark:   #560aaf;
+    --primary-light:  #9b30ff;
+    --primary-soft:   #f3e8ff;
+    --green:          #10b981;
+    --green-bg:       #f0fbf6;
+    --amber:          #d97706;
+    --amber-bg:       #fffbeb;
+    --red:            #ef4444;
+    --red-bg:         #fef2f2;
+    --blue:           #4f46e5;
+    --blue-bg:        #f0f2ff;
+
+    --text-dark:  #1a1a2e;
+    --text-mid:   #444;
+    --text-light: #888;
+    --border:     #f0eaf8;
+    --shadow-sm:  0 2px 8px rgba(106,13,173,0.07);
+    --shadow-md:  0 6px 20px rgba(106,13,173,0.10);
+
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+
+    color: var(--text-dark);
 }
 
-/* ================= PAGE ================= */
-.container {
-    padding: 20px;
-}
-
-/* ================= HEADER ================= */
-.page-header {
-    margin-bottom: 20px;
-}
-
-.page-header-top {
+/* ============================================================
+   HERO
+   ============================================================ */
+.pr-page .pr-hero {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 12px 30px rgba(106,13,173,0.28);
+    padding: 28px 34px;
+    margin-bottom: 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: #fff;
-    color: #6a0dad;
-    border: 1.5px solid #e9d5ff;
-    padding: 9px 16px;
-    border-radius: 8px;
-    font-size: 13.5px;
-    font-weight: 600;
-    text-decoration: none;
-    white-space: nowrap;
-    box-shadow: 0 2px 6px rgba(106, 13, 173, 0.08);
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.back-link:hover {
-    background: #f3e8ff;
-    border-color: #c084fc;
-    color: #560aaf;
-    box-shadow: 0 4px 10px rgba(106, 13, 173, 0.15);
-}
-
-.page-title {
-    font-size: 28px;
-    font-weight: 600;
-    color: #111827;
-    margin: 0;
-}
-
-.page-subtitle {
-    font-size: 14px;
-    color: #6b7280;
-    margin-top: 4px;
-}
-
-/* ================= SPLIT LAYOUT ================= */
-.records-layout {
-    display: grid;
-    grid-template-columns: 340px 1fr;
     gap: 20px;
-    align-items: start;
+    flex-wrap: wrap;
 }
 
-/* ================= CARD ================= */
-.card {
-    background: #fff;
-    border: 1px solid #f0e6ff;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+.pr-page .pr-hero::before,
+.pr-page .pr-hero::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.10);
+    pointer-events: none;
 }
 
-.card-title {
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    color: #6a0dad;
-    margin: 0 0 16px;
-}
+.pr-page .pr-hero::before { width: 240px; height: 240px; top: -90px; right: -50px; }
+.pr-page .pr-hero::after  { width: 150px; height: 150px; bottom: -70px; right: 160px; background: rgba(255,255,255,0.07); }
 
-/* ================= PATIENT HERO ================= */
-.patient-hero {
+.pr-page .pr-hero__left {
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding-bottom: 16px;
-    margin-bottom: 16px;
-    border-bottom: 1px solid #f0e6ff;
+    gap: 18px;
+    min-width: 0;
 }
 
-.patient-avatar {
+.pr-page .pr-hero__avatar {
+    width: 66px;
+    height: 66px;
     flex-shrink: 0;
-    width: 56px;
-    height: 56px;
     border-radius: 50%;
-    background: #6a0dad;
-    color: #fff;
+    background: #fff;
+    color: var(--primary);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
-    font-weight: 700;
+    font-size: 24px;
+    font-weight: 800;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.15);
 }
 
-.patient-hero-text {
+.pr-page .pr-hero__name {
+    font-size: 24px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.4px;
+    margin: 0;
+    word-break: break-word;
+}
+
+.pr-page .pr-hero__chips {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.pr-page .pr-chip {
+    display: inline-flex;
+    align-items: center;
     gap: 6px;
-}
-
-.patient-hero-name {
-    font-size: 17px;
-    font-weight: 600;
-    color: #111827;
-}
-
-/* ================= PATIENT TYPE BADGE ================= */
-.patient-type-badge {
-    display: inline-block;
-    align-self: flex-start;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-weight: 600;
-    font-size: 0.76rem;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.35);
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 5px 13px;
+    border-radius: 999px;
     white-space: nowrap;
 }
 
-.patient-type-badge.registered {
-    background-color: #ede9fe;
-    color: #6a0dad;
+.pr-page .pr-chip i { font-size: 15px; }
+
+.pr-page .pr-back {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #fff;
+    color: var(--primary);
+    font-size: 13.5px;
+    font-weight: 700;
+    padding: 10px 18px;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    transition: transform .22s ease, box-shadow .22s ease;
 }
 
-.patient-type-badge.walkin {
-    background-color: #e0f2fe;
-    color: #0369a1;
+.pr-page .pr-back i { font-size: 18px; }
+.pr-page .pr-back:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,0.18); }
+
+/* ============================================================
+   INFO GRID  (Personal | Medical + Emergency)
+   ============================================================ */
+.pr-page .pr-info-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: 20px;
+    align-items: stretch;
+    margin-bottom: 20px;
 }
 
-/* ================= INFO LIST ================= */
-.info-list {
+.pr-page .pr-stack {
     display: flex;
     flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+}
+
+/* ============================================================
+   CARD (same language as the dashboard info-cards)
+   ============================================================ */
+.pr-page .pr-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 22px 24px;
+    min-width: 0;
+    transition: box-shadow .22s ease;
+}
+
+.pr-page .pr-card:hover { box-shadow: var(--shadow-md); }
+
+.pr-page .pr-card__head {
+    display: flex;
+    align-items: center;
     gap: 12px;
+    margin-bottom: 18px;
 }
 
-.info-row {
+.pr-page .pr-card__head--between { justify-content: space-between; flex-wrap: wrap; }
+
+.pr-page .pr-card__head-left { display: flex; align-items: center; gap: 12px; }
+
+.pr-page .pr-card__head h2 {
+    margin: 0;
+    font-size: 15.5px;
+    font-weight: 800;
+    color: var(--text-dark);
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.pr-page .pr-card__icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    background: var(--primary-soft);
+    color: var(--primary);
+}
+
+.pr-page .pr-card__icon--red   { background: var(--red-bg);   color: var(--red); }
+.pr-page .pr-card__icon--amber { background: var(--amber-bg); color: var(--amber); }
+
+/* ============================================================
+   FIELD GRID  (label on top, value below, two columns)
+   ============================================================ */
+.pr-page .pr-fields {
+    display: grid;
+    gap: 0 28px;
+    margin: 0;
+}
+
+.pr-page .pr-fields--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.pr-page .pr-fields > div {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    padding: 10px 12px;
-    background: #f9f5ff;
-    border-radius: 8px;
+    gap: 3px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    min-width: 0;
 }
 
-.info-label {
-    font-size: 12px;
-    color: #6b7280;
+.pr-page .pr-fields__wide { grid-column: 1 / -1; }
+
+/* last row(s) lose the divider */
+.pr-page .pr-fields > div:last-child { border-bottom: none; padding-bottom: 0; }
+
+.pr-page .pr-fields dt {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: var(--text-light);
 }
 
-.info-value {
+.pr-page .pr-fields dd {
+    margin: 0;
     font-size: 14px;
-    font-weight: 600;
-    color: #111827;
-    word-break: break-word;
+    font-weight: 700;
+    color: var(--text-dark);
     overflow-wrap: anywhere;
 }
 
-/* ================= APPOINTMENT HISTORY HEADER ================= */
-.appointment-history-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 0;
-}
-
-.appointment-history-header .card-title {
-    margin-bottom: 0;
-}
-
-.total-appointments {
-    font-size: 13px;
-    font-weight: 600;
-    color: #6b7280;
-    background: #f9f5ff;
-    padding: 5px 12px;
-    border-radius: 20px;
+/* ============================================================
+   APPOINTMENT HISTORY
+   ============================================================ */
+.pr-page .pr-count {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--primary);
+    background: var(--primary-soft);
+    padding: 6px 14px;
+    border-radius: 999px;
     white-space: nowrap;
 }
 
-/* ================= TABLE ================= */
-.table-container {
-    width: 100%;
-    overflow-x: auto;
-    margin-top: 16px;
-}
+.pr-page .pr-table-wrap { width: 100%; overflow-x: auto; }
 
-.record-table {
+.pr-page .pr-table {
     width: 100%;
     border-collapse: collapse;
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.05);
 }
 
-.record-table thead th {
-    background-color: #6a0dad;
+.pr-page .pr-table thead th {
+    background: var(--primary);
     color: #fff;
     font-weight: 600;
-    font-size: 13px;
-    padding: 12px 14px;
+    font-size: 13.5px;
+    padding: 13px 16px;
     text-align: left;
     white-space: nowrap;
 }
 
-.record-table td {
-    padding: 12px 14px;
-    font-size: 13.5px;
+.pr-page .pr-table td {
+    padding: 14px 16px;
+    font-size: 14px;
     color: #374151;
     border-bottom: 1px solid #f0e6ff;
     vertical-align: middle;
 }
 
-.record-table tbody tr:last-child td {
-    border-bottom: none;
+.pr-page .pr-table tbody tr:nth-child(even) td { background: #f9f5ff; }
+.pr-page .pr-table tbody tr:nth-child(odd) td  { background: #fff; }
+.pr-page .pr-table tbody tr:hover td { background: #ede9f7; transition: background-color .2s ease; }
+.pr-page .pr-table tbody tr:last-child td { border-bottom: none; }
+
+.pr-page .pr-table td:last-child,
+.pr-page .pr-table th:last-child { text-align: center; }
+
+.pr-page .pr-date { display: block; font-weight: 700; color: var(--text-dark); }
+.pr-page .pr-time { display: block; font-size: 12px; color: var(--text-light); margin-top: 2px; }
+
+.pr-page .pr-empty {
+    text-align: center !important;
+    font-style: italic;
+    color: #9ca3af;
+    padding: 32px 0 !important;
+    background: #fff !important;
 }
 
-.record-table tbody tr:nth-child(even) td {
-    background-color: #f9f5ff;
-}
-
-.record-table tbody tr:nth-child(odd) td {
-    background-color: #ffffff;
-}
-
-.record-table tbody tr:hover td {
-    background-color: #ede9f7;
-    transition: background-color 0.2s ease;
-}
-
-.record-table td:last-child,
-.record-table th:last-child {
-    text-align: center;
-}
-
-.time-sub {
-    display: block;
-    font-size: 12px;
-    color: #6b7280;
-    margin-top: 2px;
-}
-
-/* ================= STATUS BADGES ================= */
-.badge {
+/* status badges — same palette as the dashboard */
+.pr-page .pr-badge {
     display: inline-block;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-weight: 600;
-    font-size: 0.78rem;
-    color: #fff;
+    padding: 4px 13px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: .2px;
     white-space: nowrap;
+    background: #f3f4f6;
+    color: #6b7280;
 }
 
-.badge.pending      { background-color: #f59e0b; }
-.badge.approved     { background-color: #10b981; }
-.badge.checked-in   { background-color: #14b8a6; }
-.badge.in-progress  { background-color: #f97316; }
-.badge.rejected     { background-color: #ef4444; }
-.badge.rescheduled  { background-color: #3b82f6; }
-.badge.cancelled    { background-color: #6b7280; }
-.badge.completed    { background-color: #8b5cf6; }
-.badge.no-show      { background-color: #f97316; }
+.pr-page .pr-badge.pending     { background: var(--amber-bg); color: var(--amber); }
+.pr-page .pr-badge.approved    { background: var(--green-bg); color: var(--green); }
+.pr-page .pr-badge.checked-in  { background: #ccfbf1; color: #0f766e; }
+.pr-page .pr-badge.in-progress { background: #ffedd5; color: #c2410c; }
+.pr-page .pr-badge.completed   { background: var(--blue-bg); color: var(--blue); }
+.pr-page .pr-badge.rescheduled { background: var(--primary-soft); color: var(--primary); }
+.pr-page .pr-badge.rejected    { background: var(--red-bg); color: var(--red); }
+.pr-page .pr-badge.cancelled   { background: #f3f4f6; color: #6b7280; }
+.pr-page .pr-badge.no-show     { background: #ffedd5; color: #c2410c; }
 
-/* ================= BUTTON ================= */
-.btn-view {
-    display: inline-block;
-    background: #6a0dad;
-    color: #fff;
+/* action button */
+.pr-page .pr-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    color: var(--primary);
+    border: 1.5px solid var(--primary);
     padding: 7px 14px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     font-size: 12.5px;
-    font-weight: 500;
+    font-weight: 700;
     text-decoration: none;
     white-space: nowrap;
-    transition: all 0.2s ease;
+    transition: all .22s ease;
 }
 
-.btn-view:hover {
-    background: #560aaf;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(106, 13, 173, 0.3);
-}
+.pr-page .pr-btn i { font-size: 15px; }
+.pr-page .pr-btn:hover { background: var(--primary); color: #fff; }
 
-/* ================= EMPTY STATE ================= */
-.empty-text {
-    color: #9ca3af;
-    font-style: italic;
-    font-size: 14px;
-    text-align: center !important;
-    padding: 32px 0 !important;
-    background-color: #fff !important;
-}
-
-/* ================= PAGINATION ================= */
-.pagination-wrapper {
+/* ============================================================
+   PAGINATION
+   ============================================================ */
+.pr-page .pr-pagination {
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 12px;
-    padding: 14px 4px 0;
-    margin-top: 14px;
-    border-top: 1px solid #f0e6ff;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
 }
 
-.pagination-info {
-    font-size: 13px;
-    color: #6b7280;
-}
+.pr-page .pr-pagination__info { font-size: 13px; color: #6b7280; }
+.pr-page .pr-pagination__info strong { color: #374151; font-weight: 600; }
 
-.pagination-info strong {
-    color: #374151;
-    font-weight: 600;
-}
+.pr-page .pr-pagination__nav { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 
-.pagination-nav {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex-wrap: wrap;
-}
-
-.page-btn {
+.pr-page .pr-pgbtn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-width: 34px;
     height: 34px;
     padding: 0 10px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     border: 1.5px solid #e9d5ff;
     background: #fff;
-    color: #6a0dad;
+    color: var(--primary);
     font-size: 13px;
     font-weight: 600;
-    cursor: pointer;
     text-decoration: none;
-    font-family: "Poppins", Arial, sans-serif;
-    transition: all 0.2s ease;
     line-height: 1;
+    transition: all .2s ease;
 }
 
-.page-btn:hover {
-    background: #f3e8ff;
-    border-color: #c084fc;
-    color: #6a0dad;
-}
+.pr-page a.pr-pgbtn:hover { background: var(--primary-soft); border-color: #c084fc; }
 
-.page-btn.active {
-    background: #6a0dad;
-    border-color: #6a0dad;
+.pr-page .pr-pgbtn.active {
+    background: var(--primary);
+    border-color: var(--primary);
     color: #fff;
-    box-shadow: 0 2px 8px rgba(106, 13, 173, 0.3);
+    box-shadow: 0 2px 8px rgba(106,13,173,0.3);
     cursor: default;
-    pointer-events: none;
 }
 
-.page-btn.disabled {
+.pr-page .pr-pgbtn.disabled {
     color: #d1d5db;
     border-color: #f3f4f6;
     background: #f9fafb;
     cursor: not-allowed;
-    pointer-events: none;
 }
 
-.page-ellipsis {
+.pr-page .pr-ellipsis {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -390,61 +419,24 @@
     color: #9ca3af;
 }
 
-/* ================= RESPONSIVE ================= */
-@media screen and (max-width: 1024px) {
-    .records-layout {
-        grid-template-columns: 300px 1fr;
-    }
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1100px) {
+    .pr-page .pr-info-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
-@media screen and (max-width: 900px) {
-    .records-layout {
-        grid-template-columns: 1fr;
-    }
-
-    .record-table th,
-    .record-table td {
-        padding: 10px 12px;
-        font-size: 13px;
-    }
+@media (max-width: 768px) {
+    .pr-page .pr-hero { padding: 22px 20px; }
+    .pr-page .pr-table th,
+    .pr-page .pr-table td { padding: 11px 12px; font-size: 13px; }
 }
 
-@media screen and (max-width: 600px) {
-    .container {
-        padding: 14px;
-    }
-
-    .page-header-top {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .back-link {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .page-title {
-        font-size: 22px;
-    }
-
-    .card {
-        padding: 16px;
-    }
-
-    .record-table th,
-    .record-table td {
-        padding: 9px 10px;
-        font-size: 12px;
-    }
-
-    .btn-view {
-        font-size: 12px;
-        padding: 6px 10px;
-    }
-
-    .pagination-wrapper {
-        flex-direction: column;
-        align-items: center;
-    }
+@media (max-width: 600px) {
+    .pr-page .pr-card { padding: 18px; }
+    .pr-page .pr-fields--2 { grid-template-columns: minmax(0, 1fr); }
+    .pr-page .pr-hero__name { font-size: 19px; }
+    .pr-page .pr-hero__avatar { width: 54px; height: 54px; font-size: 20px; }
+    .pr-page .pr-back { width: 100%; justify-content: center; }
+    .pr-page .pr-pagination { flex-direction: column; align-items: center; }
 }

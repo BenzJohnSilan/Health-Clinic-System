@@ -236,6 +236,13 @@
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
 }
 
+/* When the pagination bar sits directly under the table (Pending Accounts
+   page only), square off the table's bottom corners so the two read as one
+   card. Scoped by a modifier class because this stylesheet is shared. */
+.pa-table-container--paginated .pending-accounts-table {
+    border-radius: 12px 12px 0 0;
+}
+
 .pending-accounts-table th,
 .pending-accounts-table td {
     padding: 13px 16px;

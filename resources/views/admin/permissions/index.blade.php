@@ -69,6 +69,9 @@
                     <tr>
                         <td data-label="User">
                             <div class="user-cell-name">{{ $user->first_name }} {{ $user->last_name }}</div>
+                            @if($user->role === 'Staff' && $user->position)
+                                <div class="user-cell-email">{{ $user->position }}</div>
+                            @endif
                             <div class="user-cell-email">{{ $user->email }}</div>
                         </td>
                         <td data-label="Role">
@@ -189,6 +192,22 @@
             <input type="hidden" name="role" value="{{ $role }}">
             <input type="hidden" name="page" value="{{ $users->currentPage() }}">
 
+            {{-- Quick presets — Staff only. Fills the checkboxes below; the
+                 Admin still has to press Save Changes for anything to apply,
+                 and can tick/untick individual permissions afterwards. --}}
+            <div class="perm-presets" id="permPresets" style="display:none;">
+                <span class="perm-presets-label">Quick preset:</span>
+                @foreach($presets as $presetKey => $preset)
+                    <button type="button"
+                            class="btn-preset"
+                            data-preset="{{ $presetKey }}"
+                            title="{{ $preset['description'] }}">
+                        {{ $preset['label'] }}
+                    </button>
+                @endforeach
+                <span class="perm-presets-hint">Fills the checkboxes below — press Save Changes to apply.</span>
+            </div>
+
             <div class="perm-modules">
                 @foreach($groupedPermissions as $module => $permissions)
                     <div class="perm-module">
@@ -232,8 +251,23 @@ function openManageModal(userId, userName, userRole, assignedSlugs) {
         cb.checked = assigned.has(cb.dataset.slug);
     });
 
+    // Quick presets only make sense for Staff accounts.
+    document.getElementById('permPresets').style.display = (userRole === 'Staff') ? 'flex' : 'none';
+
     document.getElementById('permModal').style.display = 'flex';
 }
+
+// Preset slug lists come from Permission::presets() (single source of truth).
+const PERMISSION_PRESETS = @json(collect($presets)->map(fn ($p) => $p['slugs']));
+
+document.querySelectorAll('#permPresets .btn-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const slugs = new Set(PERMISSION_PRESETS[btn.dataset.preset] || []);
+        document.querySelectorAll('#permModalForm input[type="checkbox"]').forEach(cb => {
+            cb.checked = slugs.has(cb.dataset.slug);
+        });
+    });
+});
 
 function closePermModal() {
     document.getElementById('permModal').style.display = 'none';

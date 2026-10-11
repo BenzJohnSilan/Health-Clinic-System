@@ -34,6 +34,7 @@ class Permission extends Model
                 'reschedule_appointment'   => 'Reschedule Appointment',
                 'mark_no_show_appointment' => 'Mark Appointment as No Show',
                 'check_in_appointment'     => 'Check In Appointment',
+                'record_vital_signs'       => 'Record Vital Signs',
             ],
             'Patients' => [
                 'view_patients'                => 'View Patients',
@@ -75,6 +76,11 @@ class Permission extends Model
             'Medical Certificates' => [
                 'view_medical_certificates'   => 'View Medical Certificates',
                 'create_medical_certificate'  => 'Create Medical Certificate',
+                'release_medical_certificate' => 'Release Medical Certificate',
+            ],
+            'Laboratory' => [
+                'view_laboratory_requests'  => 'View Laboratory Requests',
+                'upload_laboratory_result'  => 'Upload Laboratory Result',
             ],
         ];
     }
@@ -86,9 +92,12 @@ class Permission extends Model
      * CRUD defaults are granted — never Delete/Stock, per the
      * Medicine module scope for this phase.
      *
-     * `view_appointments` is the one Appointment permission that is
-     * ALWAYS granted — it is the basic/default Staff Appointment
-     * access (view-only). Every other Appointment permission
+     * `view_appointments` is the one Appointment permission granted by
+     * the STANDARD Staff default — it is the basic/default Staff
+     * Appointment access (view-only). Staff accounts created with the
+     * Cashier preset (see presets()) do NOT get it, and Admin can remove
+     * it from any Staff account in Manage Permissions. Every other
+     * Appointment permission
      * (view_appointment_details, approve_appointment,
      * reject_appointment, cancel_appointment, reschedule_appointment,
      * mark_no_show_appointment) is deliberately left out here and must
@@ -119,6 +128,8 @@ class Permission extends Model
                 'record_payment',
                 'view_payment_history',
                 'view_billing_reports',
+                'view_medical_certificates',
+                'release_medical_certificate',
             ],
             'Doctor' => [
                 'view_billing',
@@ -135,14 +146,63 @@ class Permission extends Model
     }
 
     /**
-     * Assign the default permission set for a freshly created user.
+     * Billing-only permission set for a Staff member who works as a
+     * Cashier. These slugs already exist in catalog() — a Cashier is NOT
+     * a separate role: it is a normal Staff account (role = Staff) whose
+     * permissions are limited to these. The "Position" text on the
+     * account (e.g. "Cashier") is only a label; access is decided by the
+     * permissions below, never by the position.
+     */
+    public const CASHIER_SLUGS = [
+        'view_billing',
+        'record_payment',
+        'view_payment_history',
+        'view_billing_reports',
+    ];
+
+    /**
+     * Permission presets an Admin can pick for a Staff account — when
+     * creating it (Admin → Manage Users → Add User) or as a quick-fill
+     * in Manage Permissions. A preset is only a starting checklist of
+     * permission slugs; Admin can still add/remove any permission
+     * afterwards, and nothing here changes how access is enforced.
+     *
+     * @return array<string, array{label: string, description: string, slugs: array<int, string>}>
+     */
+    public static function presets(): array
+    {
+        return [
+            'standard' => [
+                'label'       => 'Standard Staff',
+                'description' => 'The default Staff permission set (appointments, billing, medicine, medical certificates).',
+                'slugs'       => self::defaultSlugsForRole('Staff'),
+            ],
+            'cashier' => [
+                'label'       => 'Cashier (Billing & Payments only)',
+                'description' => 'View billing, record payments, view payment history and billing reports only. No patients, appointments, laboratory, medical certificates or medicine access.',
+                'slugs'       => self::CASHIER_SLUGS,
+            ],
+        ];
+    }
+
+    /**
+     * Assign the default permission set for a freshly created user
+     * (or, for a Staff account, the chosen preset — e.g. 'cashier').
      * Safe to call for any role — roles with no defaults simply get
      * nothing assigned. Admin never needs rows here (bypasses checks
      * entirely) and Patient must never receive Medicine permissions.
      */
-    public static function assignDefaultsTo(User $user): void
+    public static function assignDefaultsTo(User $user, ?string $preset = null): void
     {
-        $slugs = self::defaultSlugsForRole($user->role);
+        // A preset only applies to Staff accounts. Anything else (or an
+        // unknown preset key) falls back to the role default, so existing
+        // callers — Admin\UserController for Doctor/Patient and
+        // Auth\RegisterController for Patient — behave exactly as before.
+        $presets = self::presets();
+
+        $slugs = ($user->role === 'Staff' && $preset !== null && isset($presets[$preset]))
+            ? $presets[$preset]['slugs']
+            : self::defaultSlugsForRole($user->role);
 
         if (empty($slugs)) {
             return;

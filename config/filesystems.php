@@ -47,6 +47,26 @@ return [
             'report' => false,
         ],
 
+        /*
+        |----------------------------------------------------------------------
+        | Private disk (sensitive registration documents)
+        |----------------------------------------------------------------------
+        |
+        | Holds patients' Valid IDs. It lives OUTSIDE the web root, has no
+        | public URL and is NOT part of the `storage:link` symlink, so a file
+        | here can only be read through an authorized controller response.
+        | The existing `public` disk is untouched (avatars, lab results,
+        | signatures, ... still use it).
+        |
+        */
+        'private' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private'),
+            'visibility' => 'private',
+            'throw' => true,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

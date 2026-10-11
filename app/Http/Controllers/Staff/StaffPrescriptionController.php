@@ -7,22 +7,43 @@ use App\Models\Prescription;
 use App\Models\MedicineBatch;
 use App\Models\MedicineStockMovement;
 use App\Models\UserLog;
+use App\Services\BillingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class StaffPrescriptionController extends Controller
 {
+    public function __construct(private BillingService $billing)
+    {
+    }
+
     /**
-     * Staff releases a prescribed medicine to the patient. This is the
-     * ONLY place inventory is ever deducted for a prescription — never
-     * at Doctor creation time (Section 10 of the workflow spec).
+     * The patient is BUYING a prescribed clinic medicine: Staff releases the
+     * quantity actually sold. This is the ONLY place inventory is deducted
+     * for a prescription AND the only place clinic medicine reaches an
+     * invoice — never at Doctor prescription time (Prescription != Purchase).
      *
-     * Deduction is FIFO across active, non-expired batches (same
-     * ordering MedicineController::stockOut() effectively enforces
-     * manually), with one MedicineStockMovement row written per batch
-     * touched so the audit trail always adds up. Locking + a
-     * transaction keep this safe under concurrent dispensing.
+     * One action, one DB transaction, one quantity ($request->dispensed_quantity):
+     *
+     *     stock deducted  =  quantity dispensed  =  quantity billed
+     *
+     * (quantity_prescribed is only the ceiling; if 10 are prescribed and the
+     * patient buys 6, 6 are deducted and 6 are billed.)
+     *
+     * Safety:
+     *  - the prescription row is locked first and its status re-checked
+     *    inside the lock, so a double click / two tabs / two Staff can never
+     *    deduct stock or create an invoice line twice;
+     *  - invoice_items.prescription_id is UNIQUE as a second line of defence;
+     *  - a clinic-inventory prescription only: an "Other (Manual Input)"
+     *    prescription is for an outside pharmacy and is refused here;
+     *  - the quantity must be 1..quantity_prescribed and available in
+     *    active, non-expired batches — otherwise nothing at all is changed.
+     *
+     * Deduction is FIFO across active, non-expired batches with one
+     * MedicineStockMovement row per batch touched, so the audit trail always
+     * adds up. Route middleware: permission:dispense_prescription.
      */
     public function dispense(Request $request, Prescription $prescription)
     {
@@ -30,52 +51,38 @@ class StaffPrescriptionController extends Controller
             'dispensed_quantity' => 'required|integer|min:1',
         ]);
 
-        $prescription->load('appointment', 'medicine');
-        $appointment = $prescription->appointment;
+        $quantity = (int) $request->dispensed_quantity;
 
-        // ── Guards ───────────────────────────────────────────────────
-        if (!$appointment || $appointment->status !== 'Completed') {
-            return back()->with('error', 'Medicine can only be dispensed after the consultation is Completed.');
-        }
-
-        if ($prescription->dispense_status === 'Dispensed') {
-            return back()->with('error', 'This prescription has already been dispensed.');
-        }
-
-        if ($request->dispensed_quantity > $prescription->quantity_prescribed) {
-            return back()->with('error', 'Dispensed quantity cannot exceed the quantity prescribed.');
-        }
-
-        // Manual (non-inventory) prescriptions are simply marked
-        // Dispensed for record-keeping — there is no Medicine row to
-        // deduct stock from.
-        if (!$prescription->medicine_id) {
-            $prescription->update([
-                'dispense_status'    => 'Dispensed',
-                'dispensed_quantity' => $request->dispensed_quantity,
-                'dispensed_by'       => auth()->id(),
-                'dispensed_at'       => now(),
-            ]);
-
-            UserLog::create([
-                'user_id' => auth()->id(),
-                'action'  => 'Dispensed Medicine (Manual)',
-                'module'  => 'Medicine Inventory',
-                'details' => 'Marked manual prescription "' . $prescription->manual_medicine_name . '" as dispensed for appointment ' . $appointment->reference_no . '.',
-            ]);
-
-            return back()->with('success', 'Prescription marked as dispensed.');
-        }
-
-        // ── Inventory-linked prescription: FIFO deduction ───────────────
         try {
-            DB::transaction(function () use ($request, $prescription, $appointment) {
+            $outcome = DB::transaction(function () use ($quantity, $prescription) {
 
-                $medicine = $prescription->medicine()
-                    ->lockForUpdate()
-                    ->firstOrFail();
+                // Lock the prescription itself FIRST; every check below
+                // reads the locked, up-to-date row.
+                $locked = Prescription::whereKey($prescription->id)->lockForUpdate()->firstOrFail();
+                $locked->load('appointment.patient', 'appointment.walkinPatient');
+                $appointment = $locked->appointment;
 
-                $needed = (int) $request->dispensed_quantity;
+                // ── Guards ───────────────────────────────────────────
+                if (!$appointment || $appointment->status !== 'Completed') {
+                    return ['error' => 'Medicine can only be dispensed after the consultation is Completed.'];
+                }
+
+                // "Other (Manual Input)": outside-pharmacy prescription —
+                // not stocked, not sold, not billed and never dispensed here.
+                if ($locked->isOutsidePharmacy()) {
+                    return ['error' => 'This is an outside-pharmacy prescription. The clinic does not dispense or bill it.'];
+                }
+
+                if ($locked->dispense_status === 'Dispensed') {
+                    return ['error' => 'This prescription has already been dispensed.'];
+                }
+
+                if ($quantity > (int) $locked->quantity_prescribed) {
+                    return ['error' => 'Dispensed quantity cannot exceed the quantity prescribed.'];
+                }
+
+                // ── Stock check (locked) ─────────────────────────────
+                $medicine = $locked->medicine()->lockForUpdate()->firstOrFail();
 
                 $batches = MedicineBatch::where('medicine_id', $medicine->id)
                     ->where('quantity', '>', 0)
@@ -86,11 +93,18 @@ class StaffPrescriptionController extends Controller
 
                 $available = (int) $batches->sum('quantity');
 
-                if ($available < $needed) {
+                if ($available < $quantity) {
                     throw ValidationException::withMessages([
                         'dispensed_quantity' => "Not enough stock available to dispense this quantity. Only {$available} unit(s) left in active, non-expired batches.",
                     ]);
                 }
+
+                // ── Bill the quantity actually released (once) ───────
+                $item    = $this->billing->addDispensedMedicineToInvoice($locked, $quantity, auth()->user());
+                $invoice = $item->invoice;
+
+                // ── FIFO stock deduction, same quantity ──────────────
+                $needed = $quantity;
 
                 foreach ($batches as $batch) {
                     if ($needed <= 0) {
@@ -112,18 +126,18 @@ class StaffPrescriptionController extends Controller
                         'quantity_change' => -$take,
                         'quantity_before' => $before,
                         'quantity_after'  => $after,
-                        'reason'          => 'Dispensed for Prescription #' . $prescription->id . ' (Appointment ' . $appointment->reference_no . ')',
+                        'reason'          => 'Dispensed for Prescription #' . $locked->id . ' (Appointment ' . $appointment->reference_no . ')',
                         'reference_no'    => $appointment->reference_no,
                         'batch_no'        => $batch->batch_no,
-                        'notes'           => null,
+                        'notes'           => 'Billed on invoice ' . $invoice->invoice_no,
                     ]);
 
                     $needed -= $take;
                 }
 
-                $prescription->update([
+                $locked->update([
                     'dispense_status'    => 'Dispensed',
-                    'dispensed_quantity' => $request->dispensed_quantity,
+                    'dispensed_quantity' => $quantity,
                     'dispensed_by'       => auth()->id(),
                     'dispensed_at'       => now(),
                 ]);
@@ -132,14 +146,22 @@ class StaffPrescriptionController extends Controller
                     'user_id' => auth()->id(),
                     'action'  => 'Dispensed Medicine',
                     'module'  => 'Medicine Inventory',
-                    'details' => 'Dispensed ' . $request->dispensed_quantity . ' unit(s) of '
-                               . $medicine->medicine_name . ' for appointment ' . $appointment->reference_no . '.',
+                    'details' => 'Dispensed ' . $quantity . ' of ' . $locked->quantity_prescribed . ' prescribed unit(s) of '
+                               . $medicine->medicine_name . ' for appointment ' . $appointment->reference_no
+                               . ' (' . $appointment->patientName() . '); billed on invoice ' . $invoice->invoice_no
+                               . ' (₱' . number_format((float) $item->amount, 2) . ').',
                 ]);
+
+                return ['success' => true];
             });
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors());
         }
 
-        return back()->with('success', 'Medicine dispensed and inventory updated.');
+        if (isset($outcome['error'])) {
+            return back()->with('error', $outcome['error']);
+        }
+
+        return back()->with('success', 'Medicine dispensed, inventory updated and the quantity released was added to the invoice.');
     }
 }

@@ -1,0 +1,901 @@
+/* =====================================================================
+   Admin Backup & Recovery.
+   Reuses the values already used by the Admin User Logs and Billing
+   pages (purple #6a0dad, Poppins, same table / pagination / stat card /
+   modal treatments) so this page feels native to the clinic admin panel.
+   No blue or other off-theme colors.
+   ===================================================================== */
+
+* {
+    box-sizing: border-box;
+}
+
+/* ================= PAGE HEADER ================= */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.page-header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    color: #111827;
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+.page-header p {
+    color: #6b7280;
+    margin-top: 4px;
+    font-size: 14px;
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+.btn-add {
+    background-color: #6a0dad;
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    font-family: "Poppins", Arial, sans-serif;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: background-color 0.2s ease;
+}
+
+.btn-add:hover {
+    background-color: #560aaf;
+}
+
+.btn-add:disabled {
+    background-color: #b98fd6;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* ================= ALERTS ================= */
+.alert-success {
+    background-color: #d1fae5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.alert-error {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* ================= SUMMARY CARDS ================= */
+.bk-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.bk-stat-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+    border-left: 4px solid #6a0dad;
+    min-width: 0;
+}
+
+.bk-stat-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5eefc;
+    color: #6a0dad;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.bk-stat-body {
+    min-width: 0;
+}
+
+.bk-stat-body p {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 2px;
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+.bk-stat-body h3 {
+    font-size: 19px;
+    font-weight: 700;
+    color: #111827;
+    font-family: "Poppins", Arial, sans-serif;
+    overflow-wrap: anywhere;
+}
+
+.bk-stat-body small {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    color: #9ca3af;
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+.bk-stat-body h3.is-empty {
+    font-size: 15px;
+    font-weight: 600;
+    color: #9ca3af;
+}
+
+/* ================= PRIVACY NOTE ================= */
+.bk-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #faf5ff;
+    border: 1px solid #f0e6ff;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #4b5563;
+    line-height: 1.5;
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+.bk-note i {
+    color: #6a0dad;
+    margin-top: 3px;
+}
+
+/* ================= TABLE ================= */
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.medical-table {
+    width: 100%;
+    min-width: 760px;
+    border-collapse: collapse;
+    border-radius: 12px 12px 0 0;
+    overflow: hidden;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+.medical-table th {
+    background-color: #6a0dad;
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 13px 16px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.medical-table td {
+    padding: 13px 16px;
+    font-size: 14px;
+    color: #374151;
+    border-bottom: 1px solid #f0e6ff;
+    vertical-align: middle;
+}
+
+.medical-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.medical-table tbody tr:nth-child(even) td {
+    background-color: #f9f5ff;
+}
+
+.medical-table tbody tr:nth-child(odd) td {
+    background-color: #ffffff;
+}
+
+.medical-table tbody tr:hover td {
+    background-color: #ede9f7;
+    transition: background-color 0.2s ease;
+}
+
+.medical-table td.bk-datetime {
+    white-space: nowrap;
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.medical-table td.bk-size {
+    white-space: nowrap;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.bk-sub {
+    display: block;
+    margin-top: 3px;
+    font-size: 12px;
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+.bk-contents-title {
+    display: block;
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 13.5px;
+}
+
+.bk-muted {
+    color: #9ca3af;
+}
+
+/* ================= BADGES ================= */
+.bk-badge,
+.bk-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.bk-badge--manual {
+    background: #f3e8ff;
+    color: #6a0dad;
+}
+
+.bk-badge--automatic {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+.bk-status--success {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.bk-status--failed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.bk-status--running {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* ================= ROW ACTIONS ================= */
+.bk-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: "Poppins", Arial, sans-serif;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.bk-btn--download {
+    background: #6a0dad;
+    color: #fff;
+    border: 1.5px solid #6a0dad;
+}
+
+.bk-btn--download:hover {
+    background: #560aaf;
+    border-color: #560aaf;
+}
+
+.bk-btn--ghost {
+    background: #fff;
+    color: #6a0dad;
+    border: 1.5px solid #e9d5ff;
+}
+
+.bk-btn--ghost:hover {
+    background: #f3e8ff;
+    border-color: #c084fc;
+}
+
+/* ================= EMPTY STATE ================= */
+.bk-empty {
+    background: #fff;
+    border: 1px solid #f0e6ff;
+    border-radius: 14px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+    padding: 52px 24px;
+    text-align: center;
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+.bk-empty-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 16px;
+    border-radius: 16px;
+    background: #f5eefc;
+    color: #6a0dad;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+}
+
+.bk-empty h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 6px;
+}
+
+.bk-empty p {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 22px;
+}
+
+/* ================= PAGINATION ================= */
+.pagination-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #fff;
+    border: 1px solid #f0e6ff;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+    margin-bottom: 30px;
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+.pagination-info {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.pagination-info strong {
+    color: #374151;
+    font-weight: 600;
+}
+
+.pagination-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 8px;
+    border: 1.5px solid #e9d5ff;
+    background: #fff;
+    color: #6a0dad;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    font-family: "Poppins", Arial, sans-serif;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.page-btn:hover {
+    background: #f3e8ff;
+    border-color: #c084fc;
+    color: #6a0dad;
+}
+
+.page-btn.active {
+    background: #6a0dad;
+    border-color: #6a0dad;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(106, 13, 173, 0.3);
+    cursor: default;
+    pointer-events: none;
+}
+
+.page-btn.disabled {
+    color: #d1d5db;
+    border-color: #f3f4f6;
+    background: #f9fafb;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.page-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    font-size: 13px;
+    color: #9ca3af;
+}
+
+/* ================= MODALS ================= */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1100;
+    padding: 20px;
+}
+
+.modal-overlay.is-open {
+    display: flex;
+}
+
+.modal-box {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px 30px;
+    width: 100%;
+    max-width: 480px;
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+.modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 12px;
+}
+
+.modal-text {
+    font-size: 14px;
+    color: #4b5563;
+    line-height: 1.6;
+}
+
+.modal-text + .modal-text,
+.modal-list + .modal-text {
+    margin-top: 12px;
+}
+
+.modal-list {
+    margin: 12px 0 0;
+    padding-left: 18px;
+    font-size: 13.5px;
+    color: #4b5563;
+    line-height: 1.7;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.btn-back {
+    background: #f3f4f6;
+    color: #374151;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13.5px;
+    font-family: "Poppins", Arial, sans-serif;
+    cursor: pointer;
+}
+
+.btn-back:hover {
+    background: #e5e7eb;
+}
+
+.btn-confirm {
+    background: #6a0dad;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13.5px;
+    font-family: "Poppins", Arial, sans-serif;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-confirm:hover {
+    background: #560aaf;
+}
+
+.btn-back:disabled,
+.btn-confirm:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.bk-error-box {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #991b1b;
+    font-size: 13px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.bk-error-when {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* Progress spinner shown while a backup is being created. */
+.bk-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.45);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: bk-spin 0.8s linear infinite;
+    display: inline-block;
+}
+
+@keyframes bk-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ================= KEYBOARD FOCUS ================= */
+.btn-add:focus-visible,
+.bk-btn:focus-visible,
+.btn-back:focus-visible,
+.btn-confirm:focus-visible,
+.page-btn:focus-visible {
+    outline: 3px solid rgba(106, 13, 173, 0.35);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bk-spinner {
+        animation-duration: 2.4s;
+    }
+}
+
+/* ================= RESPONSIVE ================= */
+
+/* .main-content is a flex item (min-width:auto), so a wide table would stretch
+   the whole page on phones. Letting it shrink makes the history table scroll
+   inside its own wrapper instead. Scoped to this page: this stylesheet only
+   loads here, and the shared layout CSS is not touched. */
+.main-content {
+    min-width: 0;
+}
+
+@media screen and (max-width: 1100px) {
+    .bk-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media screen and (max-width: 900px) {
+    .medical-table th,
+    .medical-table td {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .bk-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .medical-table th,
+    .medical-table td {
+        padding: 9px 10px;
+        font-size: 12px;
+    }
+
+    .pagination-wrapper {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .modal-box {
+        padding: 22px 20px;
+    }
+
+    .modal-actions {
+        flex-direction: column-reverse;
+    }
+
+    .modal-actions button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .bk-empty {
+        padding: 40px 18px;
+    }
+}
+
+/* =====================================================================
+   Restore (Phase 4). Same purple theme; the destructive action uses a
+   warning amber / red so it cannot be mistaken for Download.
+   ===================================================================== */
+
+.bk-badge--prerestore {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.bk-badge--restore {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.bk-btn--restore {
+    background: #fff;
+    color: #b45309;
+    border: 1.5px solid #fcd34d;
+    margin-left: 6px;
+}
+
+.bk-btn--restore:hover {
+    background: #fffbeb;
+    border-color: #f59e0b;
+}
+
+.bk-btn--restore:focus-visible {
+    outline: 3px solid rgba(245, 158, 11, 0.4);
+    outline-offset: 2px;
+}
+
+.bk-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #6a0dad;
+    text-decoration: none;
+    font-weight: 500;
+    margin-bottom: 8px;
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+.bk-back-link:hover {
+    text-decoration: underline;
+}
+
+.bk-warning {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    border-left: 4px solid #d97706;
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 18px;
+    color: #78350f;
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+.bk-warning > i {
+    color: #d97706;
+    font-size: 20px;
+    margin-top: 2px;
+}
+
+.bk-warning strong {
+    display: block;
+    font-size: 15px;
+    color: #7c2d12;
+    margin-bottom: 6px;
+}
+
+.bk-warning ul {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 13.5px;
+    line-height: 1.7;
+}
+
+.bk-panel {
+    background: #fff;
+    border: 1px solid #f0e6ff;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+    padding: 20px 22px;
+    margin-bottom: 18px;
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+.bk-panel-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 12px;
+}
+
+.bk-detail-list > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 9px 0;
+    border-bottom: 1px dashed #f0e6ff;
+    font-size: 13.5px;
+}
+
+.bk-detail-list > div:last-child {
+    border-bottom: none;
+}
+
+.bk-detail-list dt {
+    color: #6b7280;
+}
+
+.bk-detail-list dd {
+    font-weight: 600;
+    color: #111827;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.bk-mono {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 12.5px;
+}
+
+.bk-hint {
+    margin-top: 12px;
+    font-size: 12.5px;
+    color: #92400e;
+    background: #fffbeb;
+    border-radius: 8px;
+    padding: 9px 12px;
+    line-height: 1.5;
+}
+
+.bk-confirm-label {
+    display: block;
+    font-size: 14px;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.bk-confirm-input {
+    width: 100%;
+    max-width: 320px;
+    height: 42px;
+    padding: 0 14px;
+    border: 1.5px solid #e9d5ff;
+    border-radius: 8px;
+    font-size: 15px;
+    letter-spacing: 1px;
+    font-family: "Poppins", Arial, sans-serif;
+    color: #111827;
+    outline: none;
+}
+
+.bk-confirm-input:focus {
+    border-color: #6a0dad;
+    box-shadow: 0 0 0 3px rgba(106, 13, 173, 0.1);
+}
+
+.bk-form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.bk-cancel-link {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-restore {
+    background: #b91c1c;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13.5px;
+    font-family: "Poppins", Arial, sans-serif;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-restore:hover:not(:disabled) {
+    background: #991b1b;
+}
+
+.btn-restore:disabled {
+    background: #e5a3a3;
+    cursor: not-allowed;
+}
+
+.btn-restore:focus-visible {
+    outline: 3px solid rgba(185, 28, 28, 0.35);
+    outline-offset: 2px;
+}
+
+@media screen and (max-width: 600px) {
+    .bk-detail-list > div {
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .bk-detail-list dd {
+        text-align: left;
+    }
+
+    .bk-form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .bk-form-actions > * {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .bk-btn--restore {
+        margin-left: 0;
+        margin-top: 6px;
+    }
+}

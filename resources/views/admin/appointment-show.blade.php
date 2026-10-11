@@ -121,7 +121,7 @@
 
                 <div class="detail-row">
                     <span class="label"><i class="fa-solid fa-clock"></i> Appointment Time</span>
-                    <span class="value">{{ \Carbon\Carbon::parse($appointment->appointment_time)->format('h:i A') }}</span>
+                    <span class="value">{{ $appointment->timeLabel('h:i A') }}</span>
                 </div>
 
                 <div class="detail-row">

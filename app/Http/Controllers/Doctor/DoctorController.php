@@ -43,7 +43,9 @@ class DoctorController extends Controller
                 'Checked In',
                 'In Progress',
             ])
+            ->orderByRaw('appointment_time IS NULL')   // walk-ins (no reserved time) after scheduled
             ->orderBy('appointment_time')
+            ->orderBy('arrived_at')
             ->get();
 
         // Next patient for today
@@ -56,7 +58,9 @@ class DoctorController extends Controller
                 'Checked In',
                 'In Progress',
             ])
+            ->orderByRaw('appointment_time IS NULL')   // walk-ins (no reserved time) after scheduled
             ->orderBy('appointment_time')
+            ->orderBy('arrived_at')
             ->first();
 
         // Total appointments assigned to this doctor
@@ -99,29 +103,16 @@ class DoctorController extends Controller
             ->where('status', 'Completed')
             ->count();
 
+        // Cancelled appointments
+        $cancelledAppointments = Appointment::where('doctor_id', $doctor->id)
+            ->where('status', 'Cancelled')
+            ->count();
+
         // Recent appointments
         $recentAppointments = Appointment::with(['patient', 'walkinPatient'])
             ->where('doctor_id', $doctor->id)
             ->latest()
             ->take(5)
-            ->get();
-
-        // Calendar appointments
-        $appointments = Appointment::with(['patient', 'walkinPatient'])
-            ->where('doctor_id', $doctor->id)
-            ->whereIn('status', [
-                'Pending',
-                'Approved',
-                'Rescheduled',
-                'Checked In',
-                'In Progress',
-                'Completed',
-            ])
-            ->whereDate(
-                'appointment_date',
-                '>=',
-                Carbon::now()->subMonths(6)
-            )
             ->get();
 
         return view('doctor.dashboard', compact(
@@ -132,8 +123,8 @@ class DoctorController extends Controller
             'totalPatients',
             'pendingAppointments',
             'completedAppointments',
+            'cancelledAppointments',
             'recentAppointments',
-            'appointments',
             'todayAppointments',
             'nextPatient'
         ));

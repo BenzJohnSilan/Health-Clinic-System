@@ -1,0 +1,535 @@
+/* ==========================================================
+   DOCTOR — CREATE MEDICAL CERTIFICATE
+   doctor-medical-certificate-create.css
+
+   Uses the same design system as doctor-dashboard.css
+   (purple theme, hero banner, info-card language, rounded
+   inputs, pill buttons). Self-contained: this page no longer
+   loads doctor-medical-certificates.css.
+   ========================================================== */
+
+/* ============================================================
+   CSS VARIABLES  (same palette as the Doctor Dashboard)
+   ============================================================ */
+:root {
+    --primary:        #6a0dad;
+    --primary-dark:   #560aaf;
+    --primary-light:  #9b30ff;
+    --primary-soft:   #f3e8ff;
+    --accent-amber:   #f59e0b;
+    --accent-amber-bg:#fffbeb;
+    --accent-green:   #10b981;
+    --accent-green-bg:#f0fbf6;
+    --accent-blue:    #4f46e5;
+    --accent-blue-bg: #f0f2ff;
+    --accent-red:     #ef4444;
+
+    --text-dark:   #1a1a2e;
+    --text-mid:    #444;
+    --text-light:  #888;
+    --text-xlight: #aaa;
+
+    --bg-page:   #f4f0fa;
+    --bg-card:   #ffffff;
+    --border:    #f0eaf8;
+    --border-input: #e5d9f7;
+    --shadow-sm: 0 2px 8px rgba(106,13,173,0.07);
+    --shadow-md: 0 6px 20px rgba(106,13,173,0.10);
+    --shadow-lg: 0 12px 32px rgba(106,13,173,0.14);
+
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+
+    --transition: 0.22s ease;
+}
+
+/* Same page background as the Doctor Dashboard */
+body {
+    background: var(--bg-page);
+    color: var(--text-dark);
+}
+
+/* ============================================================
+   BACK LINK
+   ============================================================ */
+.mc-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 16px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: #fff;
+    border: 1.5px solid var(--border-input);
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all var(--transition);
+}
+
+.mc-back:hover,
+.mc-back:focus-visible {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.mc-back:focus-visible { outline: 3px solid var(--primary-light); outline-offset: 2px; }
+
+/* ============================================================
+   HERO — same purple gradient banner as the dashboard greeting
+   ============================================================ */
+.mc-hero {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 12px 30px rgba(106,13,173,0.28);
+    padding: 28px 34px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.mc-hero::before,
+.mc-hero::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.10);
+    pointer-events: none;
+}
+
+.mc-hero::before { width: 240px; height: 240px; top: -90px; right: -50px; }
+.mc-hero::after  { width: 150px; height: 150px; bottom: -70px; right: 160px; background: rgba(255,255,255,0.07); }
+
+.mc-hero-badge {
+    position: relative;
+    z-index: 1;
+    width: 54px;
+    height: 54px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.35);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 25px;
+    color: #fff;
+}
+
+.mc-hero-text { position: relative; z-index: 1; min-width: 0; }
+
+.mc-hero-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.4px;
+    margin: 0 0 4px;
+}
+
+.mc-hero-subtitle {
+    font-size: 14px;
+    color: rgba(255,255,255,0.85);
+    margin: 0;
+}
+
+/* ============================================================
+   ALERTS
+   ============================================================ */
+.mc-alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    margin-bottom: 20px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.mc-alert i { font-size: 18px; flex-shrink: 0; }
+.mc-alert--error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+
+/* ============================================================
+   LAYOUT — form (2fr) + summary sidebar (1fr)
+   ============================================================ */
+.mc-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+.mc-main,
+.mc-side {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+}
+
+.mc-side { position: sticky; top: 82px; }
+
+/* ============================================================
+   INFO CARD (same language as the dashboard cards)
+   ============================================================ */
+.info-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow var(--transition);
+}
+
+.info-card:hover { box-shadow: var(--shadow-md); }
+
+.info-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.info-card-title { display: flex; align-items: center; gap: 12px; }
+
+.info-card-title h3 {
+    font-size: 15.5px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin: 0;
+}
+
+.info-card-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    background: var(--primary-soft);
+    color: var(--primary);
+}
+
+.info-card-footer {
+    margin-top: 6px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.info-card-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 12px;
+    padding: 24px 10px;
+    color: var(--text-light);
+}
+
+.info-card-empty i {
+    width: 54px;
+    height: 54px;
+    line-height: 54px;
+    text-align: center;
+    border-radius: 50%;
+    background: var(--primary-soft);
+    color: var(--primary-light);
+    font-size: 24px;
+}
+
+.info-card-empty p {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-mid);
+    margin: 0;
+    max-width: 420px;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    padding: 5px 13px;
+    border-radius: 999px;
+    white-space: nowrap;
+    background: var(--accent-amber-bg);
+    color: var(--accent-amber);
+}
+
+/* ============================================================
+   FORM FIELDS
+   ============================================================ */
+.form-group { margin-bottom: 18px; }
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 7px;
+}
+
+.form-group .required { color: var(--accent-red); }
+
+.form-group select,
+.form-group input[type="text"],
+.form-group input[type="date"],
+.form-group textarea {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid var(--border-input);
+    border-radius: 10px;
+    background: #fff;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text-dark);
+    transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+}
+
+.form-group textarea { resize: vertical; min-height: 48px; line-height: 1.5; }
+
+.form-group select { cursor: pointer; }
+
+.form-group input::placeholder,
+.form-group textarea::placeholder { color: var(--text-xlight); }
+
+.form-group select:hover,
+.form-group input[type="text"]:hover,
+.form-group input[type="date"]:hover,
+.form-group textarea:hover { border-color: var(--primary-light); }
+
+.form-group select:focus,
+.form-group input[type="text"]:focus,
+.form-group input[type="date"]:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(106,13,173,0.12);
+}
+
+.form-hint { display: block; margin-top: 5px; font-size: 12px; color: var(--text-light); }
+
+.form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.form-row .form-group { margin-bottom: 18px; }
+
+.field-error { display: block; font-size: 12px; font-weight: 600; color: var(--accent-red); margin-top: 5px; }
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.mc-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all var(--transition);
+}
+
+.mc-btn i { font-size: 17px; }
+
+.mc-btn:focus-visible { outline: 3px solid var(--primary-light); outline-offset: 2px; }
+
+.mc-btn--cancel {
+    background: #f3f4f6;
+    border: 1.5px solid #e5e7eb;
+    color: #4b5563;
+}
+.mc-btn--cancel:hover { background: #e5e7eb; }
+
+.mc-btn--outline {
+    background: #fff;
+    border: 1.5px solid var(--primary);
+    color: var(--primary);
+}
+.mc-btn--outline:hover { background: var(--primary); color: #fff; }
+
+.mc-btn--primary {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    border: 1.5px solid transparent;
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(106,13,173,0.28);
+}
+.mc-btn--primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(106,13,173,0.36);
+}
+
+/* ============================================================
+   SIDE — consultation summary
+   ============================================================ */
+.mc-summary-list { display: flex; flex-direction: column; }
+
+.mc-summary-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.mc-summary-row:first-child { padding-top: 0; }
+.mc-summary-row:last-child  { border-bottom: none; padding-bottom: 0; }
+
+.mc-summary-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: var(--text-light);
+}
+
+.mc-summary-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dark);
+    word-break: break-word;
+}
+
+/* ============================================================
+   SIDE — "what happens next" steps
+   ============================================================ */
+.mc-steps { list-style: none; display: flex; flex-direction: column; gap: 14px; margin: 0; padding: 0; }
+
+.mc-steps li { display: flex; gap: 12px; align-items: flex-start; }
+
+.mc-step-num {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mc-steps p { margin: 0; font-size: 13px; line-height: 1.55; color: var(--text-mid); }
+.mc-steps strong { color: var(--text-dark); font-weight: 700; }
+
+/* ============================================================
+   PREVIEW MODAL
+   ============================================================ */
+#certPreviewModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26, 26, 46, 0.55);
+    backdrop-filter: blur(2px);
+    z-index: 999;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 40px 16px;
+}
+
+#certPreviewModal.show { display: flex; }
+
+.preview-modal-box {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    max-width: 680px;
+    width: 100%;
+    padding: 22px 24px 26px;
+    position: relative;
+}
+
+.preview-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.preview-modal-close {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.preview-modal-close:hover { background: var(--primary); color: #fff; }
+
+/* The certificate "paper" itself keeps its formal serif look */
+.cert-paper {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: #fff;
+    padding: 26px 30px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text-dark);
+    line-height: 1.7;
+}
+
+.cert-paper * { font-family: inherit; }
+
+.cert-clinic-name { font-family: 'EB Garamond', serif !important; font-size: 24px; font-weight: 600; text-align: center; }
+.cert-clinic-address { font-size: 10px; color: #666; font-style: italic; text-align: center; }
+.cert-rule { border: none; border-top: 2px solid var(--text-dark); margin: 10px 0; }
+.cert-rule--light { border-top: 1px solid #ccc; margin: 14px 0; }
+.cert-title { font-family: 'EB Garamond', serif !important; font-size: 20px; text-align: center; margin: 4px 0 10px; }
+.cert-paper p { margin-bottom: 4px; }
+.cert-paper .cert-intro { margin-bottom: 10px; }
+.cert-paper .cert-gap { margin-top: 8px; }
+.cert-paper .cert-purpose { margin-top: 10px; font-style: italic; }
+.cert-signature { font-size: 11px; color: #666; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media screen and (max-width: 1100px) {
+    .mc-grid { grid-template-columns: minmax(0, 1fr); }
+    .mc-side { position: static; order: -1; }
+}
+
+@media screen and (max-width: 640px) {
+    .mc-hero { padding: 22px 20px; }
+    .mc-hero-title { font-size: 20px; }
+    .info-card { padding: 18px 16px; }
+    .form-row { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    .info-card-footer { justify-content: stretch; }
+    .info-card-footer .mc-btn { flex: 1 1 100%; }
+    .cert-paper { padding: 20px 16px; }
+}

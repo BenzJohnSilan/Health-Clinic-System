@@ -21,8 +21,8 @@
     @endif
 
     <p style="color:#6b7280; font-size:14px; margin-bottom:18px; max-width:640px;">
-        Use this for walk-in and face-to-face patients — or any completed consultation
-        that doesn't already have an online medical certificate request.
+        Create a medical certificate for a completed consultation. The certificate fee is billed
+        automatically: it joins the consultation invoice if that is still unpaid, otherwise it gets its own invoice.
     </p>
 
     @if($appointments->isEmpty())

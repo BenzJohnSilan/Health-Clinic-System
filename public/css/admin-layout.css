@@ -602,6 +602,9 @@ body {
     text-align: center;
 }
 
+/* Filter empty-state: must out-rank .notif-empty { display:flex } */
+.notif-empty.notif-hidden { display: none; }
+
 .notif-empty-icon {
     width: 56px;
     height: 56px;

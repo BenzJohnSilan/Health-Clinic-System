@@ -32,15 +32,6 @@ return new class extends Migration
             $table->string('id_type', 50)->nullable();
             $table->string('valid_id')->nullable();
 
-            // ================= REASON =================
-            $table->enum('reason', [
-                'To Book Appointments Online',
-                'To Access Clinic Services',
-                'To Manage Personal Health Records',
-                'For Easier Communication with the Clinic',
-                'Others'
-            ])->nullable();
-
             // ================= MEDICAL INFORMATION =================
             $table->string('blood_type', 10)->nullable();
             $table->text('allergies')->nullable();
@@ -65,8 +56,12 @@ return new class extends Migration
             $table->string('email')->unique();       
 
             // OTP Verification
-            $table->string('email_otp', 6)->nullable();
+            // email_otp stores a keyed hash (HMAC-SHA256, 64 chars) of the code,
+            // never the raw 6-digit code. otp_attempts counts wrong guesses on
+            // the current code. Both are written only by EmailOtpService.
+            $table->string('email_otp', 64)->nullable();
             $table->timestamp('otp_expires_at')->nullable();
+            $table->unsignedTinyInteger('otp_attempts')->default(0);
 
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');              

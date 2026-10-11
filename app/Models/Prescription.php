@@ -43,6 +43,22 @@ class Prescription extends Model
         return $this->belongsTo(User::class, 'dispensed_by');
     }
 
+    /** The invoice line created when Staff dispensed this (clinic) medicine. */
+    public function invoiceItem()
+    {
+        return $this->hasOne(InvoiceItem::class);
+    }
+
+    /**
+     * An "Other (Manual Input)" prescription: no inventory medicine, meant
+     * to be bought at an outside pharmacy. The clinic never dispenses,
+     * stocks or bills it.
+     */
+    public function isOutsidePharmacy(): bool
+    {
+        return !$this->medicine_id;
+    }
+
     /**
      * True once Staff has released this medicine. Manual (non-inventory)
      * prescriptions can also be marked Dispensed for record-keeping —

@@ -33,6 +33,9 @@
 @if(session('error') && !$errors->any())
     <div class="alert-error">{{ session('error') }}</div>
 @endif
+@if($followUpNotice)
+    <div class="alert-error">{{ $followUpNotice }}</div>
+@endif
 @if(!$profileComplete)
     <div class="alert-error">
         ⚠️ Your patient profile is incomplete. Please complete the required information before booking an appointment.
@@ -64,7 +67,7 @@
                     <td>
                         {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('F d, Y') }}
                         &mdash;
-                        {{ \Carbon\Carbon::parse($appointment->appointment_time)->format('h:i A') }}
+                        {{ $appointment->timeLabel('h:i A') }}
                     </td>
 
                     <td>
@@ -73,6 +76,9 @@
                     </td>
 
                     <td>
+                        @if($appointment->isFollowUp())
+                            <span class="appt-type-followup">Follow-up</span>
+                        @endif
                         <span class="reason-preview">{{ $appointment->reason }}</span>
                     </td>
 
@@ -155,13 +161,18 @@
                 <span class="appt-card-value">
                     {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('M d, Y') }}
                     &bull;
-                    {{ \Carbon\Carbon::parse($appointment->appointment_time)->format('h:i A') }}
+                    {{ $appointment->timeLabel('h:i A') }}
                 </span>
             </div>
 
             <div class="appt-card-row">
                 <span class="appt-card-label">Reason</span>
-                <span class="appt-card-value reason-preview">{{ $appointment->reason }}</span>
+                <span class="appt-card-value reason-preview">
+                    @if($appointment->isFollowUp())
+                        <span class="appt-type-followup">Follow-up</span>
+                    @endif
+                    {{ $appointment->reason }}
+                </span>
             </div>
 
             <div class="appt-card-actions">
@@ -276,7 +287,41 @@
     <div class="modal-box">
 
         <button class="modal-close-btn" id="closeModalBtn" aria-label="Close">&times;</button>
-        <h3 class="modal-title">Book an Appointment</h3>
+        <h3 class="modal-title" id="bookingModalTitle">Book an Appointment</h3>
+
+        {{-- ===== FOLLOW-UP CHOOSER =====
+             Shown when the patient clicks the normal "Book Appointment"
+             button while a doctor-recommended follow-up is still unbooked.
+             The new appointment is NEVER assumed to be a follow-up — the
+             patient chooses. --}}
+        @if($pendingFollowUps->isNotEmpty())
+        <div id="followUpChooser" style="display:none;">
+            <div class="followup-chooser-msg">
+                <i class="fa-solid fa-circle-info"></i>
+                You have a follow-up consultation recommended by your doctor for a laboratory result.
+            </div>
+
+            @foreach($pendingFollowUps as $fu)
+                <div class="followup-chooser-item">
+                    <div class="followup-chooser-item__ref">{{ $fu->reference_no }}</div>
+                    <div class="followup-chooser-item__meta">
+                        {{ $fu->testsDisplay() }}
+                        @if($fu->doctor) · Dr. {{ $fu->doctor->first_name }} {{ $fu->doctor->last_name }} @endif
+                    </div>
+                    @if($fu->follow_up_instructions)
+                        <div class="followup-chooser-item__text">{{ $fu->follow_up_instructions }}</div>
+                    @endif
+                    <button type="button" class="btn-confirm" onclick="showBookingForm({{ $fu->id }})">
+                        Book Follow-up Consultation
+                    </button>
+                </div>
+            @endforeach
+
+            <div class="modal-actions">
+                <button type="button" class="btn-back" onclick="showBookingForm(null)">Continue as Regular Consultation</button>
+            </div>
+        </div>
+        @endif
 
         <!-- ERROR MESSAGES -->
         @if(session('error') || $errors->any())
@@ -303,8 +348,18 @@
             <span id="noAvailabilityMsgText">No doctors are available on this date. Please select another date.</span>
         </div>
 
-        <form method="POST" action="{{ route('patient.appointments.store') }}">
+        <form method="POST" action="{{ route('patient.appointments.store') }}" id="bookingFormSection">
             @csrf
+
+            {{-- Set ONLY when the patient chose "Book Follow-up Consultation";
+                 re-validated on the server (ownership, Reviewed, not yet booked). --}}
+            <input type="hidden" name="follow_up_laboratory_request_id" id="follow_up_lab_id"
+                   value="{{ $followUpRequest?->id }}">
+
+            <div id="followUpBanner" class="followup-banner" style="display:none;">
+                <div class="followup-banner__title"><i class="fa-solid fa-rotate-left"></i> Follow-up Consultation</div>
+                <div class="followup-banner__text" id="followUpBannerText"></div>
+            </div>
 
             <!-- Date -->
             <div class="form-group">
@@ -409,6 +464,14 @@
 
 <!-- ================= JAVASCRIPT ================= -->
 @php
+    $followUpsJson = $pendingFollowUps->mapWithKeys(fn ($fu) => [$fu->id => [
+        'id'             => $fu->id,
+        'reference_no'   => $fu->reference_no,
+        'doctor_id'      => $fu->doctor_id,
+        'doctor_name'    => $fu->doctor ? trim($fu->doctor->first_name . ' ' . $fu->doctor->last_name) : null,
+        'default_reason' => 'Follow-up consultation for laboratory result ' . $fu->reference_no,
+    ]])->all();
+
     $bookedSlotsJson = $bookedSlots->map(fn($s) => [
         'doctor_id'        => $s->doctor_id,
         'appointment_date' => \Carbon\Carbon::parse($s->appointment_date)->format('Y-m-d'),
@@ -421,6 +484,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ===== BOOKED SLOTS FROM SERVER =====
     const bookedSlots = @json($bookedSlotsJson);
+
+    // Local calendar date (YYYY-MM-DD). toISOString() returns the UTC date,
+    // which is a day behind the patient's own date for part of every day.
+    function localDateStr(d) {
+        const y  = d.getFullYear();
+        const mo = String(d.getMonth() + 1).padStart(2, '0');
+        const da = String(d.getDate()).padStart(2, '0');
+        return y + '-' + mo + '-' + da;
+    }
 
     // ===== DOCTOR SCHEDULE DATA (My Schedule feature) =====
     // `weeklyAvailability` only contains entries for doctors who have at
@@ -481,6 +553,59 @@ document.addEventListener('DOMContentLoaded', function () {
         return timeFitsInSlots(timeStr, weekly.slots);
     }
 
+    // ===== FOLLOW-UP CONSULTATION (Laboratory result) =====
+    // Client-side convenience only — PatientAppointmentController::store()
+    // re-checks the laboratory request and doctor on the server.
+    const followUps = @json($followUpsJson);
+    const followUpChooser = document.getElementById('followUpChooser');
+    const followUpInput   = document.getElementById('follow_up_lab_id');
+    const followUpBanner  = document.getElementById('followUpBanner');
+    const bookingForm     = document.getElementById('bookingFormSection');
+    const bookingTitle    = document.getElementById('bookingModalTitle');
+    let lockedDoctorId    = null;
+
+    function showChooser() {
+        if (followUpChooser) followUpChooser.style.display = '';
+        bookingForm.style.display = 'none';
+        bookingTitle.textContent = 'Book an Appointment';
+    }
+
+    window.showBookingForm = function (labId) {
+        const fu = labId ? followUps[labId] : null;
+        const reasonEl = document.getElementById('reason');
+
+        if (followUpChooser) followUpChooser.style.display = 'none';
+        bookingForm.style.display = '';
+
+        followUpInput.value = fu ? fu.id : '';
+        lockedDoctorId      = fu && fu.doctor_id ? String(fu.doctor_id) : null;
+
+        if (fu) {
+            bookingTitle.textContent = 'Book Follow-up Consultation';
+            followUpBanner.style.display = '';
+            document.getElementById('followUpBannerText').textContent =
+                'For laboratory result ' + fu.reference_no +
+                (fu.doctor_name ? ' with Dr. ' + fu.doctor_name : '') + '.';
+            if (reasonEl && !reasonEl.value.trim()) {
+                reasonEl.value = fu.default_reason;
+            }
+            const docSel = document.getElementById('doctor_id');
+            if (docSel && docSel.tagName === 'SELECT' && lockedDoctorId) {
+                docSel.value = lockedDoctorId;
+            }
+        } else {
+            bookingTitle.textContent = 'Book an Appointment';
+            followUpBanner.style.display = 'none';
+            // Remove an auto-filled follow-up reason if the patient switched to Regular.
+            Object.values(followUps).forEach(function (f) {
+                if (reasonEl && reasonEl.value === f.default_reason) reasonEl.value = '';
+            });
+        }
+
+        setDefaultDate();
+        refreshAvailability();
+    };
+
     // ===== ADD APPOINTMENT MODAL =====
     const apptModal      = document.getElementById('appointmentModal');
     const openModalBtn   = document.getElementById('openModalBtn');
@@ -494,8 +619,13 @@ document.addEventListener('DOMContentLoaded', function () {
     if (openModalBtn) {
         openModalBtn.addEventListener('click', () => {
             apptModal.style.display = 'flex';
-            setDefaultDate();
-            refreshAvailability();
+            // Normal "Book Appointment": if a follow-up is outstanding, ask
+            // first — never silently classify the booking as a follow-up.
+            if (followUpChooser) {
+                showChooser();
+            } else {
+                showBookingForm(null);
+            }
         });
     }
 
@@ -513,11 +643,34 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Pre-fills the date with the first day (today or later, up to 60 days
+    // ahead) on which at least one doctor can actually be booked, so the
+    // form does not open with a "no doctors available" error — e.g. when
+    // today's clinic hours are already over or it is the doctor's day off.
+    // Falls back to today if nothing is found. A date the patient already
+    // chose (or that came back from a validation error) is left alone.
     function setDefaultDate() {
-        const dateInput = document.getElementById('appointment_date');
-        if (dateInput && !dateInput.value) {
-            dateInput.value = new Date().toISOString().split('T')[0];
+        const dateEl = document.getElementById('appointment_date');
+        if (!dateEl || dateEl.value) return;
+
+        const docEl = document.getElementById('doctor_id');
+        const doctorIds = (docEl && docEl.tagName === 'SELECT')
+            ? Array.from(docEl.options).map(o => o.value).filter(Boolean)
+            : (docEl && docEl.value ? [docEl.value] : []);
+        const candidates = lockedDoctorId
+            ? doctorIds.filter(id => id === lockedDoctorId)
+            : doctorIds;
+
+        const cursor = new Date();
+        for (let i = 0; i < 60; i++) {
+            const dateStr = localDateStr(cursor);
+            if (candidates.some(id => countBookableSlotsForDoctor(id, dateStr) > 0)) {
+                dateEl.value = dateStr;
+                return;
+            }
+            cursor.setDate(cursor.getDate() + 1);
         }
+        dateEl.value = localDateStr(new Date());
     }
 
     // ===== TIME SLOT + DOCTOR AVAILABILITY UPDATER =====
@@ -545,7 +698,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function countBookableSlotsForDoctor(doctorId, dateStr) {
         if (!doctorId || !dateStr) return 0;
 
-        const today          = new Date().toISOString().split('T')[0];
+        const today          = localDateStr(new Date());
         const now            = new Date();
         const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
@@ -598,13 +751,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 const bookable = countBookableSlotsForDoctor(option.value, selectedDate) > 0;
+                // Follow-up consultations are with the reviewing Doctor only.
+                const allowed  = !lockedDoctorId || option.value === lockedDoctorId;
 
-                option.disabled    = !bookable;
+                option.disabled    = !bookable || !allowed;
                 option.textContent = bookable
                     ? option.dataset.baseText
                     : option.dataset.baseText + ' (Unavailable this date)';
 
-                if (bookable) anyDoctorAvailable = true;
+                if (bookable && allowed) anyDoctorAvailable = true;
             });
 
             // If the currently selected doctor just became unavailable,
@@ -624,7 +779,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function updateTimeSlots() {
         const selectedDate   = dateInput ? dateInput.value : '';
         const selectedDoctor = doctorInput ? doctorInput.value : '';
-        const today          = new Date().toISOString().split('T')[0];
+        const today          = localDateStr(new Date());
         const now            = new Date();
         const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
@@ -679,10 +834,13 @@ document.addEventListener('DOMContentLoaded', function () {
         updateTimeSlots();
     }
 
-    // Auto-open modal if there were validation errors
-    @if(session('error') || $errors->any())
+    // Auto-open modal if there were validation errors (replaying
+    // follow-up mode if that's what was being booked), or when arriving
+    // from the Laboratory Results "Book Follow-up Consultation" button.
+    @if(session('error') || $errors->any() || ($followUpRequest && $profileComplete))
         if (apptModal) {
             apptModal.style.display = 'flex';
+            showBookingForm(@json($followUpRequest?->id));
         }
     @endif
 

@@ -14,6 +14,14 @@
         // flag decides which modal replays `old()` input and reopens.
         $isEditError = (bool) old('edit_type');
 
+        // Whether the last failed validation came from the Schedule
+        // Appointment modal (tagged with a hidden _form field) — so its
+        // errors reopen THAT modal instead of the Add Walk-in Patient one.
+        $isAppointmentError = old('_form') === 'appointment';
+
+        // Same idea for the Add to Queue (walk-in) modal.
+        $isQueueError = old('_form') === 'queue';
+
         $activeFilters = collect(['search' => $search, 'type' => $type])
             ->filter(fn ($v) => $v !== '' && $v !== 'all');
     @endphp
@@ -92,6 +100,11 @@
                         @else
                             <span class="type-badge registered">Registered</span>
                         @endif
+                        @if($followUpsByPatient->has($patient['id']))
+                            <span class="type-badge followup" title="Doctor recommended a follow-up consultation for a laboratory result">
+                                Follow-up recommended
+                            </span>
+                        @endif
                     </td>
                     <td>
                     <div class="action-cell">
@@ -119,13 +132,30 @@
                             View
                         </button>
 
-                        @if($canScheduleAppointment || $canViewAppointments)
+                        @if($canScheduleAppointment || $canViewAppointments || $canAddToQueue)
                         <div class="action-menu">
                             <button type="button" class="action-menu-toggle" aria-haspopup="true" aria-expanded="false" aria-label="More actions">
                                 <i class="fa-solid fa-ellipsis-vertical"></i>
                             </button>
 
                             <div class="action-menu-dropdown">
+                                @if($canAddToQueue)
+                                    @if($queuedToday->has($patient['id']))
+                                        <button type="button" class="action-menu-item" disabled
+                                            title="Already in today's walk-in queue">
+                                            <i class="fa-solid fa-person-walking"></i> In Queue ({{ $queuedToday[$patient['id']] }})
+                                        </button>
+                                    @else
+                                        <button type="button" class="action-menu-item"
+                                            data-id="{{ $patient['raw_id'] }}"
+                                            data-type="{{ $patient['type'] }}"
+                                            data-name="{{ trim($patient['first_name'] . ' ' . $patient['last_name']) }}"
+                                            onclick="openQueueModal(this)">
+                                            <i class="fa-solid fa-person-walking"></i> Add to Queue
+                                        </button>
+                                    @endif
+                                @endif
+
                                 @if($canScheduleAppointment)
                                 <button type="button" class="action-menu-item"
                                     onclick="openAppointmentModal(
@@ -134,6 +164,16 @@
                                     )">
                                     <i class="fa-solid fa-calendar-plus"></i> Schedule Appointment
                                 </button>
+                                @if($followUpsByPatient->has($patient['id']))
+                                <button type="button" class="action-menu-item"
+                                    onclick="openAppointmentModal(
+                                        '{{ $patient['raw_id'] }}',
+                                        '{{ $patient['type'] }}',
+                                        {{ $followUpsByPatient[$patient['id']]->first()['id'] }}
+                                    )">
+                                    <i class="fa-solid fa-rotate-left"></i> Schedule Follow-up
+                                </button>
+                                @endif
                                 @endif
 
                                 @if($canViewAppointments)
@@ -658,8 +698,30 @@
         <form method="POST" action="{{ route('staff.appointments.store') }}">
             @csrf
 
+            <input type="hidden" name="_form"        value="appointment">
             <input type="hidden" name="patient_id"   id="appointment_patient_id">
             <input type="hidden" name="patient_type" id="appointment_patient_type">
+
+            @if($isAppointmentError && $errors->any())
+                <div class="alert-error" style="margin-bottom:14px;">
+                    <ul>
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <!-- Appointment Type — only shown when this patient has a
+                 doctor-recommended follow-up waiting to be booked.
+                 Defaults to Regular; re-validated on the server. -->
+            <div class="form-group" id="appt_type_group" style="margin-bottom:16px; display:none;">
+                <label class="form-label">Appointment Type <span class="required">*</span></label>
+                <select class="form-input" name="follow_up_laboratory_request_id" id="appt_follow_up">
+                    <option value="">Regular Consultation</option>
+                </select>
+                <div id="appt_follow_up_info" class="followup-info" style="display:none;"></div>
+            </div>
 
             <!-- Date -->
             <div class="form-group" style="margin-bottom:16px;">
@@ -720,7 +782,7 @@
             <!-- Reason -->
             <div class="form-group" style="margin-bottom:16px;">
                 <label class="form-label">Reason <span class="required">*</span></label>
-                <textarea class="form-input" name="reason" rows="3" required></textarea>
+                <textarea class="form-input" name="reason" id="appt_reason" rows="3" required></textarea>
             </div>
 
             <div class="modal-actions">
@@ -730,6 +792,65 @@
         </form>
     </div>
 </div>
+
+@if($canAddToQueue)
+<!-- ================= ADD TO WALK-IN QUEUE MODAL ================= -->
+<div id="queueModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+
+        <button class="modal-close-btn" onclick="closeModal('queueModal')" aria-label="Close">&times;</button>
+        <h3 class="modal-title">Add to Walk-in Queue</h3>
+        <p class="modal-subtitle">Adds <strong id="queue_patient_label">this patient</strong> to today's walk-in queue. No appointment time is reserved.</p>
+
+        <form method="POST" action="{{ route('staff.walk-in-queue.store') }}">
+            @csrf
+
+            <input type="hidden" name="_form"        value="queue">
+            <input type="hidden" name="patient_id"   id="queue_patient_id"   value="{{ old('patient_id') }}">
+            <input type="hidden" name="patient_type" id="queue_patient_type" value="{{ old('patient_type') }}">
+            <input type="hidden" name="patient_name" id="queue_patient_name" value="{{ old('patient_name') }}">
+
+            @if($isQueueError && $errors->any())
+                <div class="alert-error" style="margin-bottom:14px;">
+                    <ul>
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <div class="form-group" style="margin-bottom:16px;">
+                <label class="form-label">Doctor <span class="required">*</span></label>
+                @if($walkInDoctors->isEmpty())
+                    <p style="margin:6px 0 0; color:#b45309; font-size:13.5px;">
+                        No active doctor is available today, so a walk-in cannot be queued.
+                    </p>
+                @else
+                    <select class="form-input" name="doctor_id" required>
+                        <option value="">Select doctor</option>
+                        @foreach($walkInDoctors as $doc)
+                            <option value="{{ $doc->id }}" {{ (string) old('doctor_id') === (string) $doc->id ? 'selected' : '' }}>
+                                Dr. {{ $doc->first_name }} {{ $doc->last_name }}
+                            </option>
+                        @endforeach
+                    </select>
+                @endif
+            </div>
+
+            <div class="form-group" style="margin-bottom:16px;">
+                <label class="form-label">Reason for visit <span style="color:#6b7280; font-weight:400;">(optional)</span></label>
+                <textarea class="form-input" name="reason" rows="3" maxlength="500">{{ old('reason') }}</textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-back" onclick="closeModal('queueModal')">Cancel</button>
+                <button type="submit" class="btn-confirm" {{ $walkInDoctors->isEmpty() ? 'disabled' : '' }}>Add to Queue</button>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
 
 <!-- ================= FONT AWESOME ================= -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -795,7 +916,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Auto-open Add modal on a validation error from that form.
-    @if($errors->any() && !$isEditError)
+    @if($errors->any() && !$isEditError && !$isAppointmentError && !$isQueueError)
         openModal('addPatientModal');
     @endif
 
@@ -812,28 +933,109 @@ document.addEventListener('DOMContentLoaded', function () {
         syncToggleActive('editAllergyToggleGroup');
     @endif
 
+    // ===== ADD TO WALK-IN QUEUE MODAL =====
+    @if($canAddToQueue)
+    window.openQueueModal = function (btn) {
+        document.getElementById('queue_patient_id').value   = btn.dataset.id;
+        document.getElementById('queue_patient_type').value = btn.dataset.type;
+        document.getElementById('queue_patient_name').value = btn.dataset.name;
+        document.getElementById('queue_patient_label').textContent = btn.dataset.name;
+        openModal('queueModal');
+    };
+
+    // After a failed submit: reopen with the same patient.
+    @if($isQueueError && $errors->any())
+        document.getElementById('queue_patient_label').textContent = @json(old('patient_name', 'this patient'));
+        openModal('queueModal');
+    @endif
+
+    // Right after a NEW walk-in patient was saved: offer to queue them.
+    @if(session('queue_prompt'))
+        document.getElementById('queue_patient_id').value   = @json((string) session('queue_prompt')['id']);
+        document.getElementById('queue_patient_type').value = @json(session('queue_prompt')['type']);
+        document.getElementById('queue_patient_name').value = @json(session('queue_prompt')['name']);
+        document.getElementById('queue_patient_label').textContent = @json(session('queue_prompt')['name']);
+        openModal('queueModal');
+    @endif
+    @endif
+
     // ===== APPOINTMENT MODAL: TIME SLOT LOGIC =====
     const apptDateInput   = document.getElementById('appt_date');
     const apptDoctorInput = document.getElementById('appt_doctor_id');
     const apptTimeSelect  = document.getElementById('appt_time');
 
+    // ===== FOLLOW-UP CONSULTATION (Laboratory result) =====
+    // Keyed "user_{id}" / "patient_{id}". Client-side convenience only;
+    // StaffAppointmentController::store() re-validates everything.
+    const FOLLOW_UPS       = @json($followUpsByPatient);
+    const apptTypeGroup    = document.getElementById('appt_type_group');
+    const apptFollowUp     = document.getElementById('appt_follow_up');
+    const apptFollowUpInfo = document.getElementById('appt_follow_up_info');
+    const apptReason       = document.getElementById('appt_reason');
+    let currentFollowUps   = [];
+
+    function applyFollowUpSelection() {
+        const fu = currentFollowUps.find(f => String(f.id) === apptFollowUp.value) || null;
+
+        // Follow-up is with the reviewing Doctor only.
+        if (apptDoctorInput && apptDoctorInput.tagName === 'SELECT') {
+            Array.from(apptDoctorInput.options).forEach(function (opt) {
+                if (!opt.value) return;
+                opt.disabled = !!(fu && fu.doctor_id && String(fu.doctor_id) !== opt.value);
+            });
+            if (fu && fu.doctor_id) apptDoctorInput.value = String(fu.doctor_id);
+        }
+
+        if (fu) {
+            apptFollowUpInfo.style.display = '';
+            apptFollowUpInfo.textContent = 'Tests: ' + fu.tests
+                + (fu.doctor_name ? ' · Dr. ' + fu.doctor_name : '')
+                + (fu.instructions ? ' — ' + fu.instructions : '');
+            if (!apptReason.value.trim() || apptReason.value.indexOf('Follow-up consultation for laboratory result') === 0) {
+                apptReason.value = 'Follow-up consultation for laboratory result ' + fu.reference_no;
+            }
+        } else {
+            apptFollowUpInfo.style.display = 'none';
+            if (apptReason.value.indexOf('Follow-up consultation for laboratory result') === 0) {
+                apptReason.value = '';
+            }
+        }
+
+        updateStaffTimeSlots();
+    }
+
+    if (apptFollowUp) apptFollowUp.addEventListener('change', applyFollowUpSelection);
+
     // Set default date to today when modal opens
-    window.openAppointmentModal = function (patientId, patientType) {
+    window.openAppointmentModal = function (patientId, patientType, followUpLabId) {
         document.getElementById('appointment_patient_id').value   = patientId;
         document.getElementById('appointment_patient_type').value = patientType;
 
         // Reset form fields
         apptTimeSelect.value = '';
+        apptReason.value = '';
         if (apptDoctorInput && apptDoctorInput.tagName === 'SELECT') {
             apptDoctorInput.value = '';
         }
+
+        // Appointment Type: Regular unless Staff explicitly picks a follow-up.
+        currentFollowUps = FOLLOW_UPS[patientType + '_' + patientId] || [];
+        apptFollowUp.innerHTML = '<option value="">Regular Consultation</option>';
+        currentFollowUps.forEach(function (f) {
+            const opt = document.createElement('option');
+            opt.value = f.id;
+            opt.textContent = 'Follow-up — ' + f.reference_no;
+            apptFollowUp.appendChild(opt);
+        });
+        apptTypeGroup.style.display = currentFollowUps.length ? '' : 'none';
+        apptFollowUp.value = followUpLabId ? String(followUpLabId) : '';
 
         // Default date to today
         if (!apptDateInput.value) {
             apptDateInput.value = new Date().toISOString().split('T')[0];
         }
 
-        updateStaffTimeSlots();
+        applyFollowUpSelection();
         openModal('appointmentModal');
     };
 
@@ -888,6 +1090,21 @@ document.addEventListener('DOMContentLoaded', function () {
             option.textContent = isBooked ? baseText + ' – Booked' : baseText;
         });
     }
+
+    // Reopen the Schedule Appointment modal after a failed submit, or when
+    // arriving from the Laboratory Results "Schedule Follow-up" link.
+    @if($isAppointmentError)
+        openAppointmentModal(@json(old('patient_id')), @json(old('patient_type')), @json(old('follow_up_laboratory_request_id')));
+        apptDateInput.value = @json(old('appointment_date', ''));
+        if (apptDoctorInput && apptDoctorInput.tagName === 'SELECT' && !apptDoctorInput.value) {
+            apptDoctorInput.value = @json((string) old('doctor_id', ''));
+        }
+        apptReason.value = @json(old('reason', ''));
+        updateStaffTimeSlots();
+        apptTimeSelect.value = @json(old('appointment_time', ''));
+    @elseif($autoFollowUp)
+        openAppointmentModal(@json((string) $autoFollowUp['patient_id']), @json($autoFollowUp['patient_type']), {{ $autoFollowUp['lab_id'] }});
+    @endif
 
     // ===== ALLERGY / RELATIONSHIP TOGGLE HELPERS (shared by Add + Edit) =====
     window.toggleAllergyDetail = function (wrapId, radioEl) {

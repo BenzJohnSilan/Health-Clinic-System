@@ -102,614 +102,6 @@ body {
 }
 
 /* ============================================================
-   HERO SECTION — Greeting + Profile Completion in ONE container
-   Same grid-stacking crossfade mechanic as .stats-wrapper below:
-   skeleton and real content share the exact same grid cell so
-   revealing never shifts the layout — only opacity crossfades.
-   ============================================================ */
-.hero-wrapper {
-    display: grid;
-    margin-bottom: 32px;
-}
-
-.hero-wrapper .hero-section {
-    grid-row: 1;
-    grid-column: 1;
-    transition: opacity 0.3s ease;
-}
-
-.skeleton-hero {
-    opacity: 1;
-    z-index: 2;
-}
-
-.skeleton-hero.fade-out {
-    opacity: 0;
-    pointer-events: none;
-    z-index: 1;
-}
-
-/* Once faded out and no longer needed, fully remove it from the
-   grid's auto-sizing so it can't hold extra height/space open. */
-.skeleton-hero.removed {
-    display: none !important;
-}
-
-.real-hero {
-    opacity: 0;
-    z-index: 1;
-    pointer-events: none;
-}
-
-.real-hero.fade-in {
-    opacity: 1;
-    z-index: 2;
-    pointer-events: auto;
-}
-
-/* ── One cohesive hero container ───────────────────────── */
-.dashboard-hero {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    padding: 26px 28px;
-    transition: box-shadow var(--transition);
-}
-
-.dashboard-hero:hover {
-    box-shadow: var(--shadow-md);
-}
-
-.hero-divider {
-    height: 1px;
-    background: var(--border);
-    margin: 20px 0;
-}
-
-/* ── Greeting ───────────────────────────────────────────── */
-.hero-greeting {
-    margin-bottom: 0;
-}
-
-.greeting-text {
-    font-size: 23px;
-    font-weight: 800;
-    color: var(--text-dark);
-    letter-spacing: -0.4px;
-    margin: 0 0 4px;
-}
-
-.greeting-subtitle {
-    font-size: 14px;
-    color: var(--text-light);
-    margin: 0;
-}
-
-.skeleton-greeting-title {
-    width: 280px;
-    max-width: 60%;
-    height: 24px;
-    margin-bottom: 10px;
-}
-
-.skeleton-greeting-subtitle {
-    width: 340px;
-    max-width: 80%;
-    height: 14px;
-}
-
-.pc-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 8px;
-}
-
-.pc-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text-dark);
-    margin: 0;
-}
-
-.pc-check {
-    color: var(--accent-green);
-    margin-left: 4px;
-}
-
-/* Percent shown as a pill badge for a bit more polish */
-.pc-percent {
-    font-size: 13.5px;
-    font-weight: 800;
-    color: #fff;
-    background: linear-gradient(135deg, var(--primary), var(--primary-light));
-    padding: 4px 14px;
-    border-radius: 999px;
-    box-shadow: 0 3px 10px rgba(106,13,173,0.25);
-    letter-spacing: 0.2px;
-}
-
-.hero-profile.is-complete .pc-percent {
-    background: linear-gradient(135deg, var(--accent-green), #34d399);
-    box-shadow: 0 3px 10px rgba(16,185,129,0.28);
-}
-
-.pc-message {
-    font-size: 13.5px;
-    color: var(--text-mid);
-    margin: 0 0 16px;
-}
-
-/* ── Progress bar — the pretty version ─────────────────── */
-.pc-progress-track {
-    position: relative;
-    width: 100%;
-    height: 14px;
-    background: var(--primary-soft);
-    border-radius: 999px;
-    overflow: hidden;
-    box-shadow: inset 0 1px 4px rgba(106,13,173,0.14);
-    margin-bottom: 12px;
-}
-
-.pc-progress-fill {
-    position: relative;
-    height: 100%;
-    min-width: 14px;
-    border-radius: 999px;
-    background: linear-gradient(90deg, var(--primary), var(--primary-light));
-    box-shadow: 0 0 10px rgba(106,13,173,0.4);
-    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
-}
-
-/* Moving shine sweep across the filled portion */
-.pc-progress-fill::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        120deg,
-        rgba(255,255,255,0) 35%,
-        rgba(255,255,255,0.55) 50%,
-        rgba(255,255,255,0) 65%
-    );
-    background-size: 250% 100%;
-    animation: pc-progress-shine 2.6s ease-in-out infinite;
-}
-
-@keyframes pc-progress-shine {
-    0%   { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-}
-
-.hero-profile.is-complete .pc-progress-track {
-    box-shadow: inset 0 1px 4px rgba(16,185,129,0.14);
-}
-
-.hero-profile.is-complete .pc-progress-fill {
-    background: linear-gradient(90deg, var(--accent-green), #34d399);
-    box-shadow: 0 0 10px rgba(16,185,129,0.4);
-}
-
-.pc-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.pc-submessage {
-    font-size: 13px;
-    color: var(--text-light);
-}
-
-.pc-btn {
-    white-space: nowrap;
-    background: linear-gradient(135deg, var(--primary), var(--primary-light));
-    color: #fff;
-    font-weight: 600;
-    padding: 9px 18px;
-    border-radius: var(--radius-sm);
-    text-decoration: none;
-    font-size: 13.5px;
-    transition: all var(--transition);
-}
-
-.pc-btn:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
-}
-
-/* Skeleton profile block (inside hero skeleton) */
-.skeleton-pc-title {
-    width: 160px;
-    height: 16px;
-}
-
-.skeleton-pc-percent {
-    width: 60px;
-    height: 24px;
-    border-radius: 999px;
-}
-
-.skeleton-pc-message {
-    width: 60%;
-    height: 12px;
-    margin-bottom: 14px;
-}
-
-.skeleton-pc-bar {
-    width: 100%;
-    height: 14px;
-    border-radius: 999px;
-    margin-bottom: 0;
-}
-
-.skeleton-pc-submessage {
-    width: 45%;
-    height: 12px;
-}
-
-.skeleton-pc-button {
-    width: 130px;
-    height: 32px;
-    border-radius: var(--radius-sm);
-}
-
-/* ============================================================
-   STATISTICS WRAPPER
-   Skeleton at real content ay nasa PAREHONG grid cell (grid stacking)
-   kaya laging magkapatong sila sa eksaktong parehong pwesto —
-   crossfade lang ang mangyayari, walang layout shift/jump.
-   ============================================================ */
-.stats-wrapper {
-    display: grid;
-    margin-bottom: 32px;
-}
-
-.stats-wrapper .stats-section {
-    grid-row: 1;
-    grid-column: 1;
-    margin-bottom: 0;
-    transition: opacity 0.3s ease;
-}
-
-.skeleton-stats {
-    opacity: 1;
-    z-index: 2;
-}
-
-.skeleton-stats.fade-out {
-    opacity: 0;
-    pointer-events: none;
-    z-index: 1;
-}
-
-.skeleton-stats.removed {
-    display: none !important;
-}
-
-.real-stats {
-    opacity: 0;
-    z-index: 1;
-    pointer-events: none;
-}
-
-.real-stats.fade-in {
-    opacity: 1;
-    z-index: 2;
-    pointer-events: auto;
-}
-
-/* ============================================================
-   STATISTICS SECTION  — admin dashboard-card style
-   ============================================================ */
-.stats-section {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-}
-
-/* Base card — same structure as .dashboard-card in admin */
-.stat-card {
-    padding: 22px 20px 22px 22px;
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: relative;
-    overflow: hidden;
-    transition: transform var(--transition), box-shadow var(--transition);
-    border: 1px solid var(--border);
-    cursor: default;
-
-    /* reset old flex-direction:column */
-    flex-direction: row;
-    gap: 0;
-}
-
-/* Left accent bar */
-.stat-card::before {
-    content: "";
-    position: absolute;
-    left: 0; top: 0;
-    width: 5px; height: 100%;
-    border-radius: var(--radius-md) 0 0 var(--radius-md);
-}
-
-/* Decorative circle (bottom-right) */
-.stat-card::after {
-    content: "";
-    position: absolute;
-    right: -20px; bottom: -20px;
-    width: 80px; height: 80px;
-    border-radius: 50%;
-    opacity: 0.06;
-    transition: transform var(--transition);
-}
-
-.stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-lg);
-}
-
-.stat-card:hover::after {
-    transform: scale(1.4);
-}
-
-/* ── Per-card colour themes ── */
-
-/* Total  → indigo/blue */
-#stat-total {
-    background: var(--accent-blue-bg);
-}
-#stat-total::before,
-#stat-total::after { background: var(--accent-blue); }
-#stat-total .stat-icon { color: var(--accent-blue); }
-
-/* Upcoming → primary purple */
-#stat-upcoming {
-    background: var(--primary-soft);
-}
-#stat-upcoming::before,
-#stat-upcoming::after { background: var(--primary); }
-#stat-upcoming .stat-icon { color: var(--primary); }
-
-/* Completed → green */
-#stat-completed {
-    background: var(--accent-green-bg);
-}
-#stat-completed::before,
-#stat-completed::after { background: var(--accent-green); }
-#stat-completed .stat-icon { color: var(--accent-green); }
-
-/* Cancelled → red */
-#stat-cancelled {
-    background: var(--accent-red-bg);
-}
-#stat-cancelled::before,
-#stat-cancelled::after { background: var(--accent-red); }
-#stat-cancelled .stat-icon { color: var(--accent-red); }
-
-/* This Month → orange */
-#stat-this-month {
-    background: var(--accent-orange-bg);
-}
-#stat-this-month::before,
-#stat-this-month::after { background: var(--accent-orange); }
-#stat-this-month .stat-icon { color: var(--accent-orange); }
-
-/* ── Inner layout (left = text, right = icon) ── */
-.stat-body {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    flex: 1;
-    z-index: 1;
-}
-
-.stat-label {
-    font-size: 10.5px;
-    color: var(--text-light);
-    letter-spacing: 1.2px;
-    font-weight: 800;
-    text-transform: uppercase;
-    margin: 0;
-}
-
-.stat-value {
-    font-size: 32px;
-    font-weight: 900;
-    color: var(--text-dark);
-    line-height: 1;
-    letter-spacing: -0.5px;
-    margin: 6px 0 0;
-}
-
-/* Badge pill below the number */
-.stat-badge {
-    display: inline-flex;
-    align-items: center;
-    align-self: flex-start;
-    background: rgba(0,0,0,0.06);
-    color: var(--text-mid);
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 9px;
-    border-radius: 999px;
-    letter-spacing: 0.4px;
-    margin-top: 8px;
-}
-
-/* Icon — right side */
-.stat-icon {
-    font-size: 32px;
-    opacity: 0.85;
-    z-index: 1;
-    flex-shrink: 0;
-    /* Remove old box-style; just the icon itself like admin */
-    width: auto;
-    height: auto;
-    background: none;
-    border-radius: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* ============================================================
-   CALENDAR SECTION
-   ============================================================ */
-.calendar-section {
-    width: 100%;
-}
-
-.calendar-card {
-    background: var(--bg-card);
-    padding: 30px;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border);
-    margin-bottom: 30px;
-    transition: box-shadow var(--transition);
-}
-
-.calendar-card:hover {
-    box-shadow: var(--shadow-md);
-}
-
-/* Skeleton at real calendar ay nasa PAREHONG grid cell —
-   parehong pwesto agad, crossfade lang, walang jump. */
-.calendar-stack {
-    display: grid;
-}
-
-.calendar-stack > * {
-    grid-row: 1;
-    grid-column: 1;
-    transition: opacity 0.3s ease;
-}
-
-#calendar {
-    max-width: 100%;
-    margin: 0 auto;
-    width: 100%;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 1;
-}
-
-#calendar.fade-in {
-    opacity: 1;
-    pointer-events: auto;
-    z-index: 2;
-}
-
-.skeleton-calendar {
-    opacity: 1;
-    z-index: 2;
-}
-
-.skeleton-calendar.fade-out {
-    opacity: 0;
-    pointer-events: none;
-    z-index: 1;
-}
-
-/* Once faded out, fully remove from the grid stack so its height
-   (which may not match the real calendar's actual row count — e.g.
-   5 skeleton rows vs. a real 6-row month) stops leaving extra
-   blank space below the real calendar. */
-.skeleton-calendar.removed {
-    display: none !important;
-}
-
-/* ============================================================
-   FULLCALENDAR OVERRIDES
-   ============================================================ */
-.fc-toolbar-title {
-    font-size: 22px !important;
-    font-weight: 800;
-    color: var(--text-dark);
-}
-
-.fc-toolbar button {
-    border-radius: 8px !important;
-    padding: 8px 14px !important;
-    font-weight: 700;
-    font-size: 12px !important;
-    transition: all var(--transition);
-    background: linear-gradient(135deg, var(--primary), var(--primary-light)) !important;
-    color: #fff !important;
-    border: none !important;
-    box-shadow: 0 3px 10px rgba(106,13,173,0.22);
-}
-
-.fc-toolbar button:hover {
-    opacity: 0.88;
-    transform: translateY(-1px);
-    box-shadow: 0 5px 14px rgba(106,13,173,0.30);
-}
-
-.fc-daygrid-day-number {
-    font-weight: 600;
-    color: var(--text-mid);
-}
-
-.fc-daygrid-event {
-    border-radius: 8px;
-    padding: 4px 8px;
-    font-size: 12px;
-    font-weight: 600;
-    background-color: var(--accent-green) !important;
-    border-color: var(--accent-green) !important;
-    color: #fff !important;
-    box-shadow: 0 2px 8px rgba(16,185,129,0.25);
-    transition: all var(--transition);
-    display: block;
-    max-width: 100%;
-    min-width: 0;
-    overflow: hidden;
-}
-
-/* Keep doctor names and times inside their calendar cells on every screen. */
-.fc-daygrid-event-harness,
-.fc-daygrid-day-events,
-.fc-daygrid-day-frame { min-width: 0; }
-
-.calendar-event { min-width: 0; overflow: hidden; line-height: 1.3; }
-.calendar-event-title,
-.calendar-event-time {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.calendar-event-title { font-size: 12px; font-weight: 700; }
-.calendar-event-time { font-size: 10px; opacity: 0.9; margin-top: 1px; }
-
-.fc-daygrid-event:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 14px rgba(16,185,129,0.35);
-}
-
-.fc-daygrid-event.past-event {
-    background-color: #9ca3af !important;
-    border-color: #9ca3af !important;
-    color: #fff !important;
-}
-
-.fc-day-today {
-    background-color: var(--primary-soft) !important;
-}
-
-/* ============================================================
    SKELETON LOADING
    ============================================================ */
 @keyframes skeleton-shimmer {
@@ -717,99 +109,657 @@ body {
     100% { background-position: 400px 0; }
 }
 
-.skeleton-line,
-.skeleton-icon,
-.skeleton-cal-cell,
-.skeleton-cal-header .skeleton-line {
+.skeleton-line {
     background: linear-gradient(90deg, #eee 25%, #f5f5f5 37%, #eee 63%);
     background-size: 800px 100%;
     animation: skeleton-shimmer 1.4s ease-in-out infinite;
     border-radius: 6px;
 }
 
-/* Skeleton stat cards */
-.skeleton-card {
-    background: #fdfcff !important;
+/* Hero sits on a purple gradient now, so its skeleton bars use a
+   lighter, translucent shimmer instead of the default gray one. */
+.skeleton-hero .skeleton-line {
+    background: linear-gradient(90deg, rgba(255,255,255,0.22) 25%, rgba(255,255,255,0.4) 37%, rgba(255,255,255,0.22) 63%);
+    background-size: 800px 100%;
+}
+
+/* ── Skeleton shapes for the overview cards + activity card ── */
+.sk-icon   { width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; }
+.sk-title  { width: 170px; max-width: 100%; height: 16px; }
+.sk-pill   { width: 84px; height: 26px; border-radius: 999px; flex-shrink: 0; }
+.sk-btn    { width: 118px; height: 36px; border-radius: var(--radius-sm); }
+.sk-ring   { width: 100px; height: 100px; border-radius: 50%; flex-shrink: 0; }
+.sk-circle { width: 36px; height: 36px; border-radius: 50%; }
+.sk-date   { width: 80px; height: 12px; justify-self: end; }
+
+.sk-line {
+    height: 13px;
+    margin-bottom: 12px;
+}
+
+.sk-line:last-child {
+    margin-bottom: 0;
+}
+
+.sk-line--lg { height: 18px; margin-bottom: 14px; }
+
+.sk-line.w-40  { width: 40%; }
+.sk-line.w-55  { width: 55%; }
+.sk-line.w-70  { width: 70%; }
+.sk-line.w-85  { width: 85%; }
+.sk-line.w-100 { width: 100%; }
+
+.sk-lines-col {
+    flex: 1;
+    min-width: 0;
+}
+
+.activity-row .sk-line { margin-bottom: 0; }
+.activity-row .sk-pill { justify-self: end; width: 90px; }
+
+/* ============================================================
+   HERO SECTION — Greeting + Book Appointment CTA
+   Skeleton and real content share the exact same grid cell so
+   revealing never shifts the layout — only opacity crossfades.
+   ============================================================ */
+.swap-wrapper {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.hero-wrapper {
+    margin-bottom: 24px;
+}
+
+.swap-wrapper > .swap-item {
+    grid-row: 1;
+    grid-column: 1;
+    min-width: 0;
+    transition: opacity 0.3s ease;
+}
+
+.swap-skeleton {
+    opacity: 1;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.swap-skeleton.fade-out {
+    opacity: 0;
+    z-index: 1;
+}
+
+.swap-skeleton.removed {
+    display: none !important;
+}
+
+.swap-real {
+    opacity: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.swap-real.fade-in {
+    opacity: 1;
+    z-index: 2;
+    pointer-events: auto;
+}
+
+.dashboard-hero {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
     border: 1px solid var(--border);
-    cursor: default;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 12px 30px rgba(106,13,173,0.28);
+    padding: 30px 34px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    transition: box-shadow var(--transition);
 }
 
-.skeleton-card::before,
-.skeleton-card::after {
-    display: none;
+.dashboard-hero::before,
+.dashboard-hero::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.10);
+    pointer-events: none;
 }
 
-.skeleton-label {
-    width: 70%;
-    height: 10px;
-    margin-bottom: 6px;
+.dashboard-hero::before {
+    width: 240px;
+    height: 240px;
+    top: -90px;
+    right: -50px;
 }
 
-.skeleton-value {
-    width: 50%;
-    height: 26px;
-    margin-bottom: 8px;
+.dashboard-hero::after {
+    width: 150px;
+    height: 150px;
+    bottom: -70px;
+    right: 160px;
+    background: rgba(255,255,255,0.07);
 }
 
-.skeleton-badge {
-    width: 40%;
-    height: 16px;
-    border-radius: 999px;
+.dashboard-hero:hover {
+    box-shadow: 0 16px 36px rgba(106,13,173,0.34);
 }
 
-.skeleton-icon {
-    width: 32px;
-    height: 32px;
+.hero-greeting-group {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-icon-badge {
+    width: 54px;
+    height: 54px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.35);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 25px;
+    color: #fff;
+}
+
+.greeting-text {
+    font-size: 24px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.4px;
+    margin: 0 0 4px;
+}
+
+.greeting-subtitle {
+    font-size: 14px;
+    color: rgba(255,255,255,0.85);
+    margin: 0;
+}
+
+.skeleton-hero-icon {
+    width: 54px;
+    height: 54px;
     border-radius: 50%;
     flex-shrink: 0;
 }
 
-/* Skeleton calendar */
-.skeleton-cal-header {
+.skeleton-greeting-title {
+    width: 300px;
+    max-width: 60%;
+    height: 26px;
+    margin-bottom: 10px;
+}
+
+.skeleton-greeting-subtitle {
+    width: 360px;
+    max-width: 80%;
+    height: 14px;
+}
+
+.skeleton-hero-btn {
+    width: 190px;
+    height: 44px;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    background: #fff;
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 14px;
+    padding: 12px 22px;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    transition: all var(--transition);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-cta-btn i {
+    font-size: 17px;
+    color: var(--primary);
+}
+
+.hero-cta-btn:hover {
+    transform: translateY(-2px);
+    background: #f6effe;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.22);
+}
+
+/* ============================================================
+   2x2 OVERVIEW GRID — Upcoming Appointment / Profile Status /
+   Latest Laboratory Result / Follow-up. All four cards are the
+   same size, per the reference layout.
+   ============================================================ */
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+/* ── Gentle entrance so the grid doesn't just pop in flat ── */
+@keyframes cardFadeInUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.swap-real.fade-in .overview-grid .info-card {
+    animation: cardFadeInUp 0.45s ease backwards;
+}
+
+.swap-real.fade-in .overview-grid .info-card:nth-child(1) { animation-delay: 0.05s; }
+.swap-real.fade-in .overview-grid .info-card:nth-child(2) { animation-delay: 0.1s; }
+.swap-real.fade-in .overview-grid .info-card:nth-child(3) { animation-delay: 0.15s; }
+.swap-real.fade-in .overview-grid .info-card:nth-child(4) { animation-delay: 0.2s; }
+
+.swap-real.fade-in .activity-card {
+    animation: cardFadeInUp 0.45s ease 0.25s backwards;
+}
+
+/* ============================================================
+   SHARED INFO CARD (overview grid cards + activity card)
+   ============================================================ */
+.info-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow var(--transition), transform var(--transition);
+}
+
+.info-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-3px);
+}
+
+.info-card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
 }
 
-.skeleton-cal-btns {
-    width: 110px;
-    height: 30px;
+.info-card-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
-.skeleton-cal-title {
-    width: 160px;
-    height: 22px;
+.info-card-title h3 {
+    font-size: 15.5px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin: 0;
 }
 
-.skeleton-cal-grid {
+.info-card-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+}
+
+.info-card-icon--purple { background: var(--primary-soft); color: var(--primary); }
+.info-card-icon--blue   { background: var(--accent-blue-bg); color: var(--accent-blue); }
+.info-card-icon--green  { background: var(--accent-green-bg); color: var(--accent-green); }
+
+.info-card-body {
+    flex: 1;
+}
+
+.info-card-main-text {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin: 0 0 10px;
+}
+
+.info-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.info-row:last-child {
+    margin-bottom: 0;
+}
+
+.info-row-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13.5px;
+    color: var(--text-mid);
+    font-weight: 600;
+}
+
+.info-row-item i {
+    color: var(--primary);
+    font-size: 15px;
+}
+
+.info-card-footer {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.card-view-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    background: #fff;
+    border: 1.5px solid var(--primary);
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    transition: all var(--transition);
+}
+
+.card-view-btn:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+/* ── Empty states (no data for that card yet) ── */
+.info-card-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 12px;
+    padding: 24px 10px;
+    color: var(--text-light);
+}
+
+.info-card-empty i {
+    width: 54px;
+    height: 54px;
+    line-height: 54px;
+    text-align: center;
+    border-radius: 50%;
+    background: var(--primary-soft);
+    color: var(--primary-light);
+    font-size: 24px;
+}
+
+.info-card-empty p {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-mid);
+    margin: 0;
+}
+
+/* ── Status pill (top-right of each card header) ── */
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    padding: 5px 13px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.status-pill i { font-size: 13px; }
+
+.status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    display: inline-block;
+}
+
+.status-pill--green  { background: var(--accent-green-bg);  color: var(--accent-green); }
+.status-pill--blue   { background: var(--accent-blue-bg);   color: var(--accent-blue); }
+.status-pill--amber  { background: var(--accent-amber-bg);  color: var(--accent-amber); }
+.status-pill--red    { background: var(--accent-red-bg);    color: var(--accent-red); }
+.status-pill--gray   { background: #f3f4f6; color: #6b7280; }
+
+/* Recent-activity pills reuse PatientNotificationService's own
+   label_class values directly — same color language the header
+   notification dropdown already uses, just restyled as a pill. */
+.status-pill.notif-label--approved    { background: var(--accent-green-bg); color: var(--accent-green); }
+.status-pill.notif-label--rejected    { background: var(--accent-red-bg);   color: var(--accent-red); }
+.status-pill.notif-label--cancelled   { background: #f3f4f6; color: #6b7280; }
+.status-pill.notif-label--rescheduled { background: var(--accent-blue-bg);  color: var(--accent-blue); }
+.status-pill.notif-label--upcoming    { background: var(--accent-amber-bg); color: var(--accent-amber); }
+
+/* ============================================================
+   PROFILE STATUS CARD — circular progress ring
+   ============================================================ */
+.profile-status-body {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.profile-ring-wrap {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    flex-shrink: 0;
+}
+
+.profile-ring {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.profile-ring-track {
+    fill: none;
+    stroke: var(--accent-blue-bg);
+    stroke-width: 9;
+}
+
+.profile-ring-progress {
+    fill: none;
+    stroke: var(--accent-blue);
+    stroke-width: 9;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.6s ease;
+}
+
+.profile-ring-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--text-dark);
+}
+
+.profile-status-text {
+    font-size: 13.5px;
+    color: var(--text-mid);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* ── Complete state — ring, label and badge all switch to green ── */
+.profile-ring-wrap--complete .profile-ring-track {
+    stroke: var(--accent-green-bg);
+}
+
+.profile-ring-wrap--complete .profile-ring-progress {
+    stroke: var(--accent-green);
+}
+
+.profile-ring-wrap--complete .profile-ring-label {
+    color: var(--accent-green);
+}
+
+.profile-ring-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    border: 3px solid var(--bg-card);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ============================================================
+   FOLLOW-UP CARD
+   ============================================================ */
+.followup-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.followup-icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+}
+
+.followup-reason {
+    font-size: 13px;
+    color: var(--text-light);
+    margin: 0;
+    padding-left: 48px;
+}
+
+/* ============================================================
+   RECENT CLINIC ACTIVITY (latest 3 only — fixed height, never
+   grows regardless of how many activity items a patient has)
+   ============================================================ */
+.activity-card {
+    margin-bottom: 0;
+}
+
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.activity-row {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
+    grid-template-columns: 36px minmax(0, 1fr) 100px 140px;
+    align-items: center;
+    gap: 14px;
+    padding: 13px 6px;
+    border-bottom: 1px solid var(--border);
+    text-decoration: none;
+    color: inherit;
+    transition: background var(--transition);
 }
 
-.skeleton-cal-cell {
-    aspect-ratio: 1.3 / 1;
-    border-radius: 8px;
+.activity-row:last-child {
+    border-bottom: none;
+}
+
+.activity-row:hover {
+    background: var(--bg-page);
+}
+
+.activity-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--primary-soft);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.activity-icon.notif-item-icon--approved    { background: var(--accent-green-bg); color: var(--accent-green); }
+.activity-icon.notif-item-icon--rejected    { background: var(--accent-red-bg);   color: var(--accent-red); }
+.activity-icon.notif-item-icon--cancelled   { background: #f3f4f6; color: #6b7280; }
+.activity-icon.notif-item-icon--rescheduled { background: var(--accent-blue-bg);  color: var(--accent-blue); }
+.activity-icon.notif-item-icon--upcoming    { background: var(--accent-amber-bg); color: var(--accent-amber); }
+
+.activity-title {
+    min-width: 0;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.activity-date {
+    font-size: 12.5px;
+    color: var(--text-light);
+    white-space: nowrap;
+    text-align: right;
+    justify-self: end;
+}
+
+.activity-row .status-pill {
+    justify-self: end;
 }
 
 /* ============================================================
    RESPONSIVE
    ============================================================ */
-@media (max-width: 1200px) {
-    .stats-section {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
-
 @media (max-width: 900px) {
-    .stats-section {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    #datetime-container {
-        min-width: 200px;
+    .overview-grid {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -828,77 +778,50 @@ body {
         text-align: center;
     }
 
-    .stats-section {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
+    .dashboard-hero {
+        padding: 18px;
+        flex-direction: column;
+        align-items: flex-start;
     }
 
-    #stat-total {
-        grid-column: auto;
-    }
-
-    /* Five cards: the final monthly total fills the last row cleanly. */
-    #stat-this-month {
-        grid-column: 1 / -1;
-    }
-
-    .stat-card {
-        min-width: 0;
-        padding: 16px 13px 16px 16px;
-    }
-
-    .stat-value {
-        font-size: 25px;
-    }
-
-    .stat-label {
-        font-size: 9px;
-        letter-spacing: 0.7px;
-    }
-
-    .stat-icon {
-        font-size: 25px;
-    }
-
-    .calendar-card {
-        padding: 16px;
+    .hero-cta-btn {
+        width: 100%;
+        justify-content: center;
     }
 
     .greeting-text {
         font-size: 19px;
     }
 
-    .dashboard-hero {
+    .info-card {
         padding: 18px;
     }
 
-    .hero-divider {
-        margin: 16px 0;
-    }
-
-    .pc-footer {
+    .profile-status-body {
+        flex-direction: column;
         align-items: flex-start;
+        gap: 14px;
     }
 
-    .pc-btn {
-        width: 100%;
-        text-align: center;
+    .followup-reason {
+        padding-left: 0;
+    }
+
+    .activity-date,
+    .sk-date {
+        display: none;
+    }
+
+    .activity-row {
+        grid-template-columns: 32px minmax(0, 1fr) 120px;
+    }
+
+    .activity-title {
+        white-space: normal;
     }
 }
 
 @media (max-width: 480px) {
-    .stats-section {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    #stat-total {
-        grid-column: auto;
-    }
-
-    .stat-card {
-        padding: 14px 11px 14px 14px;
-    }
-
     .greeting-text {
         font-size: 17px;
     }
@@ -907,13 +830,18 @@ body {
         padding: 16px;
     }
 
-    .pc-title {
-        font-size: 14.5px;
+    .info-card {
+        padding: 16px;
     }
 
-    .pc-percent {
-        font-size: 12px;
-        padding: 3px 11px;
+    .info-card-title h3 {
+        font-size: 14px;
+    }
+
+    .info-card-icon {
+        width: 34px;
+        height: 34px;
+        font-size: 16px;
     }
 }
 
@@ -921,149 +849,4 @@ body {
     .page-header h1 {
         font-size: 20px;
     }
-
-    .stat-value {
-        font-size: 22px;
-    }
-
-    .stat-icon {
-        font-size: 22px;
-    }
-
-    .stat-badge { font-size: 9px; padding: 2px 6px; }
-
-    .calendar-card {
-        padding: 12px;
-    }
-}
-
-/* ============================================================
-   FULLCALENDAR — MOBILE TOOLBAR
-   By default FullCalendar renders its prev/next/today, title, and
-   view-switcher buttons in a single row (.fc-toolbar-chunk x3), which
-   overflows and forces horizontal scrolling on small screens. Below
-   768px this stacks the three chunks and lets buttons wrap instead of
-   spilling outside the card.
-   ============================================================ */
-@media (max-width: 768px) {
-    .fc-header-toolbar {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-        margin-bottom: 16px !important;
-    }
-
-    .fc-toolbar-chunk {
-        display: flex;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-
-    .fc-toolbar-title {
-        font-size: 18px !important;
-        text-align: center;
-    }
-
-    .fc-toolbar button {
-        padding: 6px 10px !important;
-        font-size: 11.5px !important;
-    }
-}
-
-@media (max-width: 480px) {
-    .fc-toolbar button {
-        padding: 5px 8px !important;
-        font-size: 10.5px !important;
-    }
-
-    .fc-toolbar-title {
-        font-size: 16px !important;
-    }
-
-    /* "today" reads clearer than a cramped 3-button cluster; keep
-       prev/next/today together, let the view switcher wrap below it */
-    .fc-toolbar-chunk:last-child {
-        width: 100%;
-    }
-}
-
-/* Calendar event text: shrink to fit narrow day cells instead of
-   overflowing the cell or forcing the grid wider than the viewport */
-@media (max-width: 600px) {
-    .fc-daygrid-event {
-        padding: 3px 4px;
-    }
-
-    .calendar-event-title { font-size: 10px; }
-    .calendar-event-time { font-size: 8.5px; }
-
-    .fc-daygrid-day-number {
-        font-size: 12px;
-        padding: 4px 6px;
-    }
-}
-
-/* ============================================================
-   FULLCALENDAR — MOBILE DAY GRID (compact cells)
-   With height:'auto' each day cell still keeps its default min
-   height regardless of the (much narrower) column width on phones,
-   which is what makes the grid look tall and squeezed. These
-   overrides cap the row height and tighten the weekday header /
-   number spacing so the whole month fits without wasted space.
-   ============================================================ */
-@media (max-width: 600px) {
-    .fc-daygrid-day-frame {
-        min-height: 52px !important;
-        padding: 2px !important;
-    }
-
-    .fc-col-header-cell {
-        padding: 6px 0 !important;
-    }
-
-    .fc-col-header-cell-cushion {
-        font-size: 11.5px;
-    }
-
-    .fc-daygrid-day-top {
-        flex-direction: row;
-        justify-content: center;
-    }
-
-    .fc-daygrid-day-events {
-        min-height: 0 !important;
-    }
-}
-
-@media (max-width: 430px) {
-    .fc-daygrid-day-frame {
-        min-height: 42px !important;
-    }
-
-    .fc-daygrid-day-number {
-        font-size: 11px;
-        padding: 3px 4px;
-    }
-
-    .fc-col-header-cell-cushion {
-        font-size: 10.5px;
-    }
-
-    .calendar-event-time { display: none; }
-}
-
-/* Scope any leftover horizontal overflow from FullCalendar's internal
-   tables to the calendar itself, never the page */
-.fc-scrollgrid,
-.fc-daygrid-body {
-    max-width: 100%;
-}
-
-/* Safety net: FullCalendar's internal tables can report a min-width
-   slightly wider than very narrow viewports (360px and below); scope
-   any resulting scroll to the calendar card only, never the page. */
-.calendar-card {
-    overflow-x: auto;
 }

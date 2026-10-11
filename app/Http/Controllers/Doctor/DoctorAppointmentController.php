@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Doctor;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Appointment;
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\Medicine;
 use App\Models\MedicalRecord;
 use App\Models\Prescription;
@@ -31,6 +33,12 @@ class DoctorAppointmentController extends Controller
     private function appointmentSchedule(Appointment $appointment): string
     {
         $date = Carbon::parse($appointment->appointment_date)->format('F d, Y');
+
+        // A walk-in has no reserved time — describe it by its queue number.
+        if ($appointment->isWalkIn()) {
+            return "{$date} (Walk-in {$appointment->queue_number})";
+        }
+
         $time = Carbon::parse($appointment->appointment_time)->format('h:i A');
 
         return "{$date} at {$time}";
@@ -79,10 +87,9 @@ class DoctorAppointmentController extends Controller
                 'diagnosis'                   => $request->diagnosis,
                 'treatment'                   => $request->treatment,
                 'notes'                       => $request->notes,
-                'blood_pressure'              => $request->blood_pressure,
-                'temperature'                 => $request->temperature,
-                'weight'                      => $request->weight,
-                'height'                      => $request->height,
+                // Vital Signs are recorded by Staff and are deliberately NOT
+                // written here, so a consultation save can never overwrite
+                // (or blank) them.
             ]
         );
     }
@@ -144,7 +151,7 @@ class DoctorAppointmentController extends Controller
             $dateFilter = 'All Dates';
         }
 
-        $query = Appointment::with(['patient', 'walkinPatient'])
+        $query = Appointment::with(['patient', 'walkinPatient', 'followUpLaboratoryRequest'])
             ->where('doctor_id', $doctor->id)
             ->whereIn('status', self::ACTIVE_STATUSES);
 
@@ -172,7 +179,11 @@ class DoctorAppointmentController extends Controller
 
         $appointments = $query
             ->orderBy('appointment_date', 'asc')
+            // Scheduled appointments by their reserved time first; walk-ins
+            // (NULL time) follow in the order they joined the queue.
+            ->orderByRaw('appointment_time IS NULL')
             ->orderBy('appointment_time', 'asc')
+            ->orderBy('arrived_at', 'asc')
             ->paginate(10)
             ->appends($request->query());
 
@@ -240,7 +251,7 @@ class DoctorAppointmentController extends Controller
     public function show($id)
     {
         $appointment = Appointment::where('doctor_id', auth()->id())
-            ->with(['patient', 'walkinPatient'])
+            ->with(['patient', 'walkinPatient', 'followUpLaboratoryRequest.tests', 'followUpLaboratoryRequest.reviewedBy'])
             ->findOrFail($id);
 
         // Not yet checked in — no consultation access at all.
@@ -273,7 +284,7 @@ class DoctorAppointmentController extends Controller
         $medicines = Medicine::where('status', '!=', 'Out of Stock')->get();
 
         $prescriptions = Prescription::where('appointment_id', $id)
-            ->with('medicine')
+            ->with('medicine', 'invoiceItem')
             ->get();
 
         $review = Review::where('appointment_id', $id)->first();
@@ -284,6 +295,7 @@ class DoctorAppointmentController extends Controller
         // All earlier medical records for the SAME patient (registered or
         // walk-in), excluding this appointment's own record, newest first.
         $previousRecordsQuery = MedicalRecord::with(['appointment'])
+            ->withConsultation()
             ->where('appointment_id', '!=', $id);
 
         if ($appointment->patient_id) {
@@ -296,8 +308,37 @@ class DoctorAppointmentController extends Controller
 
         $previousRecords = $previousRecordsQuery->latest()->get();
 
-        $services = Service::where('is_active', true)->orderBy('name')->get();
-        $invoice  = $appointment->invoice()->with('items')->first();
+        // Consultation is charged automatically (not a checkbox); only the
+        // OTHER active services are optional extras the Doctor can tick.
+        $services            = Service::optionalForConsultation()->where('is_active', true)->orderBy('name')->get();
+        $consultationService = $this->billing->consultationService();
+        $invoice             = $appointment->invoice()->with('items')->first();
+
+        // While In Progress the Doctor's prepared charges are only a draft
+        // (no invoice exists yet). Feed them to the same form as an
+        // in-memory, never-saved "Draft" invoice so the selections show up.
+        if (!$invoice && $appointment->status === 'In Progress' && is_array($appointment->billing_draft)) {
+            $invoice = $this->draftInvoiceForView($appointment);
+        }
+
+        // Laboratory Requests created during this consultation (Section
+        // 1/2 of the Laboratory workflow spec). Loaded with their tests
+        // so the consultation page can list what was already requested
+        // without an extra query per row.
+        $laboratoryRequests = \App\Models\LaboratoryRequest::with('tests')
+            ->where('appointment_id', $id)
+            ->latest()
+            ->get();
+
+        // The fee waiver currently in effect (so the form re-opens as saved):
+        // the invoice's Consultation line once it exists, otherwise the draft.
+        $currentWaiver = null;
+        $waivedLine    = $invoice ? $invoice->items->first(fn ($i) => $i->isWaiver()) : null;
+        if ($waivedLine) {
+            $currentWaiver = ['reason' => $waivedLine->waiver_reason, 'notes' => $waivedLine->waiver_notes];
+        } elseif (!$invoice && is_array($appointment->billing_draft) && !empty($appointment->billing_draft['waiver'])) {
+            $currentWaiver = $appointment->billing_draft['waiver'];
+        }
 
         return view('doctor.show-appointment', compact(
             'appointment',
@@ -307,8 +348,39 @@ class DoctorAppointmentController extends Controller
             'medicalRecord',
             'previousRecords',
             'services',
-            'invoice'
+            'consultationService',
+            'currentWaiver',
+            'invoice',
+            'laboratoryRequests'
         ));
+    }
+
+    /**
+     * In-memory (never saved) invoice built from the appointment's charge
+     * draft, used only to pre-fill the optional-services part of the
+     * Services / Charges form while the consultation is In Progress. It has
+     * no id, no invoice number and no payments, and nothing here is
+     * collectible. (Clinic medicine is never drafted — it is billed only
+     * when Staff dispenses it.)
+     */
+    private function draftInvoiceForView(Appointment $appointment): Invoice
+    {
+        $draft = $appointment->billing_draft ?? [];
+
+        $items = collect();
+
+        foreach ($draft['services'] ?? [] as $line) {
+            $items->push((new InvoiceItem)->forceFill([
+                'item_type'  => 'service',
+                'service_id' => $line['service_id'] ?? null,
+                'quantity'   => $line['quantity'] ?? 1,
+                'amount'     => 0,
+            ]));
+        }
+
+        return (new Invoice)
+            ->forceFill(['status' => 'Draft', 'amount_paid' => 0, 'total_amount' => 0])
+            ->setRelation('items', $items);
     }
 
     /**
@@ -378,10 +450,6 @@ class DoctorAppointmentController extends Controller
             'diagnosis'                  => 'nullable|string|max:5000',
             'treatment'                  => 'nullable|string|max:5000',
             'notes'                      => 'nullable|string|max:5000',
-            'blood_pressure'             => 'nullable|string|max:50',
-            'temperature'                => 'nullable|string|max:50',
-            'weight'                     => 'nullable|string|max:50',
-            'height'                     => 'nullable|string|max:50',
         ]);
 
         $appointment = Appointment::where('doctor_id', auth()->id())
@@ -430,10 +498,6 @@ class DoctorAppointmentController extends Controller
             'diagnosis'                  => 'required|string|max:5000',
             'treatment'                  => 'required|string|max:5000',
             'notes'                      => 'nullable|string|max:5000',
-            'blood_pressure'             => 'nullable|string|max:50',
-            'temperature'                => 'nullable|string|max:50',
-            'weight'                     => 'nullable|string|max:50',
-            'height'                     => 'nullable|string|max:50',
         ]);
 
         $appointment = Appointment::where('doctor_id', auth()->id())
@@ -444,9 +508,31 @@ class DoctorAppointmentController extends Controller
                 ->with('error', 'Only an In Progress consultation can be completed.');
         }
 
-        DB::transaction(function () use ($request, $appointment) {
+        // Fee waiver chosen on the Charges form. The page sends it along with
+        // "Complete" (marker `charges_mirrored`) so what the Doctor sees on
+        // screen is what gets applied even if "Save Charges" was not pressed.
+        // Validated BEFORE anything is saved: an invalid waiver (e.g. "Other"
+        // without notes) must not leave a half-completed consultation.
+        $overrideWaiver = $request->boolean('charges_mirrored');
+        $waiver         = null;
+
+        if ($overrideWaiver && $request->boolean('fee_waiver')) {
+            $hasCharges = $appointment->invoice()->exists() || is_array($appointment->billing_draft);
+            abort_unless(auth()->user()->hasPermission($hasCharges ? 'edit_invoice' : 'create_invoice'), 403,
+                'You do not have permission to waive the consultation fee.');
+
+            $waiver = $this->billing->buildWaiver(true, $request->input('waiver_reason'), $request->input('waiver_notes'), auth()->user());
+        }
+
+        DB::transaction(function () use ($request, $appointment, $waiver, $overrideWaiver) {
             $this->upsertMedicalRecord($appointment, $request);
             $appointment->update(['status' => 'Completed']);
+
+            // Pay-after-service: only now does the invoice Staff can collect
+            // come into being — the Consultation fee is always included
+            // (minus a Doctor-applied waiver), plus any optional services
+            // prepared in the draft.
+            $this->billing->finalizeChargesOnCompletion($appointment, auth()->user(), $waiver, $overrideWaiver);
         });
 
         $this->rememberStep($appointment, 4);
@@ -465,22 +551,30 @@ class DoctorAppointmentController extends Controller
     }
 
     /**
-     * Doctor tags the applicable service(s)/charge for this appointment.
-     * This does NOT record any payment and does NOT let the Doctor mark
-     * anything as paid — it only creates/refreshes the invoice (always
-     * starting/remaining UNPAID here) so Staff can collect payment at
-     * the counter. Locked once a payment has been recorded.
+     * Doctor prepares the OPTIONAL extra services and the fee-waiver decision
+     * for this appointment (the Consultation fee itself is automatic, and
+     * clinic medicine is billed by Staff dispensing). This does NOT record any payment and does NOT let the Doctor mark
+     * anything as paid. Pay-after-service:
+     *
+     *   - In Progress -> the selection is saved as a DRAFT on the
+     *                    appointment. No invoice exists, so Staff cannot
+     *                    collect anything yet.
+     *   - Completed   -> the invoice is created/refreshed so Staff can
+     *                    collect payment at the counter. Locked once a
+     *                    payment has been recorded.
+     *   - any other status -> not allowed.
      *
      * The route middleware only guarantees the user holds AT LEAST ONE
      * of create_invoice / edit_invoice (see routes/web.php). Which one
-     * is actually REQUIRED depends on whether this appointment already
-     * has an invoice, so that distinction is enforced here:
-     *   - no existing invoice            -> create_invoice required
-     *   - existing invoice, no payment   -> edit_invoice required
-     *   - existing invoice, has payment  -> locked regardless of permission
-     * A Doctor with only create_invoice can never modify an existing
-     * invoice, and a Doctor with only edit_invoice can never create a
-     * new one.
+     * is actually REQUIRED depends on whether charges already exist for
+     * this appointment (an invoice, or a saved draft), so that distinction
+     * is enforced here:
+     *   - nothing saved yet             -> create_invoice required
+     *   - invoice/draft exists, no payment -> edit_invoice required
+     *   - existing invoice, has payment -> locked regardless of permission
+     * A Doctor with only create_invoice can never modify existing
+     * charges, and a Doctor with only edit_invoice can never create new
+     * ones.
      */
     public function saveCharges(Request $request, $id)
     {
@@ -489,17 +583,25 @@ class DoctorAppointmentController extends Controller
             'service_ids.*'     => 'exists:services,id',
             'service_qty'       => 'nullable|array',
             'service_qty.*'     => 'nullable|integer|min:1',
-            // Only prescriptions the Doctor explicitly checked here are
-            // billed — a prescription on its own never creates a charge
-            // (Prescription != Purchase).
-            'medicine_rx_ids'   => 'nullable|array',
-            'medicine_rx_ids.*' => 'integer',
-            'medicine_rx_qty'   => 'nullable|array',
-            'medicine_rx_qty.*' => 'nullable|integer|min:1',
+            // Fee Waiver / No Charge. Only the reason (from a fixed list) and
+            // notes are accepted — never an amount: the waiver always covers
+            // the Consultation fee as set by Admin, nothing else.
+            'fee_waiver'        => 'nullable|boolean',
+            'waiver_reason'     => 'nullable|string|max:40',
+            'waiver_notes'      => 'nullable|string|max:500',
         ]);
+        // NOTE: there is intentionally no medicine input here any more. A
+        // prescription is not a purchase: clinic medicine is billed only when
+        // Staff dispenses it (BillingService::addDispensedMedicineToInvoice),
+        // so a medicine_rx_* field in a request is simply ignored.
 
         $appointment = Appointment::where('doctor_id', auth()->id())
             ->findOrFail($id);
+
+        if (!in_array($appointment->status, ['In Progress', 'Completed'], true)) {
+            return redirect()->back()
+                ->with('error', 'Charges can only be prepared while the consultation is In Progress or Completed.');
+        }
 
         $existingInvoice = $appointment->invoice()->first();
         if ($existingInvoice && $existingInvoice->amount_paid > 0) {
@@ -507,7 +609,8 @@ class DoctorAppointmentController extends Controller
                 ->with('error', 'Charges can no longer be edited — a payment has already been recorded for this invoice.');
         }
 
-        $requiredPermission = $existingInvoice ? 'edit_invoice' : 'create_invoice';
+        $hasExistingCharges = $existingInvoice || is_array($appointment->billing_draft);
+        $requiredPermission = $hasExistingCharges ? 'edit_invoice' : 'create_invoice';
         abort_unless(auth()->user()->hasPermission($requiredPermission), 403,
             'You do not have permission to perform this action.');
 
@@ -522,33 +625,34 @@ class DoctorAppointmentController extends Controller
             ];
         }
 
-        $medicineRxIds = $request->input('medicine_rx_ids', []);
-        $medicineRxQty = $request->input('medicine_rx_qty', []);
-
-        // Re-fetch the checked prescriptions ourselves (never trust the
-        // client for the price/quantity ceiling) and cap each one at
-        // its own quantity_prescribed — the Doctor can bill less than
-        // was prescribed (e.g. patient buys a partial supply) but never
-        // more.
-        $checkedPrescriptions = Prescription::where('appointment_id', $appointment->id)
-            ->whereIn('id', $medicineRxIds)
-            ->whereNotNull('medicine_id')
-            ->get();
-
-        $medicineLines = [];
-        foreach ($checkedPrescriptions as $rx) {
-            $qty = (int) ($medicineRxQty[$rx->id] ?? $rx->quantity_prescribed);
-            $qty = max(1, min($qty, (int) $rx->quantity_prescribed));
-
-            $medicineLines[] = [
-                'prescription_id' => $rx->id,
-                'quantity'        => $qty,
-            ];
-        }
-
-        $this->billing->syncInvoiceForAppointment($appointment, $lines, auth()->user(), $medicineLines);
+        // Fee waiver (validated server-side; invalid -> back with errors).
+        $waiver = $this->billing->buildWaiver(
+            $request->boolean('fee_waiver'),
+            $request->input('waiver_reason'),
+            $request->input('waiver_notes'),
+            auth()->user()
+        );
 
         $this->rememberStep($appointment, 4);
+
+        // ---- In Progress: prepare only, no invoice ----
+        if ($appointment->status === 'In Progress') {
+            $this->billing->saveChargeDraft($appointment, $lines, auth()->user(), $waiver);
+
+            return redirect()->back()->with(
+                'success',
+                'Charges saved as a draft. The invoice will be sent to Billing once you complete the consultation.'
+            );
+        }
+
+        // ---- Completed: the invoice becomes available to Staff ----
+        // (The Consultation fee is automatic, so there is always something
+        // to bill; sync removes the invoice only if truly nothing is left.)
+        $invoice = $this->billing->syncInvoiceForAppointment($appointment, $lines, auth()->user(), $waiver);
+
+        if (!$invoice->exists) {
+            return redirect()->back()->with('success', 'All charges were removed, so the unpaid invoice was removed too.');
+        }
 
         return redirect()->back()->with('success', 'Charges saved. Billing has been updated.');
     }
@@ -669,6 +773,7 @@ class DoctorAppointmentController extends Controller
     public function medicalRecordsIndex()
     {
         $records = MedicalRecord::with(['appointment.patient', 'appointment.walkinPatient'])
+            ->withConsultation()
             ->where('doctor_id', auth()->id())
             ->latest()
             ->paginate(10); 
@@ -698,12 +803,21 @@ class DoctorAppointmentController extends Controller
 
         $review = Review::where('appointment_id', $appointmentId)->first();
 
+        // Laboratory summary/history for this consultation (Section 10
+        // of the Laboratory workflow spec) — the Medical Record page
+        // only shows a reference/shortcut here, never the full report.
+        $laboratoryRequests = \App\Models\LaboratoryRequest::with('tests')
+            ->where('appointment_id', $appointmentId)
+            ->latest()
+            ->get();
+
         // ← changed from 'doctor.medical-records' to 'doctor.medical-record-show'
         return view('doctor.medical-record-show', compact(
             'appointment',
             'medicalRecord',
             'prescriptions',
             'review',
+            'laboratoryRequests',
         ));
     }
 }

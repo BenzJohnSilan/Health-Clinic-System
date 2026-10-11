@@ -779,46 +779,6 @@ body {
 .password-tips li.met { color: var(--success-600); font-weight: 500; }
 .password-tips li.met i { color: var(--success-600); }
 
-/* ===== DIGITAL SIGNATURE ===== */
-.signature-preview-box {
-    margin-bottom: 4px;
-    padding: 16px;
-    border: 1.5px dashed var(--brand-100);
-    border-radius: var(--radius-md);
-    background: var(--neutral-50);
-    text-align: center;
-}
-
-.signature-preview-box img {
-    max-height: 90px;
-    max-width: 100%;
-    object-fit: contain;
-}
-
-.signature-preview-empty {
-    padding: 20px;
-    color: var(--neutral-400);
-    font-size: 13px;
-}
-
-.signature-actions {
-    justify-content: flex-start;
-    border-top: none;
-    padding-top: 4px;
-    margin-top: 0;
-}
-
-.btn-signature-remove {
-    background: var(--danger-100);
-    color: #b91c1c;
-    box-shadow: none;
-}
-
-.btn-signature-remove:hover {
-    background: var(--danger-100);
-    box-shadow: 0 4px 12px rgba(220,38,38,0.18);
-}
-
 /* ===== FORM ACTIONS ===== */
 .form-actions {
     display: flex;

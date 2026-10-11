@@ -31,13 +31,49 @@ class Appointment extends Model
         'diagnosis',
         'reference_no',
         'booked_by_staff',
+        'appointment_type',
+        'follow_up_laboratory_request_id',
+        'billing_draft',
+        'arrived_at',
+        'queue_number',
     ];
+
+    // ====================
+    // APPOINTMENT TYPE (Laboratory Result Follow-up Consultation)
+    // ====================
+
+    public const TYPE_REGULAR   = 'Regular';
+    public const TYPE_FOLLOW_UP = 'Follow-up';
+
+    /**
+     * Walk-in visit: no reserved appointment_time, ordered by a daily
+     * queue_number and the real arrived_at timestamp. Every other value
+     * ('Regular', 'Follow-up') is a SCHEDULED appointment with a reserved slot.
+     */
+    public const TYPE_WALK_IN = 'Walk-in';
+
+    /** Walk-in added to today's queue but not yet checked in by Staff. */
+    public const STATUS_WAITING = 'Waiting';
+
+    /** Statuses in which a walk-in is still part of the ACTIVE queue. */
+    public const WALK_IN_ACTIVE_STATUSES = ['Waiting', 'Checked In', 'In Progress'];
+
+    /**
+     * Statuses in which an appointment no longer "holds" a follow-up
+     * recommendation — if the only follow-up booked for a laboratory
+     * request ended in one of these, the patient/staff may book it again.
+     * Everything else (Pending, Approved, Rescheduled, Checked In,
+     * In Progress, Completed) counts as the follow-up being booked/done.
+     */
+    public const INACTIVE_STATUSES = ['Cancelled', 'Rejected', 'No Show'];
 
     protected $casts = [
         'appointment_date' => 'date:Y-m-d',
         'appointment_time' => 'string',
         'booked_by_staff'  => 'boolean',
         'rescheduled_at'   => 'datetime',
+        'arrived_at'       => 'datetime',
+        'billing_draft'    => 'array',
     ];
 
     // ====================
@@ -50,7 +86,9 @@ class Appointment extends Model
 
         static::creating(function ($appointment) {
             if (empty($appointment->reference_no)) {
-                $appointment->reference_no = self::generateReferenceNo();
+                $appointment->reference_no = $appointment->appointment_type === self::TYPE_WALK_IN
+                    ? self::generateWalkInReferenceNo()
+                    : self::generateReferenceNo();
             }
         });
 
@@ -106,6 +144,41 @@ class Appointment extends Model
         return $prefix . str_pad($next, 5, '0', STR_PAD_LEFT);
     }
 
+    /**
+     * Walk-in Visit ID. Format: WALK-YYYYMMDD-001 (e.g. WALK-20261006-001).
+     * Numeric part is compared as a number so it stays correct past 999.
+     */
+    private static function generateWalkInReferenceNo(): string
+    {
+        $prefix = 'WALK-' . now()->format('Ymd') . '-';
+
+        $max = self::where('reference_no', 'like', $prefix . '%')
+            ->pluck('reference_no')
+            ->map(fn ($ref) => (int) substr($ref, strlen($prefix)))
+            ->max() ?? 0;
+
+        return $prefix . str_pad((string) ($max + 1), 3, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Next daily queue number (Q001, Q002, ...) for a clinic day. One shared
+     * sequence per day (not per doctor); numbers are never reused on the
+     * same day, even after a visit is completed, so an active number can
+     * never be duplicated. MUST be called inside a DB transaction; the
+     * unique(appointment_date, queue_number) index is the final safety net.
+     */
+    public static function nextQueueNumber(string $date): string
+    {
+        $max = self::whereDate('appointment_date', $date)
+            ->whereNotNull('queue_number')
+            ->lockForUpdate()
+            ->pluck('queue_number')
+            ->map(fn ($q) => (int) substr($q, 1))
+            ->max() ?? 0;
+
+        return 'Q' . str_pad((string) ($max + 1), 3, '0', STR_PAD_LEFT);
+    }
+
     // ====================
     // RELATIONSHIPS
     // ====================
@@ -138,6 +211,16 @@ class Appointment extends Model
         return $this->belongsTo(User::class, 'rescheduled_by');
     }
 
+    /**
+     * The ORIGINAL laboratory request this follow-up appointment was
+     * booked for (null for every Regular appointment). Gives the Doctor
+     * Appointment -> Laboratory Request -> tests / results / review.
+     */
+    public function followUpLaboratoryRequest()
+    {
+        return $this->belongsTo(\App\Models\LaboratoryRequest::class, 'follow_up_laboratory_request_id');
+    }
+
     public function prescriptions()
     {
         return $this->hasMany(Prescription::class, 'appointment_id');
@@ -164,6 +247,17 @@ class Appointment extends Model
     public function invoice()
     {
         return $this->hasOne(\App\Models\Invoice::class, 'appointment_id');
+    }
+
+    /**
+     * Laboratory Requests created during this consultation (Laboratory
+     * Request/Result workflow). An appointment can have more than one
+     * request across the consultation, newest first.
+     */
+    public function laboratoryRequests()
+    {
+        return $this->hasMany(\App\Models\LaboratoryRequest::class, 'appointment_id')
+            ->latest('created_at');
     }
 
     /**
@@ -200,9 +294,16 @@ class Appointment extends Model
      */
     public function canBeCheckedIn(): bool
     {
-        return in_array($this->status, ['Approved', 'Rescheduled'], true)
-            && $this->appointment_date
-            && $this->appointment_date->isToday();
+        if (!$this->appointment_date || !$this->appointment_date->isToday()) {
+            return false;
+        }
+
+        // Walk-in: waits in the queue as 'Waiting' (never as Approved).
+        if ($this->isWalkIn()) {
+            return $this->status === self::STATUS_WAITING;
+        }
+
+        return in_array($this->status, ['Approved', 'Rescheduled'], true);
     }
 
     /**
@@ -226,6 +327,53 @@ class Appointment extends Model
     // ====================
     // HELPERS
     // ====================
+
+    public function isFollowUp(): bool
+    {
+        return $this->appointment_type === self::TYPE_FOLLOW_UP;
+    }
+
+    public function isWalkIn(): bool
+    {
+        return $this->appointment_type === self::TYPE_WALK_IN;
+    }
+
+    /**
+     * Time text for any screen that used to print appointment_time.
+     * A walk-in (or any row without a reserved time) never shows a time
+     * — Carbon::parse(null) would silently return "now".
+     */
+    public function timeLabel(string $format = 'h:i A'): string
+    {
+        if ($this->isWalkIn()) {
+            return 'Walk-in';
+        }
+
+        if (!$this->appointment_time) {
+            return '—';
+        }
+
+        try {
+            return Carbon::parse($this->appointment_time)->format($format);
+        } catch (\Exception $e) {
+            return (string) $this->appointment_time;
+        }
+    }
+
+    /**
+     * Where a walk-in currently is in the queue, for the Staff queue modal.
+     * 'Vitals Taken' is not a stored status: it is a Checked In walk-in whose
+     * medical record already has vitals_recorded_at.
+     */
+    public function queueStage(): string
+    {
+        return match ($this->status) {
+            self::STATUS_WAITING => 'Waiting',
+            'Checked In'         => $this->medicalRecord?->vitals_recorded_at ? 'Vitals Taken' : 'Checked In',
+            'In Progress'        => 'In Progress',
+            default              => $this->status,
+        };
+    }
 
     /**
      * Returns whichever patient record exists (registered or walk-in).
@@ -304,6 +452,14 @@ class Appointment extends Model
 
     public function getFormattedTimeAttribute()
     {
+        if ($this->isWalkIn()) {
+            return 'Walk-in';
+        }
+
+        if (!$this->appointment_time) {
+            return '—';
+        }
+
         try {
             return Carbon::createFromFormat('H:i:s', $this->appointment_time)
                 ->format('h:i A');
@@ -315,6 +471,14 @@ class Appointment extends Model
     // ====================
     // SCOPES
     // ====================
+
+    /** Today's ACTIVE walk-in queue (Waiting / Checked In / In Progress). */
+    public function scopeActiveWalkInQueue($query)
+    {
+        return $query->where('appointment_type', self::TYPE_WALK_IN)
+            ->whereDate('appointment_date', now()->toDateString())
+            ->whereIn('status', self::WALK_IN_ACTIVE_STATUSES);
+    }
 
     public function scopeUpcoming($query)
     {

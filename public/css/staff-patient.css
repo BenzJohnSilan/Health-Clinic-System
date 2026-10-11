@@ -1390,3 +1390,29 @@ select.form-input:disabled {
         flex-wrap: wrap;
     }
 }
+
+/* ================= FOLLOW-UP CONSULTATION ================= */
+.type-badge.followup {
+    background: #dbeafe;
+    color: #1e40af;
+    margin-left: 4px;
+}
+.followup-info {
+    margin-top: 6px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e3a8a;
+    font-size: 12.5px;
+    white-space: pre-line;
+}
+
+/* Add to Queue: patient already in today's walk-in queue */
+.action-menu-item[disabled] {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.action-menu-item[disabled]:hover {
+    background: transparent;
+}

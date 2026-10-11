@@ -61,7 +61,7 @@
 
 body {
     font-family: 'DM Sans', sans-serif;
-    background: var(--neutral-100);
+    background: #f4f0fa;
     color: var(--neutral-900);
 }
 
@@ -209,6 +209,16 @@ body {
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
 }
 
+#avatarForm {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+}
+
 .avatar-wrapper {
     position: relative;
     width: 84px;
@@ -240,6 +250,7 @@ body {
     color: var(--white);
     font-size: 20px;
     backdrop-filter: blur(2px);
+    pointer-events: none;
 }
 
 .avatar-wrapper:hover .avatar-overlay { opacity: 1; }
@@ -252,6 +263,7 @@ body {
     border-radius: 50%;
     border: 2px solid rgba(255,255,255,0.2);
     transition: all var(--transition);
+    pointer-events: none;
 }
 .avatar-wrapper:hover::before {
     inset: -7px;
@@ -294,6 +306,84 @@ body {
     letter-spacing: 0.5px;
     border: 1px solid rgba(255,255,255,0.2);
     text-transform: capitalize;
+}
+
+/* ===== AVATAR ACTIONS — ONLY SAVE + REMOVE ===== */
+.avatar-actions-sidebar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 2px;
+    position: relative;
+    z-index: 1;
+}
+
+.btn-avatar-save,
+.btn-avatar-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex: 1;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition);
+    border: none;
+    letter-spacing: 0.1px;
+    white-space: nowrap;
+}
+
+.btn-avatar-save i,
+.btn-avatar-remove i {
+    font-size: 14px;
+}
+
+.btn-avatar-save {
+    background: rgba(255,255,255,0.95);
+    color: var(--brand-700);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+.btn-avatar-save:hover:not(:disabled) {
+    background: var(--white);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+}
+
+.btn-avatar-save:disabled {
+    background: rgba(255,255,255,0.35);
+    color: rgba(255,255,255,0.6);
+    cursor: not-allowed;
+}
+
+.btn-avatar-remove {
+    background: rgba(220,38,38,0.18);
+    color: var(--white);
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.btn-avatar-remove:hover {
+    background: var(--danger-600);
+    border-color: var(--danger-600);
+    transform: translateY(-1px);
+}
+
+.avatar-field-error {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #fecaca;
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+    text-align: center;
 }
 
 /* ===== TAB NAV ===== */
@@ -722,9 +812,30 @@ body {
 
     .profile-card {
         flex-direction: row;
+        flex-wrap: wrap;
         text-align: left;
         gap: 18px;
         padding: 20px 22px;
+    }
+
+    #avatarForm {
+        flex-direction: row;
+        flex-wrap: wrap;
+        width: auto;
+        align-items: center;
+    }
+
+    .avatar-actions-sidebar {
+        width: auto;
+        flex-basis: 100%;
+        justify-content: flex-start;
+        margin-top: 6px;
+    }
+
+    .btn-avatar-save,
+    .btn-avatar-remove {
+        flex: 0 0 auto;
+        min-width: 90px;
     }
 
     .profile-card-info {
@@ -753,7 +864,23 @@ body {
     .panel-header { margin-bottom: 24px; }
     .form-grid { grid-template-columns: 1fr; }
     .form-group.full-width { grid-column: auto; }
-    .profile-card { flex-direction: column; text-align: center; }
+
+    .profile-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    #avatarForm {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .avatar-actions-sidebar {
+        flex-basis: auto;
+        width: 100%;
+        justify-content: center;
+    }
+
     .profile-card-info { text-align: center; }
     .btn-save { width: 100%; justify-content: center; }
     .form-actions { padding-top: 20px; }

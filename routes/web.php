@@ -11,14 +11,18 @@ use App\Http\Controllers\Patient\PatientController;
 use App\Http\Controllers\Patient\PatientAppointmentController;
 use App\Http\Controllers\Patient\MedicalCertificateController as PatientMedicalCertificateController;
 use App\Http\Controllers\Patient\PatientNotificationController;
+use App\Http\Controllers\Patient\LaboratoryResultController as PatientLaboratoryResultController;
 
 use App\Http\Controllers\Doctor\DoctorController;
 use App\Http\Controllers\Doctor\DoctorAppointmentController;
 use App\Http\Controllers\Doctor\DoctorPatientController;
 use App\Http\Controllers\Doctor\PrescriptionController;
 use App\Http\Controllers\Doctor\MedicalCertificateController as DoctorMedicalCertificateController;
+use App\Http\Controllers\Staff\StaffMedicalCertificateController;
 use App\Http\Controllers\Doctor\DoctorScheduleController;
 use App\Http\Controllers\Doctor\DoctorBillingController;
+use App\Http\Controllers\Doctor\DoctorNotificationController;
+use App\Http\Controllers\Doctor\LaboratoryRequestController as DoctorLaboratoryRequestController;
 
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\UserController;
@@ -27,9 +31,12 @@ use App\Http\Controllers\Admin\AdminPatientController;
 use App\Http\Controllers\MedicineController as SharedMedicineController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\UserLogController;
+use App\Http\Controllers\Admin\BackupController;
+use App\Http\Controllers\Admin\BackupRestoreController;
 use App\Http\Controllers\Admin\AdminServiceController;
 use App\Http\Controllers\Admin\AdminBillingController;
 use App\Http\Controllers\Admin\AdminNotificationController;
+use App\Http\Controllers\Admin\ValidIdController;
 
 use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\Staff\StaffAppointmentController;
@@ -38,6 +45,7 @@ use App\Http\Controllers\Staff\StaffBillingController;
 use App\Http\Controllers\Staff\StaffNotificationController;
 use App\Http\Controllers\Staff\StaffActivityLogController;
 use App\Http\Controllers\Staff\StaffPrescriptionController;
+use App\Http\Controllers\Staff\StaffLaboratoryRequestController;
 
 use App\Http\Controllers\Patient\PatientBillingController;
 
@@ -112,9 +120,7 @@ function registerMedicineInventoryRoutes(): void
 | LANDING PAGE
 |--------------------------------------------------------------------------
 */
-Route::get('/', function () {
-    return view('landing');
-})->name('landing');
+Route::get('/', [\App\Http\Controllers\LandingController::class, 'index'])->name('landing');
 
 
 /*
@@ -123,8 +129,21 @@ Route::get('/', function () {
 |--------------------------------------------------------------------------
 */
 
-Route::get('/register', [RegisterController::class, 'show'])->name('register');
-Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
+// Registration is for visitors only (signed-in users are sent to their dashboard).
+// The POST is rate limited per IP — see RateLimiter::for('register') in AppServiceProvider.
+Route::get('/register', [RegisterController::class, 'show'])
+    ->middleware('guest')
+    ->name('register');
+
+Route::post('/register', [RegisterController::class, 'store'])
+    ->middleware(['guest', 'throttle:register'])
+    ->name('register.store');
+
+// Preview of the Valid ID this visitor already uploaded in their own session
+// (private disk; no id/path in the URL).
+Route::get('/register/valid-id-preview', [RegisterController::class, 'stagedValidIdPreview'])
+    ->middleware(['guest', 'throttle:30,1'])
+    ->name('register.valid-id-preview');
 
 Route::get('/login', [LoginController::class, 'show'])
     ->name('login')
@@ -184,7 +203,7 @@ Route::post('/email/resend', [VerificationController::class, 'resend'])
 |--------------------------------------------------------------------------
 */
 Route::prefix('patient')
-    ->middleware(['auth', 'verified', 'role:Patient', 'prevent-back-history'])
+    ->middleware(['auth', 'verified', 'registration.complete', 'role:Patient', 'prevent-back-history'])
     ->name('patient.')
     ->group(function () {
 
@@ -224,36 +243,52 @@ Route::prefix('patient')
         Route::get('/appointment-history', [PatientController::class, 'medicalReport'])
             ->name('appointment.history');
 
+        // Consultation Summary — Appointment History → View. Patient-facing
+        // view of one of the patient's OWN Completed consultations;
+        // ownership + Completed status are enforced in the controller.
+        Route::get('/appointment-history/{id}', [PatientController::class, 'showConsultationSummary'])
+            ->whereNumber('id')
+            ->name('appointment.show');
+
+        // Legacy URL — the separate Patient "Medical Report" page no longer
+        // exists. Kept so old bookmarks don't 404: the controller redirects
+        // straight to the Consultation Summary above.
         Route::get('/medical-report/{id}', [PatientController::class, 'showMedicalReport'])
             ->name('medical-report.show');
+
+        Route::get('/medical-report/{id}/print', [PatientController::class, 'printMedicalReport'])
+            ->name('medical-report.print');
 
         Route::get('/prescription/{id}', [PatientController::class, 'showPrescription'])
             ->name('prescription.show');
 
-        // Medical Certificates (request → pending → issued/rejected workflow)
+        // Medical Certificates — READ-ONLY history. A Medical Certificate is
+        // never requested online: the Doctor creates it at the clinic, the
+        // patient pays at the counter and receives the signed paper copy
+        // from Staff. Only certificates already RELEASED are listed here;
+        // there is no request, correction or print route for the patient.
         Route::get('/medical-certificates', [PatientMedicalCertificateController::class, 'index'])
             ->name('medical-certificates.index');
-
-        Route::get('/medical-certificates/request', [PatientMedicalCertificateController::class, 'create'])
-            ->name('medical-certificates.request');
-
-        // Used by the "Request Medical Certificate" modal to check
-        // eligibility (completed appointment + no pending request for
-        // that doctor) before showing the request form.
-        Route::get('/medical-certificates/eligibility', [PatientMedicalCertificateController::class, 'eligibility'])
-            ->name('medical-certificates.eligibility');
-
-        Route::post('/medical-certificates', [PatientMedicalCertificateController::class, 'store'])
-            ->name('medical-certificates.store');
 
         Route::get('/medical-certificates/{medicalCertificate}', [PatientMedicalCertificateController::class, 'show'])
             ->name('medical-certificates.show');
 
-        Route::get('/medical-certificates/{medicalCertificate}/print', [PatientMedicalCertificateController::class, 'print'])
-            ->name('medical-certificates.print');
-
-        Route::post('/medical-certificates/{medicalCertificate}/correction', [PatientMedicalCertificateController::class, 'requestCorrection'])
-            ->name('medical-certificates.correction.request');
+        // Laboratory Results (Section 6A of the Laboratory workflow
+        // spec) — Patient can only ever see/upload against their OWN
+        // laboratory requests; ownership is enforced in the controller
+        // itself, this route just makes the module reachable.
+        Route::get('/laboratory-results', [PatientLaboratoryResultController::class, 'index'])
+            ->name('laboratory-results.index');
+        Route::post('/laboratory-results/{laboratoryRequest}/upload', [PatientLaboratoryResultController::class, 'upload'])
+            ->name('laboratory-results.upload');
+        Route::delete('/laboratory-results/{laboratoryRequest}/results/{result}', [PatientLaboratoryResultController::class, 'removeResult'])
+            ->name('laboratory-results.remove');
+        // Replace an already-uploaded result for a specific requested test
+        // (Section 4 of the Laboratory Result workflow spec) — a single
+        // action that uploads the correct file and retires the wrong one,
+        // without the Patient ever seeing both as "current" at once.
+        Route::post('/laboratory-results/{laboratoryRequest}/results/{result}/replace', [PatientLaboratoryResultController::class, 'replaceResult'])
+            ->name('laboratory-results.replace');
 
         Route::get('/activity-logs', [PatientController::class, 'activityLogs'])
             ->name('activity.logs');
@@ -287,6 +322,14 @@ Route::prefix('doctor')
     ->group(function () {
 
         Route::get('/dashboard', [DoctorController::class, 'dashboard'])->name('dashboard');
+
+        // Notifications (read/unread persistence — AJAX). Mirrors the
+        // Admin/Staff/Patient notification routes, scoped entirely to
+        // doctor_notification_reads via DoctorNotificationController.
+        Route::post('/notifications/read', [DoctorNotificationController::class, 'markRead'])
+            ->name('notifications.read');
+        Route::post('/notifications/read-all', [DoctorNotificationController::class, 'markAllRead'])
+            ->name('notifications.read-all');
 
         // Profile (read-only view)
         Route::get('/profile', [DoctorController::class, 'profile'])->name('profile');
@@ -390,6 +433,30 @@ Route::prefix('doctor')
         Route::get('/medical-records/{appointment}', [DoctorAppointmentController::class, 'showMedicalRecord'])
             ->name('medical-records.show');
 
+        // ================= LABORATORY REQUESTS / RESULTS =================
+        // Core Doctor workflow (create + review), same as Appointments /
+        // Medical Records — gated only by role:Doctor above, never by a
+        // permission slug, so it never depends on the Staff
+        // 'upload_laboratory_result' permission.
+        Route::post('/appointments/{id}/laboratory-request', [DoctorLaboratoryRequestController::class, 'store'])
+            ->name('laboratory-requests.store');
+        Route::get('/laboratory-requests', [DoctorLaboratoryRequestController::class, 'index'])
+            ->name('laboratory-requests.index');
+        Route::get('/laboratory-requests/{laboratoryRequest}', [DoctorLaboratoryRequestController::class, 'show'])
+            ->name('laboratory-requests.show');
+        Route::get('/laboratory-requests/{laboratoryRequest}/print', [DoctorLaboratoryRequestController::class, 'print'])
+            ->name('laboratory-requests.print');
+        Route::post('/laboratory-requests/{laboratoryRequest}/review', [DoctorLaboratoryRequestController::class, 'review'])
+            ->name('laboratory-requests.review');
+        Route::post('/laboratory-requests/{laboratoryRequest}/request-correction', [DoctorLaboratoryRequestController::class, 'requestCorrection'])
+            ->name('laboratory-requests.request-correction');
+        // Correct / remove a request saved by mistake — only while it is
+        // still Awaiting Result (guarded in the controller).
+        Route::put('/laboratory-requests/{laboratoryRequest}', [DoctorLaboratoryRequestController::class, 'update'])
+            ->name('laboratory-requests.update');
+        Route::delete('/laboratory-requests/{laboratoryRequest}', [DoctorLaboratoryRequestController::class, 'destroy'])
+            ->name('laboratory-requests.destroy');
+
         // ================= MEDICINE INVENTORY (shared module) =================
         // Doctor access depends entirely on what Admin granted via
         // Manage Permissions — direct URL access is blocked the same
@@ -410,34 +477,35 @@ Route::prefix('doctor')
         Route::delete('/account-settings/signature', [DoctorController::class, 'removeSignature'])
             ->name('signature.remove');
 
-        // Medical Certificates (request → review → issue workflow)
+        // Medical Certificates — created by the Doctor from a COMPLETED
+        // consultation (never requested online by the patient). Saving the
+        // form issues the certificate and attaches its invoice; the fee is
+        // paid at Staff → Billing & Payments, the Doctor prints it once paid
+        // and signs the paper copy, and Staff releases it.
+        //
+        // NOTE: the fixed "/create" path is declared before the
+        // {medicalCertificate} routes so it isn't captured as a certificate ID.
         Route::get('/medical-certificates', [DoctorMedicalCertificateController::class, 'index'])
             ->name('medical-certificates.index');
+
+        Route::get('/medical-certificates/create', [DoctorMedicalCertificateController::class, 'create'])
+            ->name('medical-certificates.create');
+
+        Route::post('/medical-certificates', [DoctorMedicalCertificateController::class, 'store'])
+            ->name('medical-certificates.store');
 
         Route::get('/medical-certificates/{medicalCertificate}', [DoctorMedicalCertificateController::class, 'show'])
             ->name('medical-certificates.show');
 
-        Route::get('/medical-certificates/{medicalCertificate}/create', [DoctorMedicalCertificateController::class, 'create'])
-            ->name('medical-certificates.create');
-
-        Route::post('/medical-certificates/{medicalCertificate}/issue', [DoctorMedicalCertificateController::class, 'issue'])
-            ->name('medical-certificates.issue');
-
-        Route::post('/medical-certificates/{medicalCertificate}/reject', [DoctorMedicalCertificateController::class, 'reject'])
-            ->name('medical-certificates.reject');
-
-        // Direct creation for walk-in / face-to-face patients
-        // (placed before the {medicalCertificate} routes below so
-        // "create-direct" isn't captured as a certificate ID)
-        Route::get('/medical-certificates-direct/create', [DoctorMedicalCertificateController::class, 'directIndex'])
-            ->name('medical-certificates.direct.index');
-
-        Route::post('/medical-certificates-direct', [DoctorMedicalCertificateController::class, 'directStore'])
-            ->name('medical-certificates.direct.store');
-
-        // Correction requests
+        // Corrections of an already-issued certificate
         Route::get('/medical-certificates/{medicalCertificate}/correction', [DoctorMedicalCertificateController::class, 'reviewCorrection'])
             ->name('medical-certificates.correction.review');
+
+        Route::get('/medical-certificates/{medicalCertificate}/correction/edit', [DoctorMedicalCertificateController::class, 'editCorrection'])
+            ->name('medical-certificates.correction.edit');
+
+        Route::post('/medical-certificates/{medicalCertificate}/correction', [DoctorMedicalCertificateController::class, 'updateCorrection'])
+            ->name('medical-certificates.correction.update');
 
         Route::post('/medical-certificates/{medicalCertificate}/correction/reject', [DoctorMedicalCertificateController::class, 'rejectCorrection'])
             ->name('medical-certificates.correction.reject');
@@ -539,6 +607,15 @@ Route::prefix('admin')
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
+        // Valid ID of a registrant — streamed from private storage to Admins only.
+        Route::get('/users/{user}/valid-id', [ValidIdController::class, 'show'])
+            ->whereNumber('user')
+            // PreventBackHistory only understands Illuminate responses; this one
+            // is a file stream that already sends its own no-store headers.
+            ->withoutMiddleware('prevent-back-history')
+            ->middleware('throttle:120,1')
+            ->name('users.valid-id');
+
         Route::get('/pending-accounts', [AdminController::class, 'pendingAccounts'])->name('pending');
         Route::post('/approve/{id}', [AdminController::class, 'approveUser'])->name('approve');
         Route::post('/reject/{id}', [AdminController::class, 'rejectUser'])->name('reject');
@@ -554,6 +631,47 @@ Route::prefix('admin')
         Route::put('/permissions/{user}', [PermissionController::class, 'update'])->name('permissions.update');
 
         Route::get('/user-logs', [UserLogController::class, 'index'])->name('user-logs');
+
+        // Website Management (Admin-only) — edits the public landing page
+        // content (see WebsiteManagementController / LandingPageContent).
+        // Same gate as the rest of this group: auth + verified + role:Admin.
+        Route::prefix('website')->name('website.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\WebsiteManagementController::class, 'index'])->name('index');
+            Route::put('/settings/{group}', [\App\Http\Controllers\Admin\WebsiteManagementController::class, 'updateSettings'])
+                ->where('group', '[a-z]+')->name('settings.update');
+            Route::post('/items', [\App\Http\Controllers\Admin\WebsiteManagementController::class, 'storeItem'])->name('items.store');
+            Route::put('/items/{item}', [\App\Http\Controllers\Admin\WebsiteManagementController::class, 'updateItem'])->whereNumber('item')->name('items.update');
+            Route::post('/items/{item}/toggle', [\App\Http\Controllers\Admin\WebsiteManagementController::class, 'toggleItem'])->whereNumber('item')->name('items.toggle');
+            Route::post('/items/{item}/move/{direction}', [\App\Http\Controllers\Admin\WebsiteManagementController::class, 'moveItem'])
+                ->whereNumber('item')->whereIn('direction', ['up', 'down'])->name('items.move');
+            Route::delete('/items/{item}', [\App\Http\Controllers\Admin\WebsiteManagementController::class, 'destroyItem'])->whereNumber('item')->name('items.destroy');
+        });
+
+        // Backup & Recovery (Admin-only — see BackupController). Each throttle has
+        // its own prefix: without one, Laravel shares a single counter per user
+        // across every throttled route. Download is
+        // by record id, never by filename/path; it opts out of
+        // prevent-back-history only because that middleware cannot wrap a
+        // streamed file response (the controller sends the same no-cache headers).
+        Route::get('/backups', [BackupController::class, 'index'])->name('backups.index');
+        Route::post('/backups', [BackupController::class, 'store'])
+            ->middleware('throttle:5,1,backup-create')
+            ->name('backups.store');
+        Route::get('/backups/{backup}/download', [BackupController::class, 'download'])
+            ->whereNumber('backup')
+            ->middleware('throttle:20,1,backup-download')
+            ->withoutMiddleware('prevent-back-history')
+            ->name('backups.download');
+
+        // Restore (Phase 4). By record id only; typed confirmation is checked
+        // server-side; the POST is rate limited with its own counter.
+        Route::get('/backups/{backup}/restore', [BackupRestoreController::class, 'show'])
+            ->whereNumber('backup')
+            ->name('backups.restore');
+        Route::post('/backups/{backup}/restore', [BackupRestoreController::class, 'run'])
+            ->whereNumber('backup')
+            ->middleware('throttle:3,1,backup-restore')
+            ->name('backups.restore.run');
 
         // Billing & Payments (monitoring — read only)
         Route::get('/billing', [AdminBillingController::class, 'index'])->name('billing.index');
@@ -598,11 +716,12 @@ Route::prefix('staff')
         // regardless of what the Blade view shows/hides. Admin bypasses
         // all of them via User::hasPermission(); this group is Staff-only
         // (role:Staff above), so that bypass never leaks these routes to
-        // any other role. `view_appointments` is the basic/default
-        // permission every Staff account always has (see
-        // Permission::defaultSlugsForRole()), so this gate never
-        // actually blocks a normal Staff account — it exists so a
-        // manually-crafted request still can't bypass it.
+        // any other role. `view_appointments` is part of the standard
+        // Staff default (see Permission::defaultSlugsForRole()), but it is
+        // NOT guaranteed: a Staff account created with the Cashier preset
+        // (billing permissions only), or any Staff Admin has restricted in
+        // Manage Permissions, does not have it — and this gate is what
+        // keeps such an account out even if it types the URL by hand.
         Route::get('/appointments', [StaffAppointmentController::class, 'index'])
             ->middleware('permission:view_appointments')
             ->name('appointments.index');
@@ -643,6 +762,26 @@ Route::prefix('staff')
         Route::post('/appointments/{id}/check-in', [StaffAppointmentController::class, 'checkIn'])
             ->middleware('permission:check_in_appointment')
             ->name('appointments.checkIn');
+
+        // Add an EXISTING patient to today's Walk-in Queue (Patients page ->
+        // action menu -> Add to Queue). Creates one 'Walk-in' visit with no
+        // reserved time; reuses the existing walk-in intake permission.
+        Route::post('/walk-in-queue', [StaffAppointmentController::class, 'addToQueue'])
+            ->middleware('permission:add_walk_in_patient')
+            ->name('walk-in-queue.store');
+
+        // Remove a still-Waiting walk-in from the queue (silent: no patient
+        // email/SMS). Same permission as adding to the queue.
+        Route::post('/walk-in-queue/{id}/remove', [StaffAppointmentController::class, 'removeFromQueue'])
+            ->where('id', '[0-9]+')
+            ->middleware('permission:add_walk_in_patient')
+            ->name('walk-in-queue.remove');
+
+        // Staff records Vital Signs (before Check-In) on the appointment's
+        // existing medical record. The Doctor only ever VIEWS them.
+        Route::post('/appointments/{id}/vital-signs', [StaffAppointmentController::class, 'saveVitalSigns'])
+            ->middleware('permission:record_vital_signs')
+            ->name('appointments.vitalSigns.save');
 
         Route::patch('/prescriptions/{prescription}/dispense', [StaffPrescriptionController::class, 'dispense'])
             ->middleware('permission:dispense_prescription')
@@ -697,6 +836,12 @@ Route::prefix('staff')
         Route::put('/profile', [StaffController::class, 'updateProfile'])
             ->name('profile.update');
 
+        Route::put('/profile/avatar', [StaffController::class, 'updateAvatar'])
+            ->name('profile.avatar.update');
+
+        Route::delete('/profile/avatar', [StaffController::class, 'removeAvatar'])
+            ->name('profile.avatar.remove');
+
         Route::get('/change-password', [StaffController::class, 'changePassword'])
             ->name('change-password');
 
@@ -712,6 +857,11 @@ Route::prefix('staff')
             ->middleware('permission:view_billing')
             ->name('billing.show');
 
+        // Per-item discount — applied BEFORE payment, same counter permission.
+        Route::post('/billing/{invoice}/discounts', [StaffBillingController::class, 'updateDiscounts'])
+            ->middleware('permission:record_payment')
+            ->name('billing.discounts.update');
+
         Route::post('/billing/{invoice}/payments', [StaffBillingController::class, 'storePayment'])
             ->middleware('permission:record_payment')
             ->name('billing.payments.store');
@@ -719,6 +869,34 @@ Route::prefix('staff')
         Route::get('/billing/{invoice}/receipt/{payment}', [StaffBillingController::class, 'receipt'])
             ->middleware('permission:view_payment_history')
             ->name('billing.receipt');
+
+        // ================= MEDICAL CERTIFICATES (release only) =================
+        Route::get('/medical-certificates', [StaffMedicalCertificateController::class, 'index'])
+            ->middleware('permission:view_medical_certificates')
+            ->name('medical-certificates.index');
+
+        Route::post('/medical-certificates/{medicalCertificate}/release', [StaffMedicalCertificateController::class, 'release'])
+            ->middleware('permission:release_medical_certificate')
+            ->name('medical-certificates.release');
+
+        // ================= LABORATORY REQUESTS / RESULTS =================
+        // Staff can only ever VIEW the queue and UPLOAD a result file —
+        // there is no review/interpret action anywhere in this
+        // controller. Neither permission is granted by default to any
+        // Staff account; Admin must explicitly grant them via Manage
+        // Permissions, same as every other module here.
+        Route::get('/laboratory-requests', [StaffLaboratoryRequestController::class, 'index'])
+            ->middleware('permission:view_laboratory_requests')
+            ->name('laboratory-requests.index');
+        Route::post('/laboratory-requests/{laboratoryRequest}/upload', [StaffLaboratoryRequestController::class, 'upload'])
+            ->middleware('permission:upload_laboratory_result')
+            ->name('laboratory-requests.upload');
+        // Replacing an incorrect result is the same authorized action as
+        // uploading one in the first place (Section 11 of the workflow
+        // spec) — reuses the same permission rather than inventing a new one.
+        Route::post('/laboratory-requests/{laboratoryRequest}/results/{result}/replace', [StaffLaboratoryRequestController::class, 'replaceResult'])
+            ->middleware('permission:upload_laboratory_result')
+            ->name('laboratory-requests.replace');
 
         // ================= MEDICINE INVENTORY (shared module) =================
         // Staff access depends entirely on what Admin granted via

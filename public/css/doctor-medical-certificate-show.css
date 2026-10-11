@@ -1,0 +1,415 @@
+/* ==========================================================
+   DOCTOR — MEDICAL CERTIFICATE (VIEW / SHOW)
+   doctor-medical-certificate-show.css
+
+   Same design system as doctor-dashboard.css and
+   doctor-medical-certificate-create.css: purple hero banner,
+   info-cards, pill buttons. Self-contained.
+   ========================================================== */
+
+:root {
+    --primary:        #6a0dad;
+    --primary-dark:   #560aaf;
+    --primary-light:  #9b30ff;
+    --primary-soft:   #f3e8ff;
+    --accent-amber:   #f59e0b;
+    --accent-amber-d: #b45309;
+    --accent-amber-bg:#fffbeb;
+    --accent-green:   #10b981;
+    --accent-green-d: #047857;
+    --accent-green-bg:#f0fbf6;
+    --accent-blue:    #4f46e5;
+    --accent-blue-bg: #f0f2ff;
+    --accent-red:     #ef4444;
+
+    --text-dark:   #1a1a2e;
+    --text-mid:    #444;
+    --text-light:  #888;
+
+    --bg-page:   #f4f0fa;
+    --bg-card:   #ffffff;
+    --border:    #f0eaf8;
+    --border-input: #e5d9f7;
+    --shadow-sm: 0 2px 8px rgba(106,13,173,0.07);
+    --shadow-md: 0 6px 20px rgba(106,13,173,0.10);
+
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+
+    --transition: 0.22s ease;
+}
+
+body {
+    background: var(--bg-page);
+    color: var(--text-dark);
+}
+
+/* ============================================================
+   BACK LINK
+   ============================================================ */
+.mc-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 16px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: #fff;
+    border: 1.5px solid var(--border-input);
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all var(--transition);
+}
+
+.mc-back:hover,
+.mc-back:focus-visible {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.mc-back:focus-visible { outline: 3px solid var(--primary-light); outline-offset: 2px; }
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.mc-hero {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 12px 30px rgba(106,13,173,0.28);
+    padding: 28px 34px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.mc-hero::before,
+.mc-hero::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.10);
+    pointer-events: none;
+}
+
+.mc-hero::before { width: 240px; height: 240px; top: -90px; right: -50px; }
+.mc-hero::after  { width: 150px; height: 150px; bottom: -70px; right: 160px; background: rgba(255,255,255,0.07); }
+
+.mc-hero-left {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+}
+
+.mc-hero-badge {
+    width: 54px;
+    height: 54px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.35);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 25px;
+    color: #fff;
+}
+
+.mc-hero-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.4px;
+    margin: 0 0 4px;
+}
+
+.mc-hero-subtitle {
+    font-size: 14px;
+    color: rgba(255,255,255,0.85);
+    margin: 0;
+}
+
+/* Status pill in the hero (white pill so it reads on the gradient) */
+.mc-hero-status {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border-radius: 999px;
+    background: #fff;
+    font-size: 12.5px;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.mc-hero-status i { font-size: 15px; }
+.mc-hero-status.pending              { color: var(--accent-amber-d); }
+.mc-hero-status.issued               { color: var(--accent-green); }
+.mc-hero-status.released             { color: var(--accent-green-d); }
+.mc-hero-status.rejected             { color: var(--accent-red); }
+.mc-hero-status.correction_requested { color: var(--accent-blue); }
+
+/* ============================================================
+   ALERTS
+   ============================================================ */
+.mc-alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    margin-bottom: 20px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.mc-alert i { font-size: 18px; flex-shrink: 0; }
+.mc-alert--success { background: var(--accent-green-bg); border: 1px solid #a7f3d0; color: var(--accent-green-d); }
+.mc-alert--error   { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.mc-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+.mc-grid--single { grid-template-columns: minmax(0, 1fr); }
+
+.mc-main,
+.mc-side {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+}
+
+.mc-side { position: sticky; top: 82px; }
+
+/* ============================================================
+   INFO CARD
+   ============================================================ */
+.info-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow var(--transition);
+}
+
+.info-card:hover { box-shadow: var(--shadow-md); }
+
+.info-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.info-card-title { display: flex; align-items: center; gap: 12px; }
+
+.info-card-title h3 {
+    font-size: 15.5px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin: 0;
+}
+
+.info-card-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    background: var(--primary-soft);
+    color: var(--primary);
+}
+
+.info-card-icon--red { background: #fef2f2; color: var(--accent-red); }
+
+/* ============================================================
+   DETAIL ROWS
+   ============================================================ */
+.mc-detail-list { display: flex; flex-direction: column; }
+
+.mc-detail-row {
+    display: grid;
+    grid-template-columns: 170px minmax(0, 1fr);
+    gap: 14px;
+    align-items: baseline;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.mc-detail-row:first-child { padding-top: 0; }
+.mc-detail-row:last-child  { border-bottom: none; padding-bottom: 0; }
+
+.mc-detail-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: var(--text-light);
+}
+
+.mc-detail-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dark);
+    line-height: 1.55;
+    word-break: break-word;
+}
+
+/* Only for text the doctor typed: keep their line breaks */
+.mc-pre { white-space: pre-line; }
+
+.mc-detail-value--mono { font-variant-numeric: tabular-nums; letter-spacing: 0.2px; }
+
+/* ============================================================
+   PILLS
+   ============================================================ */
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    white-space: nowrap;
+    text-transform: capitalize;
+}
+
+.status-pill--green { background: var(--accent-green-bg); color: var(--accent-green); }
+.status-pill--amber { background: var(--accent-amber-bg); color: var(--accent-amber); }
+
+/* ============================================================
+   SIDE — billing & release
+   ============================================================ */
+.mc-side-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.mc-side-row:first-child { padding-top: 0; }
+.mc-side-row:last-child  { border-bottom: none; padding-bottom: 0; }
+
+.mc-side-row .mc-detail-value { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* ============================================================
+   PRINT ACTION
+   ============================================================ */
+.mc-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    width: 100%;
+    padding: 12px 20px;
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all var(--transition);
+}
+
+.mc-btn i { font-size: 18px; }
+.mc-btn:focus-visible { outline: 3px solid var(--primary-light); outline-offset: 2px; }
+
+.mc-btn--primary {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    border: 1.5px solid transparent;
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(106,13,173,0.28);
+}
+
+.mc-btn--primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(106,13,173,0.36);
+}
+
+.mc-note {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin: 14px 0 0;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--text-mid);
+}
+
+.mc-note i { font-size: 17px; color: var(--primary); flex-shrink: 0; margin-top: 1px; }
+
+.mc-note--warn {
+    margin: 0;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    background: var(--accent-amber-bg);
+    border: 1px solid #fde68a;
+    color: var(--accent-amber-d);
+    font-weight: 600;
+}
+
+.mc-note--warn i { color: var(--accent-amber); }
+
+/* ============================================================
+   REJECTION BOX
+   ============================================================ */
+.mc-rejection {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    font-size: 13.5px;
+    line-height: 1.55;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media screen and (max-width: 1100px) {
+    .mc-grid { grid-template-columns: minmax(0, 1fr); }
+    .mc-side { position: static; }
+}
+
+@media screen and (max-width: 640px) {
+    .mc-hero { padding: 22px 20px; }
+    .mc-hero-title { font-size: 20px; }
+    .info-card { padding: 18px 16px; }
+    .mc-detail-row { grid-template-columns: minmax(0, 1fr); gap: 3px; }
+}

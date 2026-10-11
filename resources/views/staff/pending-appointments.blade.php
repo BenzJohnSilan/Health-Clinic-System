@@ -55,7 +55,7 @@
                     <td>
                         {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('F j, Y') }}
                         at
-                        {{ \Carbon\Carbon::parse($appointment->appointment_time)->format('g:i A') }}
+                        {{ $appointment->timeLabel('g:i A') }}
                     </td>
                     <td>{{ $appointment->reason ?? '-' }}</td>
                     <td>

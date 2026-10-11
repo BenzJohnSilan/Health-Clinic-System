@@ -3,19 +3,30 @@
 @section('head')
 <link rel="stylesheet" href="{{ asset('css/patient-prescription.css') }}">
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+    /* Opened in its own tab: show only the prescription on SCREEN — no Patient sidebar/header.
+       Screen-only on purpose: the printed prescription is left exactly as it always was. */
+    @media screen {
+        .sidebar,
+        .sidebar-backdrop,
+        .admin-header { display: none !important; }
+        .main-content { margin-left: 0 !important; }
+    }
+</style>
 @endsection
 
 @section('content')
 
 {{-- ── Action bar (hidden on print) ── --}}
 <div class="rx-action-bar no-print">
-    <a href="{{ url()->previous() }}" class="btn-rx-back">
+    <button type="button" class="btn-rx-back" id="rxCloseBtn"
+            data-fallback="{{ route('patient.appointment.show', $appointment->id) }}">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
              stroke="currentColor" stroke-width="2" width="15" height="15">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
         </svg>
-        Back
-    </a>
+        Close
+    </button>
 
     <button class="btn-rx-print" onclick="window.print()">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -164,10 +175,24 @@
 
 </div>{{-- /#rx-printable --}}
 
+<script>
+    // This page opens in its own tab (from the Consultation Summary).
+    // Browsers only let a script close a tab it opened itself; if the tab
+    // is still open right after close(), fall back to the summary page.
+    (function () {
+        var btn = document.getElementById('rxCloseBtn');
+        btn.addEventListener('click', function () {
+            window.close();
+            setTimeout(function () {
+                if (!window.closed) { window.location.href = btn.dataset.fallback; }
+            }, 250);
+        });
+    })();
+</script>
+
 @if($autoprint ?? false)
 <script>
-    // Reached from the Medical Report's "Print Prescription" button —
-    // open the browser print dialog automatically.
+    // Reached with ?autoprint=1 — open the browser print dialog automatically.
     window.addEventListener('load', function () {
         window.print();
     });

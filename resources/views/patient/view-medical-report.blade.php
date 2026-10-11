@@ -27,15 +27,27 @@
             <p>Consultation details and medical information</p>
         </div>
 
-        <a href="{{ route('patient.prescription.show', ['id' => $appointment->id, 'autoprint' => 1]) }}"
-           class="mr-btn-print">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                 stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M9 16h6v5H9v-5z"/>
-            </svg>
-            Print Prescription
-        </a>
+        <div class="mr-header-actions">
+            <a href="{{ route('patient.medical-report.print', ['id' => $appointment->id, 'autoprint' => 1]) }}"
+               class="mr-btn-print">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                     stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Print Medical Report
+            </a>
+
+            <a href="{{ route('patient.prescription.show', ['id' => $appointment->id, 'autoprint' => 1]) }}"
+               class="mr-btn-print mr-btn-print--secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                     stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M9 16h6v5H9v-5z"/>
+                </svg>
+                Print Prescription
+            </a>
+        </div>
     </div>
 
     {{-- ================= CONSULTATION INFORMATION ================= --}}
@@ -51,7 +63,7 @@
             <div class="mr-field">
                 <span class="mr-label">Time</span>
                 <span class="mr-value">
-                    {{ \Carbon\Carbon::parse($appointment->appointment_time)->format('h:i A') }}
+                    {{ $appointment->timeLabel('h:i A') }}
                 </span>
             </div>
             <div class="mr-field">

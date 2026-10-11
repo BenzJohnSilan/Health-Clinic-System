@@ -94,7 +94,9 @@ nav {
 }
 
 .nav-center a:hover { color: var(--purple-dark); }
-.nav-center a:hover::after { width: 100%; }
+.nav-center a:hover::after,
+.nav-center a.active::after { width: 100%; }
+.nav-center a.active { color: var(--purple-dark); }
 
 .nav-links { display: flex; gap: 12px; align-items: center; }
 
@@ -179,7 +181,7 @@ nav {
     position: relative;
     z-index: 1;
     display: grid;
-    grid-template-columns: 1.05fr 0.95fr;
+    grid-template-columns: 1fr 1fr;
     align-items: center;
     gap: 60px;
     max-width: 1180px;
@@ -1097,7 +1099,8 @@ footer::before {
     }
     .nav-center.is-open { display: flex; }
     .nav-center a { display: block; padding: 12px 14px; border-radius: 10px; }
-    .nav-center a:hover { background: var(--bg); }
+    .nav-center a:hover,
+    .nav-center a.active { background: var(--bg); }
 
     #home { padding: 100px 24px 60px; text-align: center; }
     .hero-grid { grid-template-columns: 1fr; gap: 56px; }
@@ -1191,4 +1194,272 @@ footer::before {
     .faq-cat-btn { padding: 8px 13px; font-size: 12px; }
     .faq-question { padding: 16px; font-size: 14px; }
     .faq-answer, .faq-item.open .faq-answer { padding-left: 16px; padding-right: 16px; }
+}
+
+/* ===== ADMIN-UPLOADED IMAGES (Website Management) =====
+   Pictures are shown on their own: no frame, card, shadow or background.
+   A transparent PNG gives the cleanest result. */
+.hero-banner-img {
+    display: block;
+    width: 100%; max-width: 720px; height: auto; max-height: 620px;
+    object-fit: contain;
+}
+
+.about-right:has(.about-img-photo) { flex: 1.2; }
+.about-img-photo {
+    display: block;
+    width: 100%; max-width: 560px; height: auto; max-height: 540px;
+    object-fit: contain;
+}
+
+/* Hero with a picture: give the picture the larger share. */
+.hero-grid:not(.is-text-only) { grid-template-columns: 0.9fr 1.1fr; }
+@media (max-width: 900px) { .hero-grid:not(.is-text-only) { grid-template-columns: 1fr; } }
+.hero-banner-img { margin-left: auto; margin-right: auto; }
+
+/* Hero without a picture: one centred column instead of an empty right half. */
+.hero-grid.is-text-only {
+    grid-template-columns: 1fr;
+    max-width: 860px;
+    text-align: center;
+}
+.hero-grid.is-text-only .hero-content > p { max-width: 640px; margin-left: auto; margin-right: auto; font-size: 18px; }
+.hero-grid.is-text-only .hero-content h1 { font-size: 3.9rem; }
+.hero-grid.is-text-only .hero-buttons { justify-content: center; }
+
+.service-icon { overflow: hidden; }
+.service-photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+@media (max-width: 900px) {
+    .hero-grid.is-text-only .hero-content h1 { font-size: 2.4rem; }
+    .hero-grid.is-text-only .hero-content > p { font-size: 16px; }
+    .about-img-photo { max-width: 420px; margin: 0 auto; }
+}
+@media (max-width: 480px) {
+    .hero-grid.is-text-only .hero-content h1 { font-size: 2.05rem; }
+}
+
+/* =====================================================================
+   PROFESSIONAL POLISH
+   Consistent widths and spacing, calmer hero, cleaner cards, better
+   focus states. Pure presentation: no content or behaviour changes.
+   ===================================================================== */
+:root {
+    --pro-container: 1160px;
+    --pro-border: #e8e3f3;
+    --pro-shadow: 0 1px 2px rgba(26,26,46,.04), 0 8px 24px rgba(106,17,203,.06);
+    --pro-shadow-hover: 0 2px 4px rgba(26,26,46,.05), 0 16px 36px rgba(106,17,203,.14);
+    --text-muted: #5b5b6b;
+}
+
+body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+/* One container width for every section */
+.about-inner, .contact-inner, .location-inner { max-width: var(--pro-container); }
+section { padding: 96px 60px; }
+
+/* ---- Navbar ---- */
+nav {
+    background: rgba(255,255,255,.92);
+    -webkit-backdrop-filter: saturate(1.4) blur(10px);
+    backdrop-filter: saturate(1.4) blur(10px);
+    border-bottom: 1px solid var(--pro-border);
+    box-shadow: 0 1px 12px rgba(26,26,46,.04);
+}
+
+/* ---- Hero: compact, calm, no spinning ornaments ---- */
+#home {
+    min-height: auto;
+    padding: 148px 60px 112px;
+    background:
+        radial-gradient(900px 420px at 85% -10%, rgba(160,68,255,.14), transparent 60%),
+        radial-gradient(700px 380px at 5% 110%, rgba(106,17,203,.09), transparent 60%),
+        linear-gradient(180deg, #faf8ff 0%, #f5f7fb 100%);
+}
+#home::before, #home::after, .hero::before { display: none; }
+#home::after {
+    display: block; width: auto; height: 1px; inset: auto 0 0 0; border-radius: 0; animation: none;
+    background: linear-gradient(90deg, transparent, var(--pro-border), transparent);
+}
+.hero-badge { letter-spacing: .02em; border: 1px solid rgba(106,17,203,.18); }
+.hero-content h1 { letter-spacing: -.02em; line-height: 1.12; }
+.hero-content > p { color: var(--text-muted); }
+.hero-grid.is-text-only { max-width: 880px; }
+
+/* ---- Section headings ---- */
+.section-title { letter-spacing: -.01em; }
+.section-sub { max-width: 640px; margin-left: auto; margin-right: auto; }
+.section-label { font-size: 12px; letter-spacing: .16em; }
+
+/* ---- Cards: one consistent surface ---- */
+.service-card, .portal-feature, .location-card, .contact-form, .faq-item {
+    background: #fff;
+    border: 1px solid var(--pro-border);
+    box-shadow: var(--pro-shadow);
+    border-radius: 16px;
+}
+.service-card, .portal-feature, .location-card {
+    transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.service-card:hover, .portal-feature:hover, .location-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--pro-shadow-hover);
+    border-color: rgba(106,17,203,.28);
+}
+.contact-form { padding: 32px; border-radius: 20px; }
+
+/* Contact details sit on cards too, so the left column is not bare */
+.contact-info { display: flex; flex-direction: column; gap: 16px; }
+.contact-item {
+    background: #fff; border: 1px solid var(--pro-border); box-shadow: var(--pro-shadow);
+    border-radius: 16px; padding: 18px 20px; margin: 0;
+}
+.contact-item:hover { transform: translateY(-2px); }
+
+/* ---- FAQ ---- */
+.faq-item { transition: border-color .2s ease, box-shadow .2s ease; }
+.faq-item:hover, .faq-item.open, .faq-item.active { border-color: rgba(106,17,203,.35); }
+
+/* ---- Map ---- */
+.map-wrap { border-radius: 16px; border: 1px solid var(--pro-border); box-shadow: var(--pro-shadow); overflow: hidden; }
+
+/* ---- Footer ---- */
+footer { border-top: 3px solid var(--purple-dark); }
+
+/* ---- Accessibility ---- */
+a:focus-visible, button:focus-visible, input:focus-visible,
+textarea:focus-visible, select:focus-visible, summary:focus-visible {
+    outline: 3px solid rgba(160,68,255,.55); outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+    .reveal { opacity: 1; transform: none; }
+    .hero-content { opacity: 1; transform: none; }
+}
+
+@media (max-width: 900px) {
+    section { padding: 68px 22px; }
+    #home { padding: 112px 22px 72px; }
+    .contact-form { padding: 22px; }
+}
+
+/* About: label belongs to the left-aligned text block */
+.about-left .section-label { justify-content: flex-start; }
+.services-grid, .portal-features-grid { max-width: var(--pro-container); }
+.about-left .section-label::before { display: none; }
+
+/* =====================================================================
+   DESIGN PASS 2
+   One memorable element (the quick-info bar that overlaps the hero),
+   quieter section headings, left-aligned service cards.
+   ===================================================================== */
+:root { --ink: #1b1530; --wash: #f6f3fb; }
+
+/* ---- Hero: more confident headline, calmer badge ---- */
+#home { padding-bottom: 150px; }
+.hero-grid.is-text-only .hero-content h1 { font-size: 4.25rem; line-height: 1.06; letter-spacing: -.025em; }
+.hero-badge { background: #fff; border: 1px solid var(--pro-border); color: var(--ink); font-weight: 500; box-shadow: 0 1px 2px rgba(26,26,46,.05); }
+.hero-badge i { color: var(--purple-dark); }
+
+/* ---- Quick info bar ---- */
+section.quick-info { padding: 0 60px; margin-top: -64px; position: relative; z-index: 3; background: transparent; }
+.quick-info-inner {
+    max-width: var(--pro-container); margin: 0 auto;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    background: #fff; border: 1px solid var(--pro-border); border-radius: 18px;
+    box-shadow: 0 2px 4px rgba(26,26,46,.04), 0 24px 48px rgba(27,21,48,.12);
+    overflow: hidden;
+}
+.quick-item {
+    display: flex; align-items: center; gap: 16px; padding: 24px 28px;
+    color: inherit; text-decoration: none; min-width: 0;
+    transition: background .2s ease;
+}
+.quick-item + .quick-item { border-left: 1px solid var(--pro-border); }
+a.quick-item:hover { background: var(--wash); }
+.quick-icon {
+    flex: none; width: 46px; height: 46px; border-radius: 12px;
+    display: grid; place-items: center; font-size: 22px;
+    color: var(--purple-dark); background: var(--wash);
+}
+.quick-item small { display: block; font-size: 12.5px; color: var(--text-muted); margin-bottom: 2px; }
+.quick-item strong { display: block; font-size: 15px; font-weight: 500; color: var(--ink); line-height: 1.4; overflow-wrap: anywhere; }
+
+/* ---- Section headings: no ornaments, sentence-case label ---- */
+.section-label {
+    text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 500;
+    color: var(--purple-dark);
+}
+.section-label::before, .section-label::after { display: none; }
+.section-title::after { display: none; }
+.section-title { font-size: 2.35rem; margin-bottom: 14px; }
+.about-left .section-label { justify-content: flex-start; }
+
+/* ---- Services: left-aligned, icon on top, accent on hover ---- */
+.service-card { text-align: left; position: relative; overflow: hidden; }
+.service-card::before {
+    content: ''; position: absolute; inset: 0 0 auto 0; height: 3px;
+    background: linear-gradient(90deg, var(--purple-dark), var(--purple-light));
+    transform: scaleX(0); transform-origin: left; transition: transform .3s ease;
+}
+.service-card:hover::before { transform: scaleX(1); }
+.service-card .service-icon { margin-left: 0; margin-right: 0; }
+
+/* ---- Alternating rhythm: white / wash ---- */
+#services, #how-it-works, #faqs, #location { background: #fff; }
+#about, #portal-features, #workflow, #contact { background: var(--wash); }
+
+/* ---- Footer: deeper ink ---- */
+footer { background: var(--ink); }
+
+@media (max-width: 900px) {
+    section.quick-info { padding: 0 22px; margin-top: -44px; }
+    .quick-item + .quick-item { border-left: 0; border-top: 1px solid var(--pro-border); }
+    .quick-item { padding: 18px 20px; }
+    #home { padding-bottom: 100px; }
+    .hero-grid.is-text-only .hero-content h1 { font-size: 2.5rem; }
+    .section-title { font-size: 1.9rem; }
+}
+
+/* Hero background must fade out cleanly into the page behind the info bar */
+#home {
+    background:
+        radial-gradient(900px 420px at 85% -10%, rgba(160,68,255,.12), transparent 60%),
+        linear-gradient(180deg, #faf8ff 0%, #f5f7fb 100%);
+}
+#home::after { display: none; }
+.about-left .section-label, #about .section-label { color: var(--purple-dark); }
+
+/* About picture placeholder: on mobile the column shrank to its content,
+   leaving the icon card thin. Give the column the full width instead. */
+@media (max-width: 900px) {
+    .about-inner { align-items: stretch; }
+    .about-right { width: 100%; flex: none; }
+    .about-img-wrap { width: 100%; max-width: 100%; height: 240px; border-radius: 20px; }
+    .about-img-wrap i { font-size: 88px; }
+}
+
+/* Workflow on phones: a centred vertical timeline instead of icons hugging
+   the left edge. The dashed line connects the steps in order. */
+@media (max-width: 960px) {
+    .workflow-track {
+        flex-direction: column; align-items: stretch; gap: 0;
+        max-width: 320px; margin: 0 auto; padding: 0;
+    }
+    .workflow-track::before {
+        display: block; top: 28px; bottom: 28px; left: 27px; right: auto;
+        width: 2px; height: auto;
+        background: repeating-linear-gradient(180deg, rgba(106,17,203,.28) 0 6px, transparent 6px 12px);
+    }
+    .workflow-step {
+        flex: none; flex-direction: row; align-items: center; gap: 18px;
+        padding: 12px 0; text-align: left;
+    }
+    .workflow-icon { flex: none; width: 56px; height: 56px; }
+    .workflow-step span {
+        max-width: none; flex: 1; text-align: left;
+        font-size: 15px; font-weight: 500; color: var(--ink);
+        background: #fff; border: 1px solid var(--pro-border); border-radius: 12px;
+        padding: 14px 16px; box-shadow: var(--pro-shadow);
+    }
 }

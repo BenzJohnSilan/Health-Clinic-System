@@ -45,7 +45,7 @@ class StaffNotificationService
      */
     public function build(User $staff): Collection
     {
-        $items = $this->rawNotifications();
+        $items = $this->rawNotifications($staff);
 
         $readKeys = StaffNotificationRead::where('user_id', $staff->id)
             ->whereIn('notification_key', $items->pluck('key'))
@@ -75,7 +75,7 @@ class StaffNotificationService
      */
     public function markRead(User $staff, string $key): bool
     {
-        $validKeys = $this->rawNotifications()->pluck('key');
+        $validKeys = $this->rawNotifications($staff)->pluck('key');
 
         if (!$validKeys->contains($key)) {
             return false;
@@ -112,9 +112,18 @@ class StaffNotificationService
     // SOURCES — derive the raw (unread-state-agnostic) notification list
     // =========================================================================
 
-    protected function rawNotifications(): Collection
+    protected function rawNotifications(User $staff): Collection
     {
-        $items = $this->appointmentStatusNotifications();
+        // The only source today is appointment activity, which carries
+        // patient names — so it is only built for Staff who may view
+        // appointments (view_appointments). A billing-only Staff member
+        // (e.g. a Cashier) therefore gets an empty feed instead of
+        // appointment events they have no access to. The same filtered list
+        // also backs markRead(), so a key the Staff member cannot see can
+        // never be marked as read either.
+        $items = $staff->hasPermission('view_appointments')
+            ? $this->appointmentStatusNotifications()
+            : collect();
 
         return $items
             ->sortByDesc('timestamp')

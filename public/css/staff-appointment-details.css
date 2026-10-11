@@ -1,0 +1,1097 @@
+/* ==========================================================
+   STAFF - APPOINTMENT DETAILS  (staff-appointment-details.css)
+   Same design system as the Staff Dashboard (staff-dashboard.css):
+   purple gradient hero, rounded info-cards, soft status pills,
+   same palette, shadows, radius and page background.
+
+   NOTE: This is a separate file on purpose. The old
+   staff-appointment-show.css is still used by the Admin
+   appointment page, so it is left untouched.
+   ========================================================== */
+
+/* ============================================================
+   CSS VARIABLES (identical to the dashboard)
+   ============================================================ */
+:root {
+    --primary:        #6a0dad;
+    --primary-light:  #9b30ff;
+    --primary-soft:   #f3e8ff;
+    --accent-amber:   #f59e0b;
+    --accent-amber-bg:#fffbeb;
+    --accent-amber-d: #d97706;
+    --accent-green:   #10b981;
+    --accent-green-bg:#f0fbf6;
+    --accent-blue:    #4f46e5;
+    --accent-blue-bg: #f0f2ff;
+    --accent-red:     #ef4444;
+
+    --text-dark:   #1a1a2e;
+    --text-mid:    #444;
+    --text-light:  #888;
+    --text-xlight: #aaa;
+
+    --bg-page:   #f4f0fa;
+    --bg-card:   #ffffff;
+    --border:    #f0eaf8;
+    --shadow-sm: 0 2px 8px rgba(106, 13, 173, 0.07);
+    --shadow-md: 0 6px 20px rgba(106, 13, 173, 0.10);
+    --shadow-lg: 0 12px 32px rgba(106, 13, 173, 0.14);
+
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+
+    --transition: 0.22s ease;
+}
+
+body {
+    background: var(--bg-page);
+    color: var(--text-dark);
+}
+
+.appointment-details-page {
+    width: 100%;
+}
+
+.appointment-details-page [hidden] {
+    display: none !important;
+}
+
+/* ============================================================
+   HERO  (same purple gradient banner as the dashboard greeting)
+   ============================================================ */
+.page-hero {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+    padding: 30px 34px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 12px 30px rgba(106, 13, 173, 0.28);
+    transition: box-shadow var(--transition);
+}
+
+.page-hero::before,
+.page-hero::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.10);
+    pointer-events: none;
+}
+
+.page-hero::before { width: 240px; height: 240px; top: -90px; right: -50px; }
+.page-hero::after  { width: 150px; height: 150px; bottom: -70px; right: 160px; background: rgba(255, 255, 255, 0.07); }
+
+.page-hero:hover { box-shadow: 0 16px 36px rgba(106, 13, 173, 0.34); }
+
+.page-hero-group {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+}
+
+.hero-icon-badge {
+    width: 54px;
+    height: 54px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(4px);
+    color: #fff;
+    font-size: 22px;
+}
+
+.page-hero h1 {
+    margin: 0 0 4px;
+    color: #fff;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+}
+
+.page-hero p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 14px;
+}
+
+/* ============================================================
+   BACK BUTTON  (sits inside the hero, on the right side)
+   White on purple so it stands out; turns translucent on hover.
+   ============================================================ */
+.back-btn {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    background: #fff;
+    border: 1.5px solid #fff;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all var(--transition);
+}
+
+.back-btn i { font-size: 12px; }
+
+.back-btn:hover,
+.back-btn:focus-visible {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.7);
+    color: #fff;
+    transform: translateX(-2px);
+}
+
+.back-btn:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 2px;
+}
+
+/* ============================================================
+   CARD SYSTEM  (mirrors the dashboard .info-card)
+   ============================================================ */
+.details-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 20px;
+    align-items: stretch;
+    margin-bottom: 20px;
+}
+
+.details-card,
+.vitals-card,
+.prescriptions-card,
+.reason-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 22px 24px;
+    transition: box-shadow var(--transition), transform var(--transition);
+}
+
+.details-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.vitals-card,
+.prescriptions-card { margin-bottom: 20px; }
+
+/* Lift only on the compact cards, same as the dashboard.
+   Big form cards just get a deeper shadow so inputs never jump. */
+.details-card:hover,
+.reason-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-3px);
+}
+
+.vitals-card:hover,
+.prescriptions-card:hover { box-shadow: var(--shadow-md); }
+
+.card-header,
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.card-title-wrap,
+.section-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.card-icon,
+.section-icon,
+.reason-icon {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-size: 17px;
+}
+
+.card-header h2,
+.section-header h2 {
+    margin: 0;
+    color: var(--text-dark);
+    font-size: 15.5px;
+    font-weight: 800;
+    line-height: 1.25;
+}
+
+.card-header p,
+.section-header p {
+    margin: 3px 0 0;
+    color: var(--text-light);
+    font-size: 12.5px;
+    line-height: 1.45;
+}
+
+/* ============================================================
+   PATIENT IDENTITY
+   ============================================================ */
+.identity-block {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
+    background: var(--bg-page);
+}
+
+.avatar {
+    width: 52px;
+    height: 52px;
+    flex: 0 0 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    box-shadow: 0 4px 12px rgba(106, 13, 173, 0.25);
+    color: #fff;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: .3px;
+}
+
+.identity-text {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.identity-name {
+    color: var(--text-dark);
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.patient-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: .2px;
+}
+
+.patient-type-badge i { font-size: 10px; }
+
+.patient-type-badge.registered { background: var(--accent-blue-bg);  color: var(--accent-blue); }
+.patient-type-badge.walkin     { background: var(--accent-amber-bg); color: var(--accent-amber-d); }
+
+/* ============================================================
+   DETAIL ROWS  (same rhythm as the dashboard rows)
+   ============================================================ */
+.detail-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.detail-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 13px 6px;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    transition: background var(--transition);
+}
+
+.detail-row:last-child { border-bottom: 0; }
+.detail-row:hover { background: var(--bg-page); }
+
+.detail-row .label {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 0 0 auto;
+    color: var(--text-light);
+    font-size: 12.5px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.detail-row .label i {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-size: 11px;
+}
+
+.detail-row .value {
+    color: var(--text-dark);
+    font-size: 14px;
+    font-weight: 700;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+/* ============================================================
+   STATUS PILLS  (same colours as the dashboard .status-badge)
+   ============================================================ */
+.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    flex: 0 0 auto;
+    width: fit-content;
+    padding: 5px 13px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: .2px;
+    line-height: 1.2;
+    white-space: nowrap;
+    background: var(--primary-soft);
+    color: var(--primary);
+}
+
+.status i { font-size: 6px; }
+
+.status.pending     { background: var(--accent-amber-bg); color: var(--accent-amber-d); }
+.status.approved    { background: var(--accent-green-bg); color: var(--accent-green); }
+.status.checked-in  { background: #ccfbf1; color: #0f766e; }
+.status.in-progress { background: #ffedd5; color: #c2410c; }
+.status.waiting     { background: #f3e8ff; color: #6b21a8; }
+.status.completed   { background: var(--accent-blue-bg);  color: var(--accent-blue); }
+.status.cancelled,
+.status.rejected    { background: #f3f4f6; color: #6b7280; }
+.status.rescheduled { background: var(--primary-soft); color: var(--primary); }
+.status.no-show     { background: #fff1e6; color: #ea580c; }
+
+/* ============================================================
+   FLASH MESSAGES
+   ============================================================ */
+.alert-success,
+.alert-error {
+    margin-bottom: 18px;
+    padding: 12px 18px;
+    border-radius: var(--radius-md);
+    font-size: 13.5px;
+    font-weight: 600;
+    box-shadow: var(--shadow-sm);
+}
+
+.alert-success {
+    background: var(--accent-green-bg);
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.alert-error {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+/* ============================================================
+   VITAL SIGNS
+   ============================================================ */
+.vitals-saved-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    flex: 0 0 auto;
+    padding: 5px 13px;
+    border-radius: 999px;
+    background: var(--accent-green-bg);
+    color: var(--accent-green);
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: .2px;
+    white-space: nowrap;
+}
+
+.vitals-saved-badge--pending {
+    background: var(--accent-amber-bg);
+    color: var(--accent-amber-d);
+}
+
+.vitals-errors { margin-bottom: 16px; }
+
+.vitals-errors ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.vitals-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 20px;
+}
+
+.vital-field { min-width: 0; }
+
+.vital-field-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 7px;
+}
+
+.vital-field-head > label:first-child {
+    color: var(--text-dark);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.not-taken-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-light);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+}
+
+.not-taken-toggle input {
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+/* input + fixed unit stay attached as one control */
+.vital-input-group {
+    display: flex;
+    align-items: stretch;
+    height: 44px;
+    background: #fff;
+    border: 1.5px solid #e6dcf3;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.vital-input-group:focus-within {
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 3px rgba(155, 48, 255, .14);
+}
+
+.vital-input-group input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 100%;
+    padding: 0 14px;
+    border: 0;
+    background: transparent;
+    color: var(--text-dark);
+    font-size: 14px;
+    font-weight: 700;
+    outline: none;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.vital-input-group input::-webkit-outer-spin-button,
+.vital-input-group input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+}
+
+.vital-input-group input::placeholder {
+    color: #b9aecb;
+    font-weight: 500;
+}
+
+.vital-unit {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    padding: 0 14px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-size: 12.5px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.vital-field.is-not-taken .vital-input-group {
+    background: var(--bg-page);
+    border-style: dashed;
+}
+
+.vital-field.is-not-taken .vital-input-group input:disabled { cursor: not-allowed; }
+
+.vital-reason {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.vital-reason select,
+.vital-reason input {
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    background: #fff;
+    border: 1.5px solid #e6dcf3;
+    border-radius: var(--radius-sm);
+    color: var(--text-dark);
+    font-size: 13px;
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.vital-reason select:focus,
+.vital-reason input:focus {
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 3px rgba(155, 48, 255, .14);
+}
+
+/* ---- actions ---- */
+.vitals-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+}
+
+.vitals-hint {
+    flex: 1 1 260px;
+    margin: 0;
+    color: var(--text-light);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+.vitals-hint i {
+    margin-right: 5px;
+    color: var(--primary);
+}
+
+.vitals-buttons {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.vitals-btn {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 18px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.vitals-btn--primary {
+    border: 1.5px solid transparent;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(106, 13, 173, .25);
+}
+
+.vitals-btn--primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(106, 13, 173, .32);
+}
+
+/* secondary = same as the dashboard's .card-view-btn */
+.vitals-btn--secondary {
+    border: 1.5px solid var(--primary);
+    background: #fff;
+    color: var(--primary);
+}
+
+.vitals-btn--secondary:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+.vitals-btn:focus-visible,
+.dispense-btn:focus-visible {
+    outline: 3px solid var(--primary-light);
+    outline-offset: 2px;
+}
+
+/* ---- read-only vitals ---- */
+.vitals-grid--readonly { padding: 0; }
+
+.vital-readonly {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    padding: 14px 16px;
+    background: var(--bg-page);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    transition: box-shadow var(--transition), transform var(--transition);
+}
+
+.vital-readonly:hover {
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px);
+}
+
+.vital-readonly-label {
+    color: var(--text-light);
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+.vital-readonly-value {
+    color: var(--text-dark);
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.vital-readonly-value small {
+    color: var(--text-light);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.vital-readonly-value.is-missing {
+    color: var(--text-light);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+/* ============================================================
+   PRESCRIPTIONS & DISPENSING
+   Each prescription is its own panel with 3 aligned zones:
+   [ medicine ]   [ quantity tiles ]   [ action / status ]
+   ============================================================ */
+.prescription-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.prescription-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 340px);
+    align-items: center;
+    gap: 20px;
+    padding: 16px 18px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.prescription-item:hover {
+    border-color: #e3d3f5;
+    box-shadow: var(--shadow-sm);
+}
+
+/* ---- zone 1: medicine ---- */
+.prescription-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    min-width: 0;
+}
+
+.medicine-icon {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-size: 16px;
+}
+
+.medicine-info { min-width: 0; }
+
+.medicine-name {
+    color: var(--text-dark);
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.prescription-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 3px;
+    color: var(--text-light);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+.meta-dot { color: #cbbbe0; }
+
+.prescription-instructions {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 7px;
+    margin-top: 10px;
+    padding: 7px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--primary-soft);
+    color: var(--text-mid);
+    font-size: 12.5px;
+    line-height: 1.45;
+}
+
+.prescription-instructions i {
+    margin-top: 2px;
+    color: var(--primary);
+}
+
+/* ---- zone 2: quantity tiles ---- */
+.prescription-stats {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+}
+
+.stat-tile {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    min-width: 116px;
+    padding: 10px 16px;
+    background: var(--bg-page);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    text-align: center;
+}
+
+.stat-label {
+    color: var(--text-light);
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: .2px;
+    white-space: nowrap;
+}
+
+.stat-value {
+    color: var(--text-dark);
+    font-size: 17px;
+    font-weight: 800;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.stat-value small {
+    color: var(--text-light);
+    font-size: 11.5px;
+    font-weight: 600;
+}
+
+/* ---- zone 3: action / status ---- */
+.prescription-action {
+    display: flex;
+    justify-content: flex-end;
+    min-width: 0;
+}
+
+.dispense-form {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 7px;
+}
+
+.dispense-form label {
+    color: var(--text-light);
+    font-size: 11.5px;
+    font-weight: 700;
+}
+
+.dispense-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dispense-controls input {
+    width: 72px;
+    height: 40px;
+    padding: 0 9px;
+    background: #fff;
+    border: 1.5px solid #e6dcf3;
+    border-radius: var(--radius-sm);
+    color: var(--text-dark);
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.dispense-controls input:focus {
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 3px rgba(155, 48, 255, .14);
+}
+
+.dispense-btn {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    box-shadow: 0 4px 12px rgba(106, 13, 173, .25);
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.dispense-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(106, 13, 173, .32);
+}
+
+/* Released / outside-pharmacy status box */
+.dispensed-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--accent-green-bg);
+    border: 1px solid #c9f0dd;
+    border-radius: var(--radius-md);
+}
+
+.dispensed-check {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #d3f5e5;
+    color: var(--accent-green);
+    font-size: 12px;
+}
+
+.dispensed-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.dispensed-text strong {
+    color: var(--text-dark);
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+.dispensed-line {
+    color: var(--text-mid);
+    font-size: 12px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.dispensed-line b {
+    color: var(--text-dark);
+    font-weight: 800;
+}
+
+.dispensed-line--muted { color: var(--text-light); }
+
+/* Outside pharmacy = neutral amber, not the green "done" look */
+.dispensed-info--outside {
+    background: var(--accent-amber-bg);
+    border-color: #fde9b8;
+}
+
+.dispensed-info--outside .dispensed-check {
+    background: #fdf0cc;
+    color: var(--accent-amber-d);
+}
+
+/* ============================================================
+   REASON FOR APPOINTMENT
+   ============================================================ */
+.reason-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.reason-body { min-width: 0; }
+
+.reason-label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--text-light);
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: .2px;
+}
+
+.reason-text {
+    margin: 0;
+    color: var(--text-dark);
+    font-size: 14.5px;
+    font-weight: 600;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1200px) {
+    /* medicine + quantities on the first row, action on its own row */
+    .prescription-item { grid-template-columns: minmax(0, 1fr) auto; }
+
+    .prescription-action {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+    }
+
+    .dispense-form { align-items: flex-start; }
+}
+
+@media (max-width: 1100px) {
+    .details-columns { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 720px) {
+    .vitals-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+
+    .vitals-actions,
+    .vitals-buttons {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .vitals-btn { width: 100%; }
+
+    .prescription-item {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+    }
+
+    .prescription-stats { width: 100%; }
+    .stat-tile { flex: 1; min-width: 0; }
+}
+
+@media (max-width: 600px) {
+    .page-hero { padding: 18px; }
+    .page-hero h1 { font-size: 19px; }
+    .hero-icon-badge { width: 46px; height: 46px; font-size: 19px; }
+
+    /* Back button drops under the title and fills the width on phones */
+    .back-btn { width: 100%; justify-content: center; }
+
+    .details-card,
+    .vitals-card,
+    .prescriptions-card,
+    .reason-card { padding: 18px; }
+
+    .detail-row {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .detail-row .value { text-align: left; }
+}
+
+@media (max-width: 480px) {
+    .page-hero h1 { font-size: 17px; }
+    .page-hero { padding: 16px; }
+
+    .details-card,
+    .vitals-card,
+    .prescriptions-card,
+    .reason-card { padding: 16px; }
+
+    .card-header h2,
+    .section-header h2 { font-size: 14px; }
+
+    .card-icon,
+    .section-icon,
+    .reason-icon { width: 34px; height: 34px; flex-basis: 34px; font-size: 15px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .details-card:hover,
+    .reason-card:hover,
+    .vital-readonly:hover,
+    .back-btn:hover { transform: none; }
+}

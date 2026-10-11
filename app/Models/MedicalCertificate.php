@@ -12,6 +12,7 @@ class MedicalCertificate extends Model
         'appointment_id',
         'patient_id',
         'doctor_id',
+        'invoice_id',
 
         'certificate_number',
 
@@ -32,6 +33,8 @@ class MedicalCertificate extends Model
         'requested_at',
         'issued_at',
         'rejected_at',
+        'released_at',
+        'released_by',
 
         'rejection_reason',
     ];
@@ -42,6 +45,7 @@ class MedicalCertificate extends Model
         'requested_at'    => 'datetime',
         'issued_at'       => 'datetime',
         'rejected_at'     => 'datetime',
+        'released_at'     => 'datetime',
     ];
 
     // ====================
@@ -61,6 +65,21 @@ class MedicalCertificate extends Model
     public function doctor()
     {
         return $this->belongsTo(User::class, 'doctor_id');
+    }
+
+    /**
+     * The invoice carrying this certificate's fee — either the
+     * consultation invoice it was added to (unpaid, same visit) or its own
+     * separate invoice.
+     */
+    public function invoice()
+    {
+        return $this->belongsTo(Invoice::class, 'invoice_id');
+    }
+
+    public function releasedBy()
+    {
+        return $this->belongsTo(User::class, 'released_by');
     }
 
     public function corrections()
@@ -110,6 +129,39 @@ class MedicalCertificate extends Model
         return $this->status === 'issued';
     }
 
+    public function isReleased(): bool
+    {
+        return $this->status === 'released';
+    }
+
+    /**
+     * True when the certificate's fee has been fully paid. A certificate
+     * without an invoice is never considered paid.
+     */
+    public function isPaid(): bool
+    {
+        $invoice = $this->invoice;
+
+        return $invoice !== null && $invoice->status === 'Paid';
+    }
+
+    /**
+     * Printing is only allowed for an ISSUED certificate whose fee is
+     * paid. Printing never changes the status.
+     */
+    public function canBePrinted(): bool
+    {
+        return $this->isIssued() && $this->isPaid();
+    }
+
+    /**
+     * Staff may only release an ISSUED certificate whose fee is paid.
+     */
+    public function canBeReleased(): bool
+    {
+        return $this->isIssued() && $this->isPaid();
+    }
+
     public function isRejected(): bool
     {
         return $this->status === 'rejected';
@@ -128,17 +180,8 @@ class MedicalCertificate extends Model
      */
     public function hasIssuedContent(): bool
     {
-        return in_array($this->status, ['issued', 'correction_requested'], true)
+        return in_array($this->status, ['issued', 'correction_requested', 'released'], true)
             || $this->issued_at !== null;
-    }
-
-    /**
-     * True when the patient is allowed to submit a brand new request for
-     * this same appointment (no active request/certificate blocking it).
-     */
-    public function blocksNewRequest(): bool
-    {
-        return in_array($this->status, ['pending', 'issued', 'correction_requested'], true);
     }
 
     /**

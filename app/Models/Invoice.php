@@ -156,6 +156,72 @@ class Invoice extends Model
         $this->save();
     }
 
+    /**
+     * Item discounts may only change while the invoice is still
+     * completely untouched by payment: Unpaid, nothing paid, no payment
+     * rows. Paid / Partially Paid / Cancelled invoices are finalized.
+     */
+    public function discountEditable(): bool
+    {
+        // Open while no payment exists. (A zero-total invoice is stored as
+        // 'Paid' with no payment rows; Staff must still be able to undo a
+        // 100 % discount they applied.)
+        return $this->isOpenForCharges();
+    }
+
+    /**
+     * Older invoices could carry a discount on the invoice itself with no
+     * per-item discount behind it. Recalculation preserves that figure
+     * as-is; it is not editable through the per-item workflow.
+     */
+    /**
+     * True while no payment has ever been recorded against this invoice and
+     * it is not Cancelled — i.e. it is still safe to add a late charge (a
+     * dispensed medicine, a certificate fee) to it. A zero-total invoice
+     * (e.g. fully waived consultation) is stored as 'Paid' with no payment
+     * rows; it still counts as untouched, because nothing was ever paid.
+     */
+    public function isOpenForCharges(): bool
+    {
+        return $this->status !== 'Cancelled'
+            && (float) $this->amount_paid <= 0
+            && !$this->payments()->exists();
+    }
+
+    public function hasLegacyInvoiceDiscount(): bool
+    {
+        return (float) $this->discount > 0.004
+            && !$this->items()->where('discount_amount', '>', 0)->exists();
+    }
+
+    /**
+     * Pay-after-service: a consultation invoice can only be collected once
+     * its consultation is Completed. Invoices with no appointment (a
+     * separate Medical Certificate invoice) are always collectible.
+     */
+    public function isCollectible(): bool
+    {
+        if (!$this->appointment_id) {
+            return true;
+        }
+
+        return $this->appointment()->value('status') === 'Completed';
+    }
+
+    /**
+     * Invoices Staff may see and collect: no appointment (Medical
+     * Certificate invoice) or an appointment that is Completed.
+     */
+    public function scopeCollectible($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereNull('appointment_id')
+              ->orWhereIn('appointment_id', function ($sub) {
+                  $sub->select('id')->from('appointments')->where('status', 'Completed');
+              });
+        });
+    }
+
     public function statusBadgeClass(): string
     {
         return match ($this->status) {

@@ -1,4 +1,35 @@
 <!DOCTYPE html>
+@use('App\Support\LandingText', 'T')
+@php
+    // $settings / $items come from LandingController (Admin → Website Management,
+    // with the original text as fallback). All text is escaped; see App\Support\LandingText.
+    $s = $settings;
+    $url = fn ($u, $default) => ($u !== '' && $u !== null && T::isSafeUrl($u)) ? $u : $default;
+    $heroPrimaryUrl   = $url($s['hero_primary_url'], route('register'));
+    $heroSecondaryUrl = $url($s['hero_secondary_url'], '#about');
+    $mapDefault = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3868.1!2d121.3167!3d14.1500!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd5b2e2e2e2e2f%3A0x0!2sBrgy.+Dayap%2C+Calauan%2C+Laguna!5e0!3m2!1sen!2sph!4v1';
+    $mapUrl = preg_match('#^https://www\.google\.com/maps/embed\?[^\s"<>]+$#', (string) $s['location_map_url']) ? $s['location_map_url'] : $mapDefault;
+
+    // Plain facts handed to the Viora chatbot script so its answers match the page.
+    $phoneLines = T::lines($s['contact_phones']);
+    $emailLines = T::lines($s['contact_emails']);
+    $vioraInfo = [
+        'brand'      => $s['brand_name'],
+        'phone'      => $phoneLines[0] ?? $s['footer_phone'],
+        'phones'     => implode(' / ', $phoneLines) ?: $s['footer_phone'],
+        'email'      => $emailLines[0] ?? $s['footer_email'],
+        'address'    => trim(preg_replace('/,\s*,/', ',', implode(', ', T::lines($s['location_address'])))),
+        'hours'      => T::lines($s['location_hours']),
+        'directions' => (string) $s['location_directions'],
+        'parking'    => (string) $s['location_parking'],
+    ];
+
+    // FAQ tabs: only categories that have at least one visible question.
+    $faqGroups = collect($items['faqs'])->groupBy('category');
+    $faqTabs = collect(\App\Support\LandingDefaults::FAQ_CATEGORIES)->filter(fn ($label, $key) => $faqGroups->has($key));
+    $faqFirst = $faqTabs->keys()->first();
+@endphp
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -21,7 +52,7 @@
 
     <a class="nav-brand" href="#home">
         <i class='bx bx-plus-medical' style="font-size:18px; vertical-align:middle;"></i>
-        ClinicRMS
+        {{ $s['brand_name'] }}
     </a>
 
     <ul class="nav-center" id="primaryNavigation">
@@ -42,398 +73,224 @@
 <main id="main-content">
 <!-- ===== HERO ===== -->
 <div id="home" class="hero">
-    <div class="hero-grid">
+    <div class="hero-grid {{ $s['hero_image_url'] ? '' : 'is-text-only' }}">
         <div class="hero-content">
+            @if(trim($s['hero_badge']) !== '')
             <div class="hero-badge">
                 <i class='bx bxs-shield-plus'></i>
-                Secure Patient Portal
+                {{ $s['hero_badge'] }}
             </div>
+            @endif
 
             <h1>
-                Your Health,<br>
-                <span>Our Priority</span>
+                {{ $s['hero_title_line1'] }}@if(trim($s['hero_title_highlight']) !== '')<br>
+                <span>{{ $s['hero_title_highlight'] }}</span>@endif
             </h1>
 
             <p>
-                Manage your appointments and access your medical records anytime
-                through our clinic's secure, easy-to-use online patient portal.
+                {{ $s['hero_description'] }}
             </p>
 
             <div class="hero-buttons">
-                <a href="{{ route('register') }}" class="btn-primary-hero">
-                    Get Started <i class='bx bx-right-arrow-alt'></i>
+                <a href="{{ $heroPrimaryUrl }}" class="btn-primary-hero">
+                    {{ $s['hero_primary_label'] }} <i class='bx bx-right-arrow-alt'></i>
                 </a>
-                <a href="#about" class="btn-secondary-hero">
-                    Learn More
+                <a href="{{ $heroSecondaryUrl }}" class="btn-secondary-hero">
+                    {{ $s['hero_secondary_label'] }}
                 </a>
             </div>
         </div>
 
+        @if($s['hero_image_url'])
+        {{-- Admin hero picture: shown on its own, no card/box. Without one, the hero is text-only and centred. --}}
         <div class="hero-visual">
-            <div class="portal-card">
-                <div class="portal-card-header">
-                    <div class="portal-dots"><span></span><span></span><span></span></div>
-                    <span class="portal-card-title"><i class='bx bxs-shield-plus'></i> Patient Portal</span>
-                </div>
-
-                <div class="portal-row">
-                    <div class="portal-row-icon"><i class='bx bxs-calendar-check'></i></div>
-                    <div class="portal-row-text">
-                        <h6>Appointments</h6>
-                        <p>General Consultation</p>
-                    </div>
-                    <span class="portal-status status-approved">Approved</span>
-                </div>
-
-                <div class="portal-row">
-                    <div class="portal-row-icon"><i class='bx bxs-folder-open'></i></div>
-                    <div class="portal-row-text">
-                        <h6>Medical Records</h6>
-                        <p>Securely stored & organized</p>
-                    </div>
-                    <span class="portal-status status-neutral">View</span>
-                </div>
-
-                <div class="portal-row">
-                    <div class="portal-row-icon"><i class='bx bxs-lock-alt'></i></div>
-                    <div class="portal-row-text">
-                        <h6>Secure Access</h6>
-                        <p>Role-based & encrypted</p>
-                    </div>
-                    <span class="portal-status status-secure"><i class='bx bx-check-shield'></i></span>
-                </div>
-            </div>
-
-            <div class="hero-visual-badge"><i class='bx bxs-badge-check'></i> Private &amp; Secure</div>
+            <img class="hero-banner-img" src="{{ $s['hero_image_url'] }}" alt="" loading="eager">
         </div>
+        @endif
     </div>
 </div>
+
+<!-- ===== QUICK INFO (built from the Contact / Clinic Information settings) ===== -->
+@php
+    $quickHours   = T::lines($s['location_hours'])[0] ?? '';
+    $quickPhone   = $phoneLines[0] ?? trim((string) $s['footer_phone']);
+    $quickAddress = $vioraInfo['address'];
+    $quickTel     = preg_replace('/[^0-9+]/', '', $quickPhone);
+@endphp
+@if($quickHours !== '' || $quickPhone !== '' || $quickAddress !== '')
+<section class="quick-info" aria-label="Clinic at a glance">
+    <div class="quick-info-inner">
+        @if($quickHours !== '')
+        <div class="quick-item">
+            <span class="quick-icon"><i class='bx bx-time-five'></i></span>
+            <div><small>Clinic hours</small><strong>{{ $quickHours }}</strong></div>
+        </div>
+        @endif
+        @if($quickPhone !== '')
+        <a class="quick-item" @if($quickTel !== '') href="tel:{{ $quickTel }}" @endif>
+            <span class="quick-icon"><i class='bx bx-phone'></i></span>
+            <div><small>Call us</small><strong>{{ $quickPhone }}</strong></div>
+        </a>
+        @endif
+        @if($quickAddress !== '')
+        <a class="quick-item" href="#location">
+            <span class="quick-icon"><i class='bx bx-map'></i></span>
+            <div><small>Visit us</small><strong>{{ $quickAddress }}</strong></div>
+        </a>
+        @endif
+    </div>
+</section>
+@endif
 
 <!-- ===== ABOUT ===== -->
 <section id="about">
     <div class="about-inner">
         <div class="about-left reveal">
-            <p class="section-label" style="text-align:left;">Who We Are</p>
-            <h2>About Our <span>Clinic</span></h2>
-            <p>
-                Our clinic is committed to providing accessible and organized healthcare
-                services for the community. Through our online patient portal, patients
-                can manage appointments and access their personal health records in one
-                convenient platform.
-            </p>
-            <p>
-                Whether you're a patient booking your first appointment or a member of
-                our clinical team, our system provides a smooth and secure experience
-                tailored to your role — with access strictly limited to what's relevant
-                to you.
-            </p>
+            <p class="section-label" style="text-align:left;">{{ $s['about_label'] }}</p>
+            <h2>{{ $s['about_title'] }}@if(trim($s['about_title_highlight']) !== '') <span>{{ $s['about_title_highlight'] }}</span>@endif</h2>
+            <p>{{ $s['about_text_1'] }}</p>
+            @if(trim((string) $s['about_text_2']) !== '')
+            <p>{{ $s['about_text_2'] }}</p>
+            @endif
         </div>
 
         <div class="about-right reveal">
-            <div class="about-img-wrap">
-                <i class='bx bxs-clinic'></i>
-            </div>
+            @if($s['about_image_url'])
+                {{-- Admin picture: shown on its own, no frame or box. --}}
+                <img class="about-img-photo" src="{{ $s['about_image_url'] }}" alt="" loading="lazy">
+            @else
+                <div class="about-img-wrap">
+                    <i class='bx bxs-clinic'></i>
+                </div>
+            @endif
         </div>
     </div>
 </section>
 
+@if(count($items['services']))
 <!-- ===== SERVICES ===== -->
 <section id="services">
-    <p class="section-label">What We Offer</p>
-    <h2 class="section-title">Our Services</h2>
-    <p class="section-sub">Straightforward, well-organized care — supported by our online patient portal.</p>
+    <p class="section-label">{{ $s['services_label'] }}</p>
+    <h2 class="section-title">{{ $s['services_title'] }}</h2>
+    <p class="section-sub">{{ $s['services_sub'] }}</p>
 
     <div class="services-grid">
+        @foreach($items['services'] as $service)
         <div class="service-card reveal">
-            <div class="service-icon"><i class='bx bx-plus-medical'></i></div>
-            <h4>General Consultation</h4>
-            <p>Sit down with a doctor to discuss your health concerns and get the guidance you need.</p>
+            <div class="service-icon">
+                @if($service['image'])
+                    <img class="service-photo" src="{{ $service['image'] }}" alt="" loading="lazy">
+                @else
+                    <i class='bx {{ $service['icon'] ?? 'bx-plus-medical' }}'></i>
+                @endif
+            </div>
+            <h4>{{ $service['title'] }}</h4>
+            <p>{{ $service['body'] }}</p>
         </div>
-        <div class="service-card reveal">
-            <div class="service-icon"><i class='bx bxs-heart'></i></div>
-            <h4>Health Checkup</h4>
-            <p>Routine checkups to help keep track of your health and catch concerns early.</p>
-        </div>
-        <div class="service-card reveal">
-            <div class="service-icon"><i class='bx bxs-calendar-plus'></i></div>
-            <h4>Appointment Scheduling</h4>
-            <p>Request a visit online and get notified as soon as the clinic confirms your slot.</p>
-        </div>
-        <div class="service-card reveal">
-            <div class="service-icon"><i class='bx bxs-report'></i></div>
-            <h4>Medical Records</h4>
-            <p>Your visit history and reports, kept organized and accessible whenever you need them.</p>
-        </div>
+        @endforeach
     </div>
 </section>
+@endif
 
+@if(count($items['features']))
 <!-- ===== PATIENT PORTAL FEATURES ===== -->
 <section id="portal-features">
-    <p class="section-label">Your Account</p>
-    <h2 class="section-title">What You Can Do In The Patient Portal</h2>
-    <p class="section-sub">Once your account is approved, everything you need is a login away.</p>
+    <p class="section-label">{{ $s['features_label'] }}</p>
+    <h2 class="section-title">{{ $s['features_title'] }}</h2>
+    <p class="section-sub">{{ $s['features_sub'] }}</p>
 
     <div class="portal-features-grid">
+        @foreach($items['features'] as $feature)
         <div class="portal-feature reveal">
-            <div class="portal-feature-icon"><i class='bx bxs-calendar-week'></i></div>
+            <div class="portal-feature-icon"><i class='bx {{ $feature['icon'] ?? 'bxs-check-circle' }}'></i></div>
             <div>
-                <h4>Manage Appointments</h4>
-                <p>Request, track, and reschedule your appointments from your dashboard.</p>
+                <h4>{{ $feature['title'] }}</h4>
+                <p>{{ $feature['body'] }}</p>
             </div>
         </div>
-        <div class="portal-feature reveal">
-            <div class="portal-feature-icon"><i class='bx bxs-file-find'></i></div>
-            <div>
-                <h4>View Medical Records</h4>
-                <p>Access your own reports and visit history whenever you need them.</p>
-            </div>
-        </div>
-        <div class="portal-feature reveal">
-            <div class="portal-feature-icon"><i class='bx bxs-id-card'></i></div>
-            <div>
-                <h4>Access Personal Information</h4>
-                <p>Review and update your profile and contact details securely.</p>
-            </div>
-        </div>
-        <div class="portal-feature reveal">
-            <div class="portal-feature-icon"><i class='bx bxs-bell-ring'></i></div>
-            <div>
-                <h4>Receive Clinic Updates</h4>
-                <p>Get organized, real-time notifications about your appointment status.</p>
-            </div>
-        </div>
+        @endforeach
     </div>
 </section>
+@endif
 
+@if(count($items['steps']))
 <!-- ===== HOW IT WORKS ===== -->
 <section id="how-it-works">
-    <p class="section-label">Getting Started</p>
-    <h2 class="section-title">How It Works</h2>
-    <p class="section-sub">Getting access to your patient account takes just a few simple steps.</p>
+    <p class="section-label">{{ $s['steps_label'] }}</p>
+    <h2 class="section-title">{{ $s['steps_title'] }}</h2>
+    <p class="section-sub">{{ $s['steps_sub'] }}</p>
 
     <div class="steps-row">
+        @foreach($items['steps'] as $step)
         <div class="step-item reveal">
             <div class="step-icon-wrap">
-                <div class="step-icon"><i class='bx bxs-user-plus'></i></div>
-                <span class="step-num-badge">01</span>
+                <div class="step-icon"><i class='bx {{ $step['icon'] ?? 'bxs-check-circle' }}'></i></div>
+                <span class="step-num-badge">{{ str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
             </div>
-            <h4>Register an Account</h4>
-            <p>Create your patient account with your basic information in just a few minutes.</p>
+            <h4>{{ $step['title'] }}</h4>
+            <p>{{ $step['body'] }}</p>
         </div>
-        <div class="step-item reveal">
-            <div class="step-icon-wrap">
-                <div class="step-icon"><i class='bx bxs-user-check'></i></div>
-                <span class="step-num-badge">02</span>
-            </div>
-            <h4>Wait for Clinic Approval</h4>
-            <p>Our clinic staff reviews new patient accounts to keep records secure and accurate.</p>
-        </div>
-        <div class="step-item reveal">
-            <div class="step-icon-wrap">
-                <div class="step-icon"><i class='bx bxs-calendar-check'></i></div>
-                <span class="step-num-badge">03</span>
-            </div>
-            <h4>Book an Appointment</h4>
-            <p>Once approved, log in anytime to request an appointment for your preferred date.</p>
-        </div>
-        <div class="step-item reveal">
-            <div class="step-icon-wrap">
-                <div class="step-icon"><i class='bx bxs-institution'></i></div>
-                <span class="step-num-badge">04</span>
-            </div>
-            <h4>Visit the Clinic</h4>
-            <p>Arrive for your scheduled visit and let our clinic team take care of the rest.</p>
-        </div>
+        @endforeach
     </div>
 </section>
+@endif
 
+@if(count($items['workflow']))
 <!-- ===== SYSTEM WORKFLOW ===== -->
 <section id="workflow">
-    <p class="section-label">Behind The Scenes</p>
-    <h2 class="section-title">How Your Appointment Is Handled</h2>
-    <p class="section-sub">A simple, transparent workflow from request to completed visit.</p>
+    <p class="section-label">{{ $s['workflow_label'] }}</p>
+    <h2 class="section-title">{{ $s['workflow_title'] }}</h2>
+    <p class="section-sub">{{ $s['workflow_sub'] }}</p>
 
     <div class="workflow-track">
+        @foreach($items['workflow'] as $flow)
         <div class="workflow-step reveal">
-            <div class="workflow-icon"><i class='bx bx-message-square-detail'></i></div>
-            <span>Appointment Request</span>
+            <div class="workflow-icon"><i class='bx {{ $flow['icon'] ?? 'bx-check' }}'></i></div>
+            <span>{{ $flow['title'] }}</span>
         </div>
-        <div class="workflow-step reveal">
-            <div class="workflow-icon"><i class='bx bx-check-double'></i></div>
-            <span>Approval</span>
-        </div>
-        <div class="workflow-step reveal">
-            <div class="workflow-icon"><i class='bx bx-log-in-circle'></i></div>
-            <span>Checked In</span>
-        </div>
-        <div class="workflow-step reveal">
-            <div class="workflow-icon"><i class='bx bx-plus-medical'></i></div>
-            <span>Consultation</span>
-        </div>
-        <div class="workflow-step reveal">
-            <div class="workflow-icon"><i class='bx bx-badge-check'></i></div>
-            <span>Completed</span>
-        </div>
+        @endforeach
     </div>
 </section>
+@endif
 
+@if($faqTabs->isNotEmpty())
 <!-- ===== FAQs SECTION ===== -->
 <section id="faqs">
-    <p class="section-label">Got Questions?</p>
-    <h2 class="section-title">Frequently Asked Questions</h2>
-    <p class="section-sub">Find answers to the most common questions about our clinic system. Can't find what you're looking for? Chat with Viora!</p>
+    <p class="section-label">{{ $s['faqs_label'] }}</p>
+    <h2 class="section-title">{{ $s['faqs_title'] }}</h2>
+    <p class="section-sub">{{ $s['faqs_sub'] }}</p>
 
     <div class="faqs-inner reveal">
         <!-- Category Tabs -->
         <div class="faq-categories">
-            <button class="faq-cat-btn active" data-cat="appointments">Appointments</button>
-            <button class="faq-cat-btn" data-cat="account">Account & Login</button>
-            <button class="faq-cat-btn" data-cat="records">Medical Records</button>
-            <button class="faq-cat-btn" data-cat="clinic">Clinic Info</button>
+            @foreach($faqTabs as $catKey => $catLabel)
+            <button class="faq-cat-btn {{ $catKey === $faqFirst ? 'active' : '' }}" data-cat="{{ $catKey }}">{{ $catLabel }}</button>
+            @endforeach
         </div>
 
-        <!-- Appointments -->
-        <div class="faq-group active" id="faq-appointments">
+        @foreach($faqTabs as $catKey => $catLabel)
+        <!-- {{ $catLabel }} -->
+        <div class="faq-group {{ $catKey === $faqFirst ? 'active' : '' }}" id="faq-{{ $catKey }}">
+            @foreach($faqGroups[$catKey] as $faq)
             <div class="faq-item">
                 <button class="faq-question">
-                    How do I book an appointment?
+                    {{ $faq['title'] }}
                     <span class="faq-icon"><i class='bx bx-plus'></i></span>
                 </button>
-                <div class="faq-answer"><p>Log in to your account, go to the <strong>Appointments</strong> section, select your preferred doctor, date, and time, then submit your booking request. You will receive a notification once your appointment has been approved.</p></div>
+                <div class="faq-answer"><p>{{ T::format($faq['body']) }}</p></div>
             </div>
-            <div class="faq-item">
-                <button class="faq-question">
-                    Can I reschedule or cancel my appointment?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>Yes. Go to <strong>My Appointments</strong> in your dashboard and select the appointment you wish to cancel or reschedule. We recommend doing so at least <strong>24 hours before</strong> your scheduled time to allow other patients to book that slot.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-question">
-                    How long does it take for an appointment to be confirmed?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>Appointments are typically reviewed and confirmed within <strong>24 to 48 hours</strong> during clinic operating hours. You will receive a system notification whenever the status of your booking changes.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-question">
-                    What happens if I miss my scheduled appointment?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>If you miss your appointment, you may request a new schedule depending on available clinic slots. Repeated missed appointments without prior notice may affect future booking priority.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-question">
-                    Can I walk in without an appointment?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>Walk-in patients may still be accommodated depending on clinic availability and queue capacity. However, booking in advance is strongly recommended to secure your preferred time slot.</p></div>
-            </div>
+            @endforeach
         </div>
-
-        <!-- Account & Login -->
-        <div class="faq-group" id="faq-account">
-            <div class="faq-item">
-                <button class="faq-question">
-                    How do I register for an account?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>Click the <strong>"Register"</strong> button in the navigation bar. Fill in your name, email address, and password. Verify your email through the link we send you, and you're ready to use the system. Registration as a patient is completely free.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-question">
-                    I forgot my password. What should I do?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>On the login page, click <strong>"Forgot Password"</strong> and enter your registered email address. We will send you a link to reset your password. Check your spam or junk folder if you don't see the email in your inbox.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-question">
-                    How do I update my personal information?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>Go to <strong>Profile Settings</strong> after logging in. From there, you can edit your name, contact number, and other personal details. Make sure to save your changes when done.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-question">
-                    Who can access and use ClinicRMS?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>The system supports three types of users: <strong>Admins</strong> who manage clinic operations, <strong>Doctors</strong> who access their assigned patients and schedules, and <strong>Patients</strong> who can book appointments and view their own records. Each role has controlled access to relevant data only.</p></div>
-            </div>
-        </div>
-
-        <!-- Medical Records -->
-        <div class="faq-group" id="faq-records">
-            <div class="faq-item">
-                <button class="faq-question">
-                    Can I view my medical history and past consultations?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>Yes. In your patient dashboard, you can view your appointment history and medical reports issued by your doctor. Access to other patients' records is strictly restricted to protect privacy.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-question">
-                    Will my medical records and personal information remain confidential?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>Yes. We use <strong>encrypted connections (HTTPS)</strong> and role-based access controls to ensure only authorized personnel can view your records. We never share your personal or medical data with third parties.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-question">
-                    Can I request a copy of my medical record?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>Yes. Requests for medical records may be processed following clinic policies and proper patient verification procedures. Please contact the clinic staff or email us at <strong>support@clinicrms.com</strong> to initiate your request.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-question">
-                    What should I do if there is incorrect information in my record?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>Inform the clinic staff immediately so the necessary corrections can be made. You may also reach us at <strong>support@clinicrms.com</strong> or call <strong>+63 917 123 4567</strong> for assistance.</p></div>
-            </div>
-        </div>
-
-        <!-- Clinic Info -->
-        <div class="faq-group" id="faq-clinic">
-            <div class="faq-item">
-                <button class="faq-question">
-                    What are the clinic's operating hours?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>The clinic is open <strong>Monday through Friday, 9:00 AM – 5:00 PM</strong> and <strong>Saturday, 9:00 AM – 12:00 PM</strong>. We are closed on Sundays and public holidays.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-question">
-                    What doctors and specialists are available?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>We have general practitioners and various specialists on staff. For the most up-to-date list, log in to your account and visit the <strong>Doctors</strong> section, or contact the clinic directly at <strong>+63 917 123 4567</strong>.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-question">
-                    Is the system accessible on mobile phones?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>Yes. ClinicRMS is fully responsive and works on all devices — desktop, tablet, or smartphone — with an internet connection. No app installation is required.</p></div>
-            </div>
-            <div class="faq-item">
-                <button class="faq-question">
-                    Who should I contact for concerns or technical assistance?
-                    <span class="faq-icon"><i class='bx bx-plus'></i></span>
-                </button>
-                <div class="faq-answer"><p>You may contact the clinic staff directly, email us at <strong>support@clinicrms.com</strong>, or call <strong>+63 917 123 4567</strong>. You can also use the Contact form on this page or chat with our AI assistant <strong>Viora</strong> for quick answers.</p></div>
-            </div>
-        </div>
+        @endforeach
     </div>
 </section>
+@endif
 
 <!-- ===== CONTACT ===== -->
 <section id="contact">
-    <p class="section-label">Get In Touch</p>
-    <h2 class="section-title">Contact Us</h2>
-    <p class="section-sub">Have questions or need support? Reach out to us and we'll get back to you as soon as possible.</p>
+    <p class="section-label">{{ $s['contact_label'] }}</p>
+    <h2 class="section-title">{{ $s['contact_title'] }}</h2>
+    <p class="section-sub">{{ $s['contact_sub'] }}</p>
 
     <div class="contact-inner">
         <div class="contact-info reveal">
@@ -441,24 +298,25 @@
                 <div class="contact-icon"><i class='bx bxs-map'></i></div>
                 <div>
                     <h5>Our Address</h5>
-                    <p>Barangay Dayap, Calauan,<br>Laguna, Philippines</p>
+                    <p>{{ T::format($s['contact_address'], false) }}</p>
                 </div>
             </div>
             <div class="contact-item">
                 <div class="contact-icon"><i class='bx bxs-phone-call'></i></div>
                 <div>
                     <h5>Phone Number</h5>
-                    <p>+63 917 123 4567<br>+63 2 8123 4567</p>
+                    <p>{{ T::format($s['contact_phones'], false) }}</p>
                 </div>
             </div>
             <div class="contact-item">
                 <div class="contact-icon"><i class='bx bxs-envelope'></i></div>
                 <div>
                     <h5>Email Address</h5>
-                    <p>support@clinicrms.com<br>admin@clinicrms.com</p>
+                    <p>{{ T::format($s['contact_emails'], false) }}</p>
                 </div>
             </div>
         </div>
+
 
         <div class="contact-form reveal">
             <div class="form-row">
@@ -492,9 +350,9 @@
 
 <!-- ===== LOCATION / CLINIC INFO ===== -->
 <section id="location">
-    <p class="section-label">Find Us</p>
-    <h2 class="section-title">Clinic Information</h2>
-    <p class="section-sub">Visit us at our clinic. We're conveniently located and easy to find.</p>
+    <p class="section-label">{{ $s['location_label'] }}</p>
+    <h2 class="section-title">{{ $s['location_title'] }}</h2>
+    <p class="section-sub">{{ $s['location_sub'] }}</p>
 
     <div class="location-inner">
         <div class="location-details reveal">
@@ -502,35 +360,40 @@
                 <div class="location-card-icon"><i class='bx bxs-map-pin'></i></div>
                 <div>
                     <h5>Clinic Address</h5>
-                    <p>Barangay Dayap, Calauan,<br>Laguna 4012, Philippines</p>
+                    <p>{{ T::format($s['location_address'], false) }}</p>
                 </div>
             </div>
+            @if(trim((string) $s['location_directions']) !== '')
             <div class="location-card">
                 <div class="location-card-icon"><i class='bx bxs-bus'></i></div>
                 <div>
                     <h5>How to Get There</h5>
-                    <p>From Santa Cruz, take a jeepney or bus bound for Calauan. Alight at Calauan town proper and take a tricycle to Barangay Dayap.</p>
+                    <p>{{ T::format($s['location_directions'], false) }}</p>
                 </div>
             </div>
+            @endif
+            @if(trim((string) $s['location_parking']) !== '')
             <div class="location-card">
                 <div class="location-card-icon"><i class='bx bxs-parking'></i></div>
                 <div>
                     <h5>Parking Available</h5>
-                    <p>Free parking available inside the clinic compound for patients and visitors.</p>
+                    <p>{{ T::format($s['location_parking'], false) }}</p>
                 </div>
             </div>
+            @endif
             <div class="location-card">
                 <div class="location-card-icon"><i class='bx bxs-time'></i></div>
                 <div>
                     <h5>Operating Hours</h5>
-                    <p>Mon–Fri: 9:00 AM – 5:00 PM<br>Saturday: 9:00 AM – 12:00 PM<br>Sunday: Closed</p>
+                    <p>{{ T::format($s['location_hours'], false) }}</p>
                 </div>
             </div>
         </div>
 
         <div class="map-wrap reveal">
             <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3868.1!2d121.3167!3d14.1500!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd5b2e2e2e2e2f%3A0x0!2sBrgy.+Dayap%2C+Calauan%2C+Laguna!5e0!3m2!1sen!2sph!4v1"
+                src="{{ $mapUrl }}"
+                title="Clinic location map"
                 allowfullscreen=""
                 loading="lazy"
                 referrerpolicy="no-referrer-when-downgrade">
@@ -545,9 +408,9 @@
     <div class="footer-inner">
         <div class="footer-col footer-brand">
             <a class="footer-logo" href="#home">
-                <i class='bx bx-plus-medical'></i> ClinicRMS
+                <i class='bx bx-plus-medical'></i> {{ $s['brand_name'] }}
             </a>
-            <p>Our clinic's official online patient portal for managing appointments and medical records, securely and in one place.</p>
+            <p>{{ $s['footer_description'] }}</p>
         </div>
 
         <div class="footer-col">
@@ -565,22 +428,23 @@
         <div class="footer-col">
             <h5>Contact</h5>
             <ul class="footer-contact">
-                <li><i class='bx bxs-map'></i> Barangay Dayap, Calauan, Laguna 4012, Philippines</li>
-                <li><i class='bx bxs-phone-call'></i> +63 917 123 4567</li>
-                <li><i class='bx bxs-envelope'></i> support@clinicrms.com</li>
+                <li><i class='bx bxs-map'></i> {{ $s['footer_address'] }}</li>
+                <li><i class='bx bxs-phone-call'></i> {{ $s['footer_phone'] }}</li>
+                <li><i class='bx bxs-envelope'></i> {{ $s['footer_email'] }}</li>
             </ul>
         </div>
     </div>
 
     <div class="footer-bottom">
-        <p>&copy; {{ date('Y') }} Clinic Record System. All rights reserved.</p>
+        <p>&copy; {{ date('Y') }} {{ $s['footer_copyright_name'] }}. All rights reserved.</p>
         <div class="footer-legal">
-            <a href="#">Privacy Policy</a>
+            <a href="{{ $url($s['footer_privacy_url'], '#') }}">Privacy Policy</a>
             <span>·</span>
-            <a href="#">Terms of Use</a>
+            <a href="{{ $url($s['footer_terms_url'], '#') }}">Terms of Use</a>
         </div>
     </div>
 </footer>
+
 
 <!-- ===== VIORA CHATBOT ===== -->
 <button class="viora-trigger" id="vioraTrigger" aria-label="Chat with Viora">
@@ -593,7 +457,7 @@
         <div class="viora-avatar"><i class='bx bxs-bot'></i></div>
         <div class="viora-header-info">
             <h4>Viora</h4>
-            <p>ClinicRMS AI Assistant • Online</p>
+            <p>{{ $s['brand_name'] }} AI Assistant • Online</p>
         </div>
         <button class="viora-close" id="vioraClose" type="button" aria-label="Close chat"><i class='bx bx-x'></i></button>
     </div>
@@ -633,6 +497,42 @@ primaryNavigation.querySelectorAll('a').forEach(link => link.addEventListener('c
     navToggle.setAttribute('aria-label', 'Open navigation menu');
     navToggle.innerHTML = "<i class='bx bx-menu'></i>";
 }));
+
+// ===== ACTIVE NAV LINK =====
+// Highlights the link of the section being viewed, and the one just clicked.
+const navLinks = Array.from(primaryNavigation.querySelectorAll('a[href^="#"]'));
+const navTargets = navLinks
+    .map(a => ({ link: a, el: document.getElementById(a.getAttribute('href').slice(1)) }))
+    .filter(t => t.el);
+let navLockUntil = 0;
+
+function setActiveNav(link) {
+    navLinks.forEach(a => {
+        const on = a === link;
+        a.classList.toggle('active', on);
+        if (on) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+    });
+}
+
+function updateActiveNav() {
+    if (Date.now() < navLockUntil) return;
+    const line = window.scrollY + 140;               // just under the fixed navbar
+    let current = navTargets[0];
+    navTargets.forEach(t => { if (t.el.getBoundingClientRect().top + window.scrollY <= line) current = t; });
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+        current = navTargets[navTargets.length - 1];  // bottom of the page
+    }
+    setActiveNav(current.link);
+}
+
+navLinks.forEach(a => a.addEventListener('click', () => {
+    setActiveNav(a);
+    navLockUntil = Date.now() + 1000;                 // let the smooth scroll finish
+    setTimeout(updateActiveNav, 1050);
+}));
+window.addEventListener('scroll', updateActiveNav, { passive: true });
+window.addEventListener('resize', updateActiveNav);
+updateActiveNav();
 
 document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && primaryNavigation.classList.contains('is-open')) {
@@ -687,6 +587,9 @@ const vioraBadge    = vioraTrigger.querySelector('.viora-badge');
 let chatOpen = false;
 let greeted  = false;
 
+const CLINIC = @json($vioraInfo);
+const clinicHours = CLINIC.hours.map(h => '• ' + h.replace(/^([^:]+):/, '**$1:**')).join('\n');
+
 const responses = [
     {
         keys: ['book', 'appointment', 'schedule'],
@@ -710,7 +613,7 @@ const responses = [
     },
     {
         keys: ['hours', 'open', 'closed', 'operating', 'clinic hours', 'schedule'],
-        answer: `🕐 Our clinic hours are:\n\n• **Monday–Friday:** 9:00 AM – 5:00 PM\n• **Saturday:** 9:00 AM – 12:00 PM\n• **Sunday:** Closed\n\nWe recommend booking an appointment before visiting! 📅`
+        answer: `🕐 Our clinic hours are:\n\n${clinicHours}\n\nWe recommend booking an appointment before visiting! 📅`
     },
     {
         keys: ['register', 'sign up', 'create account'],
@@ -718,7 +621,7 @@ const responses = [
     },
     {
         keys: ['password', 'forgot', 'reset', "can't log in", 'login issue'],
-        answer: `Having trouble logging in? Don't worry! 😊\n\n• **Forgot password:** Click "Forgot Password" on the login page and we'll send a reset link to your email.\n• **Can't log in:** Make sure your email has been verified. Check your inbox or spam folder.\n• **Still stuck?** Contact us at support@clinicrms.com 📧`
+        answer: `Having trouble logging in? Don't worry! 😊\n\n• **Forgot password:** Click "Forgot Password" on the login page and we'll send a reset link to your email.\n• **Can't log in:** Make sure your email has been verified. Check your inbox or spam folder.\n• **Still stuck?** Contact us at ${CLINIC.email} 📧`
     },
     {
         keys: ['update', 'personal info', 'profile', 'edit account'],
@@ -730,11 +633,11 @@ const responses = [
     },
     {
         keys: ['copy', 'request record', 'get record'],
-        answer: `Yes, you can request a copy of your medical record! 📄\n\nRequests are processed following clinic policies and patient verification procedures.\n\nPlease contact us at:\n📧 support@clinicrms.com\n📞 +63 917 123 4567`
+        answer: `Yes, you can request a copy of your medical record! 📄\n\nRequests are processed following clinic policies and patient verification procedures.\n\nPlease contact us at:\n📧 ${CLINIC.email}\n📞 ${CLINIC.phone}`
     },
     {
         keys: ['wrong', 'incorrect', 'error in record', 'fix record'],
-        answer: `If there's incorrect information in your record, please inform the clinic staff immediately so corrections can be made. 📝\n\nYou can also reach us at:\n📧 support@clinicrms.com\n📞 +63 917 123 4567`
+        answer: `If there's incorrect information in your record, please inform the clinic staff immediately so corrections can be made. 📝\n\nYou can also reach us at:\n📧 ${CLINIC.email}\n📞 ${CLINIC.phone}`
     },
     {
         keys: ['privacy', 'safe', 'data', 'security', 'confidential', 'information'],
@@ -742,11 +645,11 @@ const responses = [
     },
     {
         keys: ['doctor', 'specialist', 'available doctor'],
-        answer: `👨‍⚕️ We have general practitioners and various specialists available.\n\nFor the most up-to-date list:\n• Log in and visit the **Doctors** section\n• Or contact us at:\n📞 +63 917 123 4567\n📧 support@clinicrms.com`
+        answer: `👨‍⚕️ We have general practitioners and various specialists available.\n\nFor the most up-to-date list:\n• Log in and visit the **Doctors** section\n• Or contact us at:\n📞 ${CLINIC.phone}\n📧 ${CLINIC.email}`
     },
     {
         keys: ['location', 'where', 'address', 'map', 'directions', 'calauan', 'laguna', 'dayap'],
-        answer: `📍 Our clinic is located at:\n\n**Barangay Dayap, Calauan, Laguna 4012, Philippines**\n\n🚌 **How to get here:**\nFrom Santa Cruz, take a jeepney or bus to Calauan. From the town proper, take a tricycle to Brgy. Dayap.\n\n🅿️ Free parking is available for patients!`
+        answer: `📍 Our clinic is located at:\n\n**${CLINIC.address}**${CLINIC.directions ? '\n\n🚌 **How to get here:**\n' + CLINIC.directions : ''}${CLINIC.parking ? '\n\n🅿️ ' + CLINIC.parking : ''}`
     },
     {
         keys: ['mobile', 'phone', 'app', 'smartphone', 'tablet'],
@@ -754,7 +657,7 @@ const responses = [
     },
     {
         keys: ['contact', 'reach', 'number', 'email', 'phone', 'support'],
-        answer: `📞 Here is our contact information:\n\n• **Phone:** +63 917 123 4567 / +63 2 8123 4567\n• **Email:** support@clinicrms.com\n• **Address:** Brgy. Dayap, Calauan, Laguna\n\nYou can also fill out the contact form on this page! 😊`
+        answer: `📞 Here is our contact information:\n\n• **Phone:** ${CLINIC.phones}\n• **Email:** ${CLINIC.email}\n• **Address:** ${CLINIC.address}\n\nYou can also fill out the contact form on this page! 😊`
     },
     {
         keys: ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening', 'greetings'],
@@ -771,7 +674,7 @@ function getResponse(msg) {
     for (const r of responses) {
         if (r.keys.some(k => lower.includes(k))) return r.answer;
     }
-    return `Sorry, I'm not able to answer that directly just yet. 😅\n\nYou can try:\n• One of the quick reply buttons below\n• Emailing us at **support@clinicrms.com**\n• Calling us at **+63 917 123 4567**\n\nIs there anything else I can help you with? 💜`;
+    return `Sorry, I'm not able to answer that directly just yet. 😅\n\nYou can try:\n• One of the quick reply buttons below\n• Emailing us at **${CLINIC.email}**\n• Calling us at **${CLINIC.phone}**\n\nIs there anything else I can help you with? 💜`;
 }
 
 function addMessage(text, type) {

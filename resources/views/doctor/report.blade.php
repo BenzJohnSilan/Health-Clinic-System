@@ -39,7 +39,7 @@
             </tr>
             <tr>
                 <th>Time</th>
-                <td>{{ \Carbon\Carbon::parse($appointment->appointment_time)->format('h:i A') }}</td>
+                <td>{{ $appointment->timeLabel('h:i A') }}</td>
             </tr>
             <tr>
                 <th>Reason</th>

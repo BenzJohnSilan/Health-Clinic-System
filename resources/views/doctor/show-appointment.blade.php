@@ -8,56 +8,102 @@
 
 <div class="sa-wrapper">
 
-    {{-- HEADER --}}
-    <div class="sa-header sa-header--back">
-        <a href="{{ route('doctor.appointments.index') }}" class="sa-back-link">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            Back
-        </a>
+    {{-- HERO — same banner style as the dashboard --}}
+    @php
+        $statusMap = [
+            'Approved'    => 'approved',
+            'Checked In'  => 'checkedin',
+            'In Progress' => 'inprogress',
+            'Completed'   => 'completed',
+            'Pending'     => 'pending',
+            'Rejected'    => 'rejected',
+            'Cancelled'   => 'cancelled',
+            'Rescheduled' => 'rescheduled',
+            'No Show'     => 'noshow',
+        ];
+        $statusKey = $statusMap[$appointment->status] ?? 'pending';
+    @endphp
+    <div class="sa-hero">
+        <div class="sa-hero__main">
+            <div class="sa-hero__icon"><i class='bx bx-plus-medical'></i></div>
+            <div>
+                <div class="sa-hero__title-row">
+                    <h1 class="sa-hero__title">Consultation</h1>
+                    <span class="sa-badge sa-badge--{{ $statusKey }}">{{ $appointment->status }}</span>
+                    @if($appointment->isFollowUp())
+                        <span class="sa-badge sa-badge--followup">Follow-up Consultation</span>
+                    @endif
+                </div>
+                <p class="sa-hero__sub">
+                    <span><i class='bx bx-calendar'></i> {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('F d, Y') }}</span>
+                    <span><i class='bx bx-time-five'></i> {{ $appointment->timeLabel('h:i A') }}</span>
+                </p>
+            </div>
+        </div>
+        <div class="sa-hero__actions">
+            <a href="{{ route('doctor.appointments.index') }}" class="sa-btn sa-btn--hero-ghost">
+                <i class='bx bx-chevron-left'></i> Back
+            </a>
+            <a href="{{ route('doctor.prescription.print', $appointment->id) }}"
+               class="sa-btn sa-btn--hero" target="_blank">
+                <i class='bx bx-printer'></i> Print Prescription
+            </a>
+        </div>
     </div>
 
-    <div class="sa-header sa-header--titlebar">
-        <div class="sa-header__title-row">
-            <h1 class="sa-header__title">Consultation</h1>
-            @php
-                $statusMap = [
-                    'Approved'    => 'approved',
-                    'Checked In'  => 'checkedin',
-                    'In Progress' => 'inprogress',
-                    'Completed'   => 'completed',
-                    'Pending'     => 'pending',
-                    'Rejected'    => 'rejected',
-                    'Cancelled'   => 'cancelled',
-                    'Rescheduled' => 'rescheduled',
-                    'No Show'     => 'noshow',
-                ];
-                $statusKey = $statusMap[$appointment->status] ?? 'pending';
-            @endphp
-            <span class="sa-badge sa-badge--{{ $statusKey }}">{{ $appointment->status }}</span>
+    {{-- FOLLOW-UP CONSULTATION — the laboratory result that caused this
+         appointment, one click away. The normal consultation steps below
+         are unchanged. --}}
+    @if($appointment->isFollowUp())
+        @php $fuLab = $appointment->followUpLaboratoryRequest; @endphp
+        <div class="sa-followup">
+            <div class="sa-followup__title"><i class='bx bx-link-alt'></i> Follow-up Consultation</div>
+            @if($fuLab)
+                <div class="sa-followup__grid">
+                    <div>
+                        <span class="sa-followup__label">Related Laboratory Result</span>
+                        <span class="sa-followup__value">{{ $fuLab->reference_no }}</span>
+                    </div>
+                    <div>
+                        <span class="sa-followup__label">Tests</span>
+                        <span class="sa-followup__value">{{ $fuLab->testsDisplay() }}</span>
+                    </div>
+                    <div>
+                        <span class="sa-followup__label">Reviewed</span>
+                        <span class="sa-followup__value">{{ $fuLab->reviewed_at?->format('M d, Y') ?? '—' }}</span>
+                    </div>
+                </div>
+                @if($fuLab->review_notes)
+                    <p class="sa-followup__text"><strong>Interpretation / Remarks:</strong> {{ $fuLab->review_notes }}</p>
+                @endif
+                @if($fuLab->follow_up_instructions)
+                    <p class="sa-followup__text"><strong>Follow-up Instructions:</strong> {{ $fuLab->follow_up_instructions }}</p>
+                @endif
+                <a href="{{ route('doctor.laboratory-requests.show', $fuLab->id) }}" target="_blank" class="sa-btn sa-btn--outline">
+                    View Laboratory Result
+                </a>
+            @else
+                <p class="sa-followup__text">The related laboratory request is no longer available.</p>
+            @endif
         </div>
-        <a href="{{ route('doctor.prescription.print', $appointment->id) }}"
-           class="sa-btn sa-btn--outline" target="_blank">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-            Print Prescription
-        </a>
-    </div>
+    @endif
 
     {{-- ALERTS --}}
     @if(session('success'))
         <div class="sa-alert sa-alert--success">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <i class='bx bx-check-circle'></i>
             {{ session('success') }}
         </div>
     @endif
     @if(session('error'))
         <div class="sa-alert sa-alert--error">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <i class='bx bx-error-circle'></i>
             {{ session('error') }}
         </div>
     @endif
     @if($errors->any())
         <div class="sa-alert sa-alert--error">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <i class='bx bx-error-circle'></i>
             <ul class="sa-alert__list">
                 @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
@@ -71,9 +117,9 @@
          to a later step, open that step so the doctor sees it immediately. --}}
     @php
         $sa_stepFieldMap = [
-            2 => ['chief_complaint','blood_pressure','temperature','weight','height','history_of_present_illness','physical_examination','diagnosis','treatment','notes'],
-            3 => ['medicine_id','manual_medicine_name','dosage','frequency','duration','quantity_prescribed','instructions','next_review_date','message'],
-            4 => ['service_ids','service_qty','medicine_rx_ids','medicine_rx_qty'],
+            2 => ['chief_complaint','history_of_present_illness','physical_examination','diagnosis','treatment','notes'],
+            3 => ['medicine_id','manual_medicine_name','dosage','frequency','duration','quantity_prescribed','instructions','next_review_date','message','tests','lab_diagnosis','other_test_description'],
+            4 => ['service_ids','service_qty','fee_waiver','waiver_reason','waiver_notes'],
         ];
 
         // Default to whichever step the Doctor last had open (session
@@ -105,7 +151,7 @@
         <div class="sa-progressbar__track">
             @foreach([
                 1 => ['Patient & Records', 'Info & history'],
-                2 => ['Assessment', 'Vitals & diagnosis'],
+                2 => ['Assessment', 'Diagnosis & notes'],
                 3 => ['Prescription & Review', 'Meds & follow-up'],
                 4 => ['Charges & Completion', 'Billing & finish'],
             ] as $sa_num => $sa_step)
@@ -117,7 +163,7 @@
                         data-step-btn="{{ $sa_num }}">
                     <span class="sa-progress-step__circle">
                         <span class="sa-progress-step__num">{{ $sa_num }}</span>
-                        <svg class="sa-progress-step__check" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        <i class='bx bx-check sa-progress-step__check'></i>
                     </span>
                     <span class="sa-progress-step__text">
                         <span class="sa-progress-step__title">{{ $sa_step[0] }}</span>
@@ -137,9 +183,7 @@
         {{-- 1. PATIENT AND APPOINTMENT INFORMATION --}}
         <div class="sa-card">
             <div class="sa-card__header">
-                <span class="sa-card__icon sa-card__icon--blue">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                </span>
+                <span class="sa-card__icon"><i class='bx bx-user'></i></span>
                 <h2 class="sa-card__title">Patient and Appointment Information</h2>
             </div>
 
@@ -242,7 +286,7 @@
                         </div>
                         <div class="sa-info-row">
                             <dt>Appointment Time</dt>
-                            <dd>{{ \Carbon\Carbon::parse($appointment->appointment_time)->format('h:i A') }}</dd>
+                            <dd>{{ $appointment->timeLabel('h:i A') }}</dd>
                         </div>
                         <div class="sa-info-row">
                             <dt>Reason for Visit</dt>
@@ -264,69 +308,64 @@
             </div>
         </div>
 
-        {{-- 2. PREVIOUS MEDICAL RECORDS --}}
-        <div class="sa-card">
-            <div class="sa-card__header">
-                <span class="sa-card__icon sa-card__icon--teal">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                </span>
-                <h2 class="sa-card__title">Previous Medical Records</h2>
-                @if($previousRecords->isNotEmpty())
-                    <span class="sa-count-chip">{{ $previousRecords->count() }}</span>
-                @endif
-                <div class="sa-card__header-actions">
-                    <a href="{{ route('doctor.medical-records.index') }}" class="sa-btn sa-btn--outline sa-btn--sm">View All</a>
+                {{-- 2. PREVIOUS MEDICAL RECORDS --}}
+            <div class="sa-card">
+                <div class="sa-card__header">
+                    <span class="sa-card__icon"><i class='bx bx-history'></i></span>
+                    <h2 class="sa-card__title">Previous Medical Records</h2>
+                    @if($previousRecords->isNotEmpty())
+                        <span class="sa-count-chip">{{ $previousRecords->count() }}</span>
+                    @endif
                 </div>
-            </div>
 
-            @php $latestRecords = $previousRecords->take(3); @endphp
+                @php $latestRecords = $previousRecords->take(3); @endphp
 
-            @if($latestRecords->isNotEmpty())
-                <div class="sa-table-wrap">
-                    <table class="sa-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Diagnosis</th>
-                                <th>Doctor</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($latestRecords as $record)
+                @if($latestRecords->isNotEmpty())
+                    <div class="sa-table-wrap">
+                        <table class="sa-table">
+                            <thead>
                                 <tr>
-                                    <td>
-                                        {{ $record->appointment ? \Carbon\Carbon::parse($record->appointment->appointment_date)->format('M d, Y') : $record->created_at->format('M d, Y') }}
-                                    </td>
-                                    <td class="sa-table__diagnosis">{{ $record->diagnosis ?? '—' }}</td>
-                                    <td>
-                                        @if($record->doctor)
-                                            Dr. {{ $record->doctor->first_name }} {{ $record->doctor->last_name }}
-                                        @else
-                                            —
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <a href="{{ route('doctor.medical-records.show', $record->appointment_id) }}" class="sa-btn sa-btn--outline sa-btn--sm">View</a>
-                                    </td>
+                                    <th>Date</th>
+                                    <th>Diagnosis</th>
+                                    <th>Doctor</th>
+                                    <th>Action</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                <p class="sa-table-note">Showing {{ $latestRecords->count() }} latest record{{ $latestRecords->count() > 1 ? 's' : '' }}.</p>
-            @else
-                <div class="sa-empty-state">
-                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    <p>No previous medical records available.</p>
-                </div>
-            @endif
-        </div>
+                            </thead>
+                            <tbody>
+                                @foreach($latestRecords as $record)
+                                    <tr>
+                                        <td>
+                                            {{ $record->appointment ? \Carbon\Carbon::parse($record->appointment->appointment_date)->format('M d, Y') : $record->created_at->format('M d, Y') }}
+                                        </td>
+                                        <td class="sa-table__diagnosis">{{ $record->diagnosis ?? '—' }}</td>
+                                        <td>
+                                            @if($record->doctor)
+                                                Dr. {{ $record->doctor->first_name }} {{ $record->doctor->last_name }}
+                                            @else
+                                                —
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <a href="{{ route('doctor.medical-records.show', $record->appointment_id) }}" target="_blank" rel="noopener noreferrer" class="sa-btn sa-btn--outline sa-btn--sm">View</a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="sa-table-note">Showing {{ $latestRecords->count() }} latest record{{ $latestRecords->count() > 1 ? 's' : '' }}.</p>
+                @else
+                    <div class="sa-empty-state">
+                        <i class='bx bx-file'></i>
+                        <p>No previous medical records available.</p>
+                    </div>
+                @endif
+            </div>
 
         <div class="sa-step-footer sa-step-footer--first">
             <button type="button" class="sa-btn sa-btn--primary" data-step-target="2">
                 Next: Assessment
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                <i class='bx bx-chevron-right'></i>
             </button>
         </div>
 
@@ -337,9 +376,7 @@
         {{-- 3. CONSULTATION INFORMATION --}}
         <div class="sa-card">
             <div class="sa-card__header">
-                <span class="sa-card__icon sa-card__icon--teal">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9S3 16.97 3 12 7.03 3 12 3s9 4.03 9 9z"/></svg>
-                </span>
+                <span class="sa-card__icon"><i class='bx bx-notepad'></i></span>
                 <h2 class="sa-card__title">Consultation Information</h2>
             </div>
 
@@ -351,7 +388,7 @@
                 <form action="{{ route('doctor.appointments.startConsultation', $appointment->id) }}" method="POST">
                     @csrf
                     <button type="submit" class="sa-btn sa-btn--primary sa-btn--full">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <i class='bx bx-play'></i>
                         Start Consultation
                     </button>
                 </form>
@@ -364,44 +401,7 @@
                     </div>
                 </div>
 
-                <div class="sa-vitals-grid">
-                    <div class="sa-vital-tile">
-                        <div class="sa-vital-icon sa-vital-icon--bp">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                        </div>
-                        <div>
-                            <div class="sa-vital-val">{{ $medicalRecord->blood_pressure ?? '—' }}</div>
-                            <div class="sa-vital-label">Blood Pressure</div>
-                        </div>
-                    </div>
-                    <div class="sa-vital-tile">
-                        <div class="sa-vital-icon sa-vital-icon--temp">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
-                        </div>
-                        <div>
-                            <div class="sa-vital-val">{{ $medicalRecord->temperature ?? '—' }}</div>
-                            <div class="sa-vital-label">Temperature</div>
-                        </div>
-                    </div>
-                    <div class="sa-vital-tile">
-                        <div class="sa-vital-icon sa-vital-icon--weight">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><path d="M6.5 8a2 2 0 0 0-1.905 1.46L2.1 18.5A2 2 0 0 0 4 21h16a2 2 0 0 0 1.9-2.54L19.4 9.46A2 2 0 0 0 17.5 8z"/></svg>
-                        </div>
-                        <div>
-                            <div class="sa-vital-val">{{ $medicalRecord->weight ?? '—' }}</div>
-                            <div class="sa-vital-label">Weight</div>
-                        </div>
-                    </div>
-                    <div class="sa-vital-tile">
-                        <div class="sa-vital-icon sa-vital-icon--height">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><polyline points="17 7 12 2 7 7"/><polyline points="17 17 12 22 7 17"/></svg>
-                        </div>
-                        <div>
-                            <div class="sa-vital-val">{{ $medicalRecord->height ?? '—' }}</div>
-                            <div class="sa-vital-label">Height</div>
-                        </div>
-                    </div>
-                </div>
+                @include('doctor.partials.vital-signs-readonly', ['medicalRecord' => $medicalRecord])
 
                 <div class="sa-notes-stack" style="margin-top:16px;">
                     <div class="sa-note-block">
@@ -443,41 +443,14 @@
                     </div>
 
                     <div class="sa-section-divider" style="margin-top:6px;">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                        Vital Signs
+                        <i class='bx bx-pulse'></i>
+                        Vital Signs <span class="sa-readonly-tag">Read-only · recorded by Staff</span>
                     </div>
 
-                    <div class="sa-form-row">
-                        <div class="sa-form-group">
-                            <label class="sa-label">Blood Pressure</label>
-                            <input type="text" name="blood_pressure" class="sa-input"
-                                placeholder="e.g. 120/80 mmHg"
-                                value="{{ old('blood_pressure', $medicalRecord->blood_pressure ?? '') }}">
-                        </div>
-                        <div class="sa-form-group">
-                            <label class="sa-label">Temperature</label>
-                            <input type="text" name="temperature" class="sa-input"
-                                placeholder="e.g. 36.6 °C"
-                                value="{{ old('temperature', $medicalRecord->temperature ?? '') }}">
-                        </div>
-                    </div>
-                    <div class="sa-form-row">
-                        <div class="sa-form-group">
-                            <label class="sa-label">Weight</label>
-                            <input type="text" name="weight" class="sa-input"
-                                placeholder="e.g. 65 kg"
-                                value="{{ old('weight', $medicalRecord->weight ?? '') }}">
-                        </div>
-                        <div class="sa-form-group">
-                            <label class="sa-label">Height</label>
-                            <input type="text" name="height" class="sa-input"
-                                placeholder="e.g. 170 cm"
-                                value="{{ old('height', $medicalRecord->height ?? '') }}">
-                        </div>
-                    </div>
+                    @include('doctor.partials.vital-signs-readonly', ['medicalRecord' => $medicalRecord])
 
                     <div class="sa-section-divider">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9S3 16.97 3 12 7.03 3 12 3s9 4.03 9 9z"/></svg>
+                        <i class='bx bx-notepad'></i>
                         Clinical Notes
                     </div>
 
@@ -518,12 +491,12 @@
 
         <div class="sa-step-footer">
             <button type="button" class="sa-btn sa-btn--ghost" data-step-target="1">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                <i class='bx bx-chevron-left'></i>
                 Back
             </button>
             <button type="button" class="sa-btn sa-btn--primary" data-step-target="3">
                 Next: Prescription & Review
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                <i class='bx bx-chevron-right'></i>
             </button>
         </div>
 
@@ -531,12 +504,285 @@
 
         <div class="step-panel {{ $saInitialStep == 3 ? 'is-active' : '' }}" data-step="3">
 
+        {{-- 3.5 LABORATORY REQUEST --}}
+        <div class="sa-card">
+            <div class="sa-card__header">
+                <span class="sa-card__icon"><i class='bx bxs-flask'></i></span>
+                <h2 class="sa-card__title">Laboratory Request</h2>
+                @if($laboratoryRequests->isNotEmpty())
+                    <span class="sa-count-chip">{{ $laboratoryRequests->count() }}</span>
+                @endif
+            </div>
+
+            {{-- Requests already saved for this consultation --}}
+            @forelse($laboratoryRequests as $labReq)
+                @php
+                    $labBadgeMap = [
+                        'Awaiting Result' => 'labawaiting',
+                        'Result Received' => 'labreceived',
+                        'Reviewed'         => 'labreviewed',
+                    ];
+                    $labBadgeClass = $labBadgeMap[$labReq->status] ?? 'labawaiting';
+
+                    // Edit/Delete only while the consultation is In Progress
+                    // (same window as Prescriptions) and the request has not
+                    // entered the result workflow. Printing never locks it.
+                    $labCanModify = $appointment->status === 'In Progress' && $labReq->isEditable();
+
+                    // After a failed update, re-open THIS request's edit
+                    // panel with the doctor's submitted values.
+                    $labIsOldEdit = (string) old('lab_edit_id') === (string) $labReq->id;
+                    $labEditTests = $labIsOldEdit
+                        ? old('tests', [])
+                        : $labReq->tests->pluck('test_name')->all();
+                @endphp
+                <div class="sa-lab-request-item">
+                    <div class="sa-lab-request-item__body">
+                        <p class="sa-lab-request-item__ref">
+                            {{ $labReq->reference_no }}
+                            <span class="sa-badge sa-badge--{{ $labBadgeClass }}">{{ $labReq->status }}</span>
+                        </p>
+                        <p class="sa-lab-request-item__tests">{{ $labReq->testsDisplay() }}</p>
+                    </div>
+                    <div class="sa-lab-request-item__actions">
+                        @if($labCanModify)
+                            <button type="button" class="sa-btn sa-btn--outline sa-btn--sm"
+                                    data-lab-edit-toggle="labEditPanel{{ $labReq->id }}">
+                                <i class='bx bx-edit'></i>
+                                Edit
+                            </button>
+                            <form action="{{ route('doctor.laboratory-requests.destroy', $labReq->id) }}" method="POST"
+                                  id="labDeleteForm{{ $labReq->id }}">
+                                @csrf
+                                @method('DELETE')
+                                <button type="button" class="sa-btn sa-btn--outline sa-btn--sm sa-btn--danger-outline"
+                                        onclick="openLabDeleteModal('labDeleteForm{{ $labReq->id }}')">
+                                    <i class='bx bx-trash'></i>
+                                    Delete
+                                </button>
+                            </form>
+                        @endif
+                        <a href="{{ route('doctor.laboratory-requests.print', $labReq->id) }}"
+                           class="sa-btn sa-btn--outline sa-btn--sm" target="_blank">
+                            <i class='bx bx-printer'></i>
+                            Print Laboratory Request
+                        </a>
+                        @if(in_array($labReq->status, ['Result Received', 'Reviewed'], true))
+                            <a href="{{ route('doctor.laboratory-requests.show', $labReq->id) }}"
+                               class="sa-btn sa-btn--primary sa-btn--sm">
+                                {{ $labReq->status === 'Reviewed' ? 'View Result' : 'Review Result' }}
+                            </a>
+                        @endif
+                    </div>
+
+                    @if($labCanModify)
+                    {{-- Edit panel — same fields as the New Laboratory Request form,
+                         pre-checked with this request's current tests. --}}
+                    <div class="sa-lab-request-form sa-lab-edit-panel" id="labEditPanel{{ $labReq->id }}"
+                         style="{{ $labIsOldEdit ? '' : 'display:none;' }}">
+                        <form action="{{ route('doctor.laboratory-requests.update', $labReq->id) }}" method="POST"
+                              data-lab-form>
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="lab_edit_id" value="{{ $labReq->id }}">
+
+                            <div class="sa-lab-tests-grid">
+                                @foreach(\App\Models\LaboratoryRequest::TEST_CATALOG as $labTest)
+                                    <label class="sa-lab-test-item">
+                                        <input type="checkbox" name="tests[]" value="{{ $labTest }}"
+                                               {{ $labTest === 'Others' ? 'data-lab-others' : '' }}
+                                               {{ in_array($labTest, $labEditTests, true) ? 'checked' : '' }}>
+                                        <span>{{ $labTest }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+
+                            <div class="sa-form-group" data-lab-other-group style="display:none; margin-top:10px;">
+                                <label class="sa-label">Other Test Description</label>
+                                <input type="text" name="other_test_description" class="sa-input"
+                                       placeholder="Describe the other test"
+                                       value="{{ $labIsOldEdit ? old('other_test_description') : $labReq->other_test_description }}">
+                            </div>
+
+                            <div class="sa-form-group" style="margin-top:10px; margin-bottom:0;">
+                                <label class="sa-label">Diagnosis</label>
+                                <textarea name="lab_diagnosis" class="sa-textarea" rows="2"
+                                    placeholder="Diagnosis / clinical notes for this laboratory request...">{{ $labIsOldEdit ? old('lab_diagnosis') : $labReq->diagnosis }}</textarea>
+                            </div>
+
+                            <p class="sa-field-error" data-lab-empty-error style="display:none;">
+                                Please select at least one laboratory test.
+                            </p>
+
+                            <div class="sa-lab-request-actions">
+                                <button type="button" class="sa-btn sa-btn--ghost sa-btn--sm"
+                                        data-lab-edit-toggle="labEditPanel{{ $labReq->id }}">
+                                    Cancel
+                                </button>
+                                <button type="submit" class="sa-btn sa-btn--primary sa-btn--sm">
+                                    <i class='bx bx-check'></i>
+                                    Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    @endif
+                </div>
+            @empty
+                <p class="sa-empty">No laboratory tests requested yet.</p>
+            @endforelse
+
+            {{-- New Laboratory Request — same In Progress window as Prescriptions.
+                 Only shown when this consultation has NO laboratory request yet;
+                 once one exists, its summary (and Edit panel, when active) is
+                 shown instead — never both at the same time. --}}
+            @if($appointment->status === 'In Progress' && $laboratoryRequests->isEmpty())
+            @php
+                // Old input from a failed EDIT belongs to that request's
+                // edit panel, not to this "new request" form.
+                $labCreateOld = old('lab_edit_id') === null;
+            @endphp
+            <div class="sa-lab-request-form">
+                <form action="{{ route('doctor.laboratory-requests.store', $appointment->id) }}" method="POST" id="labRequestForm"
+                      data-lab-form>
+                    @csrf
+
+                    <div class="sa-lab-tests-grid">
+                        @foreach(\App\Models\LaboratoryRequest::TEST_CATALOG as $labTest)
+                            <label class="sa-lab-test-item">
+                                <input type="checkbox" name="tests[]" value="{{ $labTest }}"
+                                       {!! $labTest === 'Others' ? 'id="labTestOthersCheckbox" data-lab-others' : '' !!}
+                                       {{ $labCreateOld && in_array($labTest, old('tests', []), true) ? 'checked' : '' }}>
+                                <span>{{ $labTest }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+
+                    <div class="sa-form-group" id="labOtherDescGroup" data-lab-other-group style="display:none; margin-top:10px;">
+                        <label class="sa-label">Other Test Description</label>
+                        <input type="text" name="other_test_description" class="sa-input"
+                               placeholder="Describe the other test"
+                               value="{{ $labCreateOld ? old('other_test_description') : '' }}">
+                    </div>
+
+                    <div class="sa-form-group" style="margin-top:10px; margin-bottom:0;">
+                        <label class="sa-label">Diagnosis</label>
+                        <textarea name="lab_diagnosis" class="sa-textarea" rows="2"
+                            placeholder="Diagnosis / clinical notes for this laboratory request...">{{ $labCreateOld ? old('lab_diagnosis') : '' }}</textarea>
+                    </div>
+
+                    <div class="sa-lab-request-actions">
+                        <button type="submit" class="sa-btn sa-btn--primary sa-btn--sm">
+                            <i class='bx bx-plus'></i>
+                            Save Laboratory Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+            @endif
+
+            {{-- Delete confirmation modal + the shared JS below must render
+                 unconditionally — NOT only when the create form is shown —
+                 since Edit/Delete/Cancel live on the SAVED request item,
+                 which is exactly the case where the create form is hidden. --}}
+
+            {{-- Delete confirmation — reuses the layout's existing confirmation
+                 dialog styling (.logout-modal) so no new modal UI is introduced. --}}
+            <div class="logout-modal" id="labDeleteModal">
+                <div class="logout-box">
+                    <div class="logout-icon">
+                        <i class="fas fa-trash-alt"></i>
+                    </div>
+                    <h3>Delete Laboratory Request?</h3>
+                    <p>This laboratory request has not been processed yet. Are you sure you want to delete it?</p>
+                    <div class="logout-buttons">
+                        <button type="button" class="btn-cancel" onclick="closeLabDeleteModal()">Cancel</button>
+                        <button type="button" class="btn-confirm" id="labDeleteConfirmBtn">Delete</button>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+            (function () {
+                // "Others" description toggle — per form, so it works for the
+                // New Laboratory Request form and every Edit panel.
+                document.querySelectorAll('[data-lab-form]').forEach(function (form) {
+                    var othersChk  = form.querySelector('[data-lab-others]');
+                    var otherGroup = form.querySelector('[data-lab-other-group]');
+
+                    function syncOtherField() {
+                        if (othersChk && otherGroup) {
+                            otherGroup.style.display = othersChk.checked ? 'block' : 'none';
+                        }
+                    }
+                    if (othersChk) othersChk.addEventListener('change', syncOtherField);
+                    form.addEventListener('reset', function () { setTimeout(syncOtherField, 0); });
+                    syncOtherField();
+
+                    // Edit panels: block saving an empty request client-side
+                    // (the server enforces the same rule).
+                    var emptyError = form.querySelector('[data-lab-empty-error]');
+                    if (emptyError) {
+                        form.addEventListener('submit', function (e) {
+                            if (!form.querySelector('input[name="tests[]"]:checked')) {
+                                e.preventDefault();
+                                emptyError.style.display = 'block';
+                            }
+                        });
+                        form.addEventListener('change', function () {
+                            emptyError.style.display = 'none';
+                        });
+                    }
+                });
+
+                // Edit / Cancel toggle. Cancel discards unsaved changes.
+                document.querySelectorAll('[data-lab-edit-toggle]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        var panel = document.getElementById(btn.dataset.labEditToggle);
+                        if (!panel) return;
+                        var opening = panel.style.display === 'none';
+                        if (!opening) {
+                            var form = panel.querySelector('form');
+                            if (form) form.reset();
+                            var err = panel.querySelector('[data-lab-empty-error]');
+                            if (err) err.style.display = 'none';
+                        }
+                        panel.style.display = opening ? 'block' : 'none';
+                        if (opening) panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    });
+                });
+
+                // Delete confirmation dialog
+                var labDeleteModal = document.getElementById('labDeleteModal');
+                var labDeleteFormId = null;
+
+                window.openLabDeleteModal = function (formId) {
+                    labDeleteFormId = formId;
+                    labDeleteModal.classList.add('active');
+                };
+                window.closeLabDeleteModal = function () {
+                    labDeleteFormId = null;
+                    labDeleteModal.classList.remove('active');
+                };
+                document.getElementById('labDeleteConfirmBtn').addEventListener('click', function () {
+                    var form = labDeleteFormId ? document.getElementById(labDeleteFormId) : null;
+                    if (form) {
+                        this.disabled = true;
+                        form.submit();
+                    }
+                });
+                labDeleteModal.addEventListener('click', function (e) {
+                    if (e.target === labDeleteModal) window.closeLabDeleteModal();
+                });
+            })();
+            </script>
+        </div>
+
+
         {{-- 4. PRESCRIPTION --}}
         <div class="sa-card">
             <div class="sa-card__header">
-                <span class="sa-card__icon sa-card__icon--purple">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                </span>
+                <span class="sa-card__icon"><i class='bx bx-capsule'></i></span>
                 <h2 class="sa-card__title">Prescription</h2>
                 @if($prescriptions->isNotEmpty())
                     <span class="sa-count-chip">{{ $prescriptions->count() }}</span>
@@ -544,7 +790,7 @@
                 @if($appointment->status === 'In Progress')
                     <div class="sa-card__header-actions">
                         <button type="button" class="sa-btn sa-btn--primary sa-btn--sm" id="addRxToggleBtn">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            <i class='bx bx-plus'></i>
                             Add Prescription
                         </button>
                     </div>
@@ -554,7 +800,7 @@
             @forelse($prescriptions as $prescription)
             <div class="sa-rx-item">
                 <div class="sa-rx-pill-icon">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 20H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H20a2 2 0 0 1 2 2v3"/><circle cx="18" cy="18" r="3"/><path d="m22 22-1.5-1.5"/></svg>
+                    <i class='bx bx-capsule'></i>
                 </div>
                 <div class="sa-rx-item__body">
                     <p class="sa-rx-item__name">
@@ -587,14 +833,14 @@
                     <button type="submit" class="sa-btn-icon sa-btn-icon--danger"
                         onclick="return confirm('Delete this prescription?')"
                         title="Delete prescription">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                        <i class='bx bx-trash'></i>
                     </button>
                 </form>
                 @endif
             </div>
             @empty
             <div class="sa-empty-state">
-                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <i class='bx bx-shield-alt-2'></i>
                 <p>No medicines prescribed yet.</p>
             </div>
             @endforelse
@@ -665,7 +911,7 @@
                         </div>
 
                         <button type="submit" class="sa-btn sa-btn--primary sa-btn--full">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            <i class='bx bx-plus'></i>
                             Add Prescription
                         </button>
                     </form>
@@ -677,9 +923,7 @@
         {{-- 5. REVIEW SCHEDULE --}}
         <div class="sa-card">
             <div class="sa-card__header">
-                <span class="sa-card__icon sa-card__icon--green">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-                </span>
+                <span class="sa-card__icon"><i class='bx bx-calendar-check'></i></span>
                 <h2 class="sa-card__title">Review Schedule</h2>
                 @if($appointment->status === 'In Progress')
                     <span class="sa-complete-note">Optional — does not complete the consultation</span>
@@ -704,7 +948,7 @@
                     </div>
                     <div class="sa-form-actions">
                         <button type="submit" class="sa-btn sa-btn--primary">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            <i class='bx bx-check'></i>
                             Save Review
                         </button>
                     </div>
@@ -731,12 +975,12 @@
 
         <div class="sa-step-footer">
             <button type="button" class="sa-btn sa-btn--ghost" data-step-target="2">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                <i class='bx bx-chevron-left'></i>
                 Back
             </button>
             <button type="button" class="sa-btn sa-btn--primary" data-step-target="4">
                 Next: Charges & Completion
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                <i class='bx bx-chevron-right'></i>
             </button>
         </div>
 
@@ -747,14 +991,21 @@
         {{-- 6. SERVICES / CHARGES --}}
         <div class="sa-card">
             <div class="sa-card__header">
-                <span class="sa-card__icon sa-card__icon--orange">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                </span>
+                <span class="sa-card__icon"><i class='bx bx-receipt'></i></span>
                 <h2 class="sa-card__title">Services / Charges</h2>
                 @if($invoice)
                     <span class="sa-billing-badge sa-billing-badge--{{ $invoice->statusBadgeClass() }}">{{ $invoice->status }}</span>
                 @endif
             </div>
+
+            @php
+                $purchasableRx    = $prescriptions->whereNotNull('medicine_id')->values();
+                $consultFee       = $consultationService ? (float) $consultationService->price : 0.0;
+                $waiverReasons    = config('billing.waiver_reasons', []);
+                $waiverChecked    = (bool) old('fee_waiver', $currentWaiver ? 1 : 0);
+                $waiverReasonVal  = old('waiver_reason', $currentWaiver['reason'] ?? '');
+                $waiverNotesVal   = old('waiver_notes', $currentWaiver['notes'] ?? '');
+            @endphp
 
             @if($invoice && $invoice->amount_paid > 0)
                 <p class="sa-billing-note">
@@ -764,8 +1015,18 @@
                 <ul class="sa-billing-item-list">
                     @foreach($invoice->items as $item)
                         <li>
-                            <span>{{ $item->description }} @if($item->quantity > 1) × {{ $item->quantity }} @endif</span>
-                            <span>₱{{ number_format($item->amount, 2) }}</span>
+                            <span>
+                                {{ $item->description }} @if($item->quantity > 1) × {{ $item->quantity }} @endif
+                                @if($item->isWaiver())
+                                    <br><small style="color:#6b7280;">Waived — {{ $item->waiverReasonLabel() }}@if($item->waiver_notes): {{ $item->waiver_notes }}@endif</small>
+                                @endif
+                            </span>
+                            <span>
+                                ₱{{ number_format($item->amount, 2) }}
+                                @if($item->isWaiver())
+                                    <br><small style="color:#6b7280;">−₱{{ number_format($item->discount_amount, 2) }} waived</small>
+                                @endif
+                            </span>
                         </li>
                     @endforeach
                 </ul>
@@ -774,25 +1035,68 @@
                     <span>₱{{ number_format($invoice->total_amount, 2) }}</span>
                 </div>
             @else
-                @php
-                    $purchasableRx = $prescriptions->whereNotNull('medicine_id')->values();
-                    $existingByMedicineRx = $invoice
-                        ? $invoice->items->where('item_type', 'medicine')->keyBy('medicine_id')
-                        : collect();
-                @endphp
                 @if(!(auth()->user()->hasPermission('create_invoice') || auth()->user()->hasPermission('edit_invoice')))
-                    <p class="sa-empty">You do not have permission to create or edit billing charges. Contact your Admin if you need this access.</p>
+                    {{-- No billing permission: the Consultation fee is still charged automatically on completion. --}}
+                    <p class="sa-empty">
+                        @if($consultationService)
+                            The Consultation fee (₱{{ number_format($consultFee, 2) }}) is charged automatically when you complete the consultation.
+                        @endif
+                        You do not have permission to waive the fee or add other charges. Contact your Admin if you need this access.
+                    </p>
                 @else
                 <form action="{{ route('doctor.appointments.saveCharges', $appointment->id) }}" method="POST" id="chargesForm">
                     @csrf
                     @method('PATCH')
 
-                    @if($services->isEmpty())
-                        <p class="sa-empty">No active services configured yet. Ask Admin to add one under Services / Fees.</p>
-                    @else
-                        @php
-                            $existingByService = $invoice ? $invoice->items->keyBy('service_id') : collect();
-                        @endphp
+                    {{-- CONSULTATION — automatic, never a checkbox --}}
+                    <div class="sa-charge-list">
+                        @if($consultationService)
+                            <div class="sa-charge-row sa-charge-row--fixed">
+                                <span class="sa-charge-name">
+                                    {{ $consultationService->name }}
+                                    <small style="color:#9ca3af;font-weight:400;">· charged automatically</small>
+                                </span>
+                                <span class="sa-charge-price">₱{{ number_format($consultFee, 2) }}</span>
+                            </div>
+                        @else
+                            <p class="sa-empty">No active "Consultation" service is configured, so no consultation fee will be charged. Ask Admin to add it under Services / Fees.</p>
+                        @endif
+                    </div>
+
+                    {{-- FEE WAIVER / NO CHARGE --}}
+                    @if($consultationService && $consultFee > 0)
+                        <div class="sa-waiver">
+                            <label class="sa-waiver__toggle">
+                                <input type="checkbox" name="fee_waiver" value="1" id="feeWaiverToggle" {{ $waiverChecked ? 'checked' : '' }}>
+                                <span><strong>Fee Waiver / No Charge</strong> — waive the consultation fee</span>
+                            </label>
+
+                            <div class="sa-waiver__panel" id="feeWaiverPanel" style="{{ $waiverChecked ? '' : 'display:none;' }}">
+                                <label class="sa-label" for="waiverReason">Waiver Reason <span class="sa-required">*</span></label>
+                                <select name="waiver_reason" id="waiverReason" class="sa-input {{ $errors->has('waiver_reason') ? 'is-invalid' : '' }}">
+                                    <option value="">— Select a reason —</option>
+                                    @foreach($waiverReasons as $key => $reasonCfg)
+                                        <option value="{{ $key }}" data-notes-required="{{ $reasonCfg['notes_required'] ? '1' : '0' }}"
+                                                {{ $waiverReasonVal === $key ? 'selected' : '' }}>{{ $reasonCfg['label'] }}</option>
+                                    @endforeach
+                                </select>
+                                @error('waiver_reason')<p class="sa-field-error">{{ $message }}</p>@enderror
+
+                                <label class="sa-label" for="waiverNotes" style="margin-top:10px;">
+                                    Reason / Notes <span class="sa-required" id="waiverNotesStar" style="display:none;">*</span>
+                                </label>
+                                <textarea name="waiver_notes" id="waiverNotes" rows="2" maxlength="500"
+                                          class="sa-textarea {{ $errors->has('waiver_notes') ? 'is-invalid' : '' }}"
+                                          placeholder="Required when the reason is &quot;Other&quot;">{{ $waiverNotesVal }}</textarea>
+                                @error('waiver_notes')<p class="sa-field-error">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- OPTIONAL EXTRA SERVICES (everything except Consultation / Medical Certificate) --}}
+                    @if($services->isNotEmpty())
+                        @php $existingByService = $invoice ? $invoice->items->keyBy('service_id') : collect(); @endphp
+                        <div class="sa-charge-medicines__label" style="margin:4px 0 8px;">Other services (optional)</div>
                         <div class="sa-charge-list">
                             @foreach($services as $service)
                                 @php $existing = $existingByService->get($service->id); @endphp
@@ -809,42 +1113,56 @@
                         </div>
                     @endif
 
+                    {{-- CLINIC MEDICINES — information only. A prescription is not a purchase. --}}
                     <div class="sa-charge-medicines">
                         <div class="sa-charge-medicines__label">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                            Clinic Medicines — check what the patient is buying
+                            <i class='bx bx-shield-alt-2'></i>
+                            Clinic Medicines — prescribed
                         </div>
 
                         @forelse($purchasableRx as $rx)
                             @if($rx->medicine)
-                                @php $existingRxItem = $existingByMedicineRx->get($rx->medicine_id); @endphp
-                                <label class="sa-charge-row">
-                                    <input type="checkbox" name="medicine_rx_ids[]" value="{{ $rx->id }}"
-                                           data-price="{{ $rx->medicine->price }}" class="sa-charge-check"
-                                           {{ $existingRxItem ? 'checked' : '' }}>
-                                    <span class="sa-charge-name">{{ $rx->medicine->medicine_name }}</span>
-                                    <span class="sa-charge-price">₱{{ number_format($rx->medicine->price, 2) }}</span>
-                                    <input type="number" name="medicine_rx_qty[{{ $rx->id }}]" min="1"
-                                           max="{{ $rx->quantity_prescribed }}"
-                                           value="{{ $existingRxItem->quantity ?? $rx->quantity_prescribed }}" class="sa-charge-qty">
-                                </label>
+                                <div class="sa-charge-row sa-charge-row--fixed">
+                                    <span class="sa-charge-name">
+                                        {{ $rx->medicine->medicine_name }}
+                                        <small style="color:#9ca3af;font-weight:400;">· prescribed {{ $rx->quantity_prescribed }}</small>
+                                    </span>
+                                    <span class="sa-charge-price">
+                                        @if($rx->dispense_status === 'Dispensed')
+                                            Bought {{ $rx->dispensed_quantity }} of {{ $rx->quantity_prescribed }}
+                                            @if($rx->invoiceItem) · ₱{{ number_format($rx->invoiceItem->amount, 2) }} @endif
+                                        @else
+                                            Not purchased yet
+                                        @endif
+                                    </span>
+                                </div>
                             @endif
                         @empty
-                            <p class="sa-charge-medicines__empty">No clinic-inventory medicine has been prescribed yet. Manually prescribed (outside-pharmacy) items are never billed.</p>
+                            <p class="sa-charge-medicines__empty">No clinic-inventory medicine has been prescribed.</p>
                         @endforelse
 
-                        @if($purchasableRx->isNotEmpty())
-                            <p class="sa-charge-medicines__empty" style="margin-top:8px;">Leave a medicine unchecked if the patient is not buying it from the clinic (e.g. taking the prescription outside, or deciding later) — it stays ₱0 and no stock is affected here.</p>
-                        @endif
+                        <p class="sa-charge-medicines__empty" style="margin-top:8px;">
+                            A prescription is not a purchase: nothing here is charged or taken from stock.
+                            If the patient decides to buy a medicine from the clinic, Staff dispenses the quantity
+                            actually bought, and only that quantity is added to the invoice.
+                            Medicines prescribed under "Other (Manual Input)" are for an outside pharmacy and are never billed.
+                        </p>
+                    </div>
+
+                    {{-- LIVE SUMMARY --}}
+                    <div class="sa-charge-summary">
+                        <div><span>Consultation Fee</span><span id="sumConsultFee">₱{{ number_format($consultFee, 2) }}</span></div>
+                        <div id="sumWaiverRow" style="display:none;"><span>Consultation Waiver</span><span id="sumWaiver">−₱{{ number_format($consultFee, 2) }}</span></div>
+                        <div><span>Net Consultation</span><span id="sumNetConsult">₱{{ number_format($consultFee, 2) }}</span></div>
                     </div>
 
                     <div class="sa-charge-est-total">
-                        <span>Estimated Total</span>
+                        <span>Estimated Total <small style="font-weight:400;color:#9ca3af;">(before any medicine bought from the clinic)</small></span>
                         <span id="chargesEstTotal">₱0.00</span>
                     </div>
 
-                    <button type="submit" class="sa-btn sa-btn--primary sa-btn--full" {{ $services->isEmpty() && $purchasableRx->isEmpty() ? 'disabled' : '' }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    <button type="submit" class="sa-btn sa-btn--primary sa-btn--full">
+                        <i class='bx bx-check'></i>
                         Save Charges
                     </button>
                 </form>
@@ -853,7 +1171,27 @@
                 (function () {
                     const form    = document.getElementById('chargesForm');
                     if (!form) return;
-                    const totalEl = document.getElementById('chargesEstTotal');
+
+                    const FEE       = {{ json_encode($consultFee) }};
+                    const totalEl   = document.getElementById('chargesEstTotal');
+                    const toggle    = document.getElementById('feeWaiverToggle');
+                    const panel     = document.getElementById('feeWaiverPanel');
+                    const reasonSel = document.getElementById('waiverReason');
+                    const notesEl   = document.getElementById('waiverNotes');
+                    const star      = document.getElementById('waiverNotesStar');
+                    const money     = n => '₱' + n.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                    function waived() { return !!(toggle && toggle.checked); }
+
+                    function syncWaiverUi() {
+                        if (!toggle) return;
+                        panel.style.display = waived() ? '' : 'none';
+                        const opt = reasonSel.options[reasonSel.selectedIndex];
+                        const needsNotes = waived() && opt && opt.dataset.notesRequired === '1';
+                        star.style.display = needsNotes ? '' : 'none';
+                        if (needsNotes) { notesEl.setAttribute('required', 'required'); } else { notesEl.removeAttribute('required'); }
+                        reasonSel.toggleAttribute('required', waived());
+                    }
 
                     function recompute() {
                         let sum = 0;
@@ -864,15 +1202,44 @@
                             const qty = qtyInput ? (parseInt(qtyInput.value, 10) || 1) : 1;
                             sum += parseFloat(chk.dataset.price || 0) * qty;
                         });
-                        totalEl.textContent = '₱' + sum.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                        const net = waived() ? 0 : FEE;
+                        document.getElementById('sumWaiverRow').style.display = waived() ? '' : 'none';
+                        document.getElementById('sumNetConsult').textContent = money(net);
+                        totalEl.textContent = money(sum + net);
                     }
 
-                    form.querySelectorAll('.sa-charge-check, .sa-charge-qty').forEach(function (el) {
-                        el.addEventListener('input', recompute);
-                        el.addEventListener('change', recompute);
+                    form.querySelectorAll('.sa-charge-check, .sa-charge-qty, #feeWaiverToggle, #waiverReason').forEach(function (el) {
+                        el.addEventListener('input', function () { syncWaiverUi(); recompute(); });
+                        el.addEventListener('change', function () { syncWaiverUi(); recompute(); });
                     });
 
+                    syncWaiverUi();
                     recompute();
+
+                    // "Complete Consultation" lives in the other form. Send the waiver
+                    // choice along with it so what is on screen is what gets applied,
+                    // even if "Save Charges" was not pressed first.
+                    const consultationForm = document.getElementById('consultationForm');
+                    if (consultationForm) {
+                        consultationForm.addEventListener('submit', function (e) {
+                            const submitter = e.submitter ? (e.submitter.getAttribute('formaction') || '') : '';
+                            if (submitter.indexOf('complete-consultation') === -1) return;
+
+                            consultationForm.querySelectorAll('input[data-mirrored-charge]').forEach(n => n.remove());
+                            const add = (name, value) => {
+                                const i = document.createElement('input');
+                                i.type = 'hidden'; i.name = name; i.value = value; i.dataset.mirroredCharge = '1';
+                                consultationForm.appendChild(i);
+                            };
+                            add('charges_mirrored', '1');
+                            if (waived()) {
+                                add('fee_waiver', '1');
+                                add('waiver_reason', reasonSel.value);
+                                add('waiver_notes', notesEl.value);
+                            }
+                        });
+                    }
                 })();
                 </script>
                 @endif
@@ -882,9 +1249,16 @@
         {{-- 7. BOTTOM ACTION BUTTONS --}}
         <div class="sa-step-footer sa-step-footer--last">
             <button type="button" class="sa-btn sa-btn--ghost" data-step-target="3">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                <i class='bx bx-chevron-left'></i>
                 Back
             </button>
+            @if($appointment->status === 'Completed')
+            <a href="{{ route('doctor.medical-certificates.create', ['appointment_id' => $appointment->id]) }}"
+               class="sa-btn sa-btn--ghost">
+                <i class='bx bx-file-blank'></i>
+                Create Medical Certificate
+            </a>
+            @endif
             @if(!in_array($appointment->status, ['Checked In', 'Completed'], true))
             <div class="sa-bottom-actions">
                 <button type="submit"
@@ -892,7 +1266,7 @@
                         formaction="{{ route('doctor.appointments.completeConsultation', $appointment->id) }}"
                         class="sa-btn sa-btn--success"
                         onclick="return confirm('Complete this consultation? Once completed, it can no longer be edited.')">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    <i class='bx bx-check'></i>
                     Complete Consultation
                 </button>
             </div>

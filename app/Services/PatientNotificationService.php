@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Appointment;
 use App\Models\AppointmentStatusEvent;
+use App\Models\LaboratoryRequest;
+use App\Models\LaboratoryResultCorrection;
 use App\Models\MedicalCertificate;
 use App\Models\MedicalCertificateCorrection;
 use App\Models\PatientNotificationRead;
@@ -110,6 +112,8 @@ class PatientNotificationService
             ->concat($this->upcomingReminderNotifications($patient))
             ->concat($this->medicalCertificateNotifications($patient))
             ->concat($this->medicalCertificateCorrectionNotifications($patient))
+            ->concat($this->laboratoryResultCorrectionNotifications($patient))
+            ->concat($this->laboratoryReviewedNotifications($patient))
             ->concat($this->accountNotifications($patient));
 
         return $items
@@ -137,7 +141,10 @@ class PatientNotificationService
     protected function appointmentStatusNotifications(User $patient): Collection
     {
         return AppointmentStatusEvent::whereIn('status', ['Approved', 'Rejected', 'Cancelled', 'Rescheduled'])
-            ->whereHas('appointment', fn ($q) => $q->where('patient_id', $patient->id))
+            // Walk-ins have no booking to approve/cancel — a walk-in removed
+            // from the queue must not read as "your appointment was cancelled".
+            ->whereHas('appointment', fn ($q) => $q->where('patient_id', $patient->id)
+                ->where('appointment_type', '!=', Appointment::TYPE_WALK_IN))
             ->with('appointment')
             ->latest('occurred_at')
             ->take(self::PER_SOURCE_LIMIT)
@@ -259,56 +266,21 @@ class PatientNotificationService
         $items = collect();
 
         foreach ($certs as $cert) {
-            // Request submitted.
-            if ($cert->requested_at) {
+            // The patient never requests a certificate online; the only
+            // event worth a notification is the clinic handing over the
+            // signed certificate (Released).
+            if ($cert->status === 'released' && $cert->released_at) {
                 $items->push([
-                    'key'        => "mc_{$cert->id}_pending_{$cert->requested_at->timestamp}",
-                    'category'   => 'medical-certificate',
-                    'icon'       => 'bx-file-blank',
-                    'icon_class' => '',
-                    'label'      => 'Requested',
-                    'label_class'=> '',
-                    'title'      => 'Medical Certificate Request Submitted',
-                    'message'    => 'Your medical certificate request has been submitted successfully.',
-                    'url'        => route('patient.medical-certificates.index'),
-                    'timestamp'  => $cert->requested_at,
-                ]);
-            }
-
-            // Issued / ready (covers the original issuance and any later
-            // correction-driven re-issuance, since each save bumps updated_at).
-            if ($cert->status === 'issued') {
-                $items->push([
-                    'key'        => "mc_{$cert->id}_issued_{$cert->updated_at->timestamp}",
+                    'key'        => "mc_{$cert->id}_released_{$cert->released_at->timestamp}",
                     'category'   => 'medical-certificate',
                     'icon'       => 'bx-check-circle',
                     'icon_class' => 'notif-item-icon--approved',
-                    'label'      => 'Ready',
+                    'label'      => 'Released',
                     'label_class'=> 'notif-label--approved',
-                    'title'      => 'Medical Certificate Ready',
-                    'message'    => 'Your requested medical certificate is now available.',
+                    'title'      => 'Medical Certificate Released',
+                    'message'    => 'Your medical certificate has been released by the clinic.',
                     'url'        => route('patient.medical-certificates.show', $cert->id),
-                    // For the "issued" event specifically we key/time off
-                    // issued_at when present so a correction currently in
-                    // review doesn't push a stale "ready" notice to the
-                    // top; fall back to updated_at otherwise.
-                    'timestamp'  => $cert->issued_at ?? $cert->updated_at,
-                ]);
-            }
-
-            // Rejected.
-            if ($cert->status === 'rejected' && $cert->rejected_at) {
-                $items->push([
-                    'key'        => "mc_{$cert->id}_rejected_{$cert->rejected_at->timestamp}",
-                    'category'   => 'medical-certificate',
-                    'icon'       => 'bx-x-circle',
-                    'icon_class' => 'notif-item-icon--rejected',
-                    'label'      => 'Rejected',
-                    'label_class'=> 'notif-label--rejected',
-                    'title'      => 'Medical Certificate Request Rejected',
-                    'message'    => 'Your medical certificate request was not approved.',
-                    'url'        => route('patient.medical-certificates.show', $cert->id),
-                    'timestamp'  => $cert->rejected_at,
+                    'timestamp'  => $cert->released_at,
                 ]);
             }
         }
@@ -343,6 +315,88 @@ class PatientNotificationService
                     'message'    => 'Your correction request was not approved. The original certificate remains valid.',
                     'url'        => route('patient.medical-certificates.show', $correction->medical_certificate_id),
                     'timestamp'  => $correction->resolved_at,
+                ];
+            });
+    }
+
+    /**
+     * Notify the patient when the Doctor requests a correction on a
+     * laboratory result they uploaded (Section 7 of the correction
+     * workflow spec) — points them straight at their Laboratory Results
+     * list, where the reason and an "Upload Correct Result" action are
+     * shown (Section 2). Only the currently-pending request is shown
+     * per laboratory request — once resolved (a new file uploaded) it
+     * naturally stops appearing here, no separate cleanup needed.
+     */
+    protected function laboratoryResultCorrectionNotifications(User $patient): Collection
+    {
+        return LaboratoryResultCorrection::where('status', 'pending')
+            ->whereHas('laboratoryRequest', fn ($q) => $q->where('patient_id', $patient->id))
+            ->with('laboratoryRequest')
+            ->latest('created_at')
+            ->take(self::PER_SOURCE_LIMIT)
+            ->get()
+            ->filter(fn ($correction) => $correction->laboratoryRequest !== null)
+            ->map(function ($correction) {
+                $refNo = $correction->laboratoryRequest->reference_no;
+
+                // Name the specific test so the patient never has to
+                // guess which uploaded file needs replacing (Section 6
+                // of the correction workflow spec) — falls back to the
+                // request reference only for older corrections that
+                // predate the required test selector.
+                $message = $correction->test_name
+                    ? "{$correction->test_name} result needs correction. Please upload the correct result."
+                    : "Your laboratory result for request {$refNo} needs correction. Please upload the correct result.";
+
+                return [
+                    'key'        => "lab_correction_{$correction->id}_pending_{$correction->created_at->timestamp}",
+                    'category'   => 'laboratory',
+                    'icon'       => 'bx-error-circle',
+                    'icon_class' => 'notif-item-icon--rejected',
+                    'label'      => 'Correction Needed',
+                    'label_class'=> 'notif-label--rejected',
+                    'title'      => $correction->test_name
+                        ? "{$correction->test_name} Result Needs Correction"
+                        : 'Laboratory Result Correction Needed',
+                    'message'    => $message,
+                    'url'        => route('patient.laboratory-results.index'),
+                    'timestamp'  => $correction->created_at,
+                ];
+            });
+    }
+
+    /**
+     * "Your laboratory result has been reviewed." — and, when the Doctor
+     * recommended it, "Your doctor recommends a follow-up consultation…".
+     * One item per review (keyed on reviewed_at), same derived-feed
+     * approach as every other source here. Never includes internal
+     * correction reasons.
+     */
+    protected function laboratoryReviewedNotifications(User $patient): Collection
+    {
+        return LaboratoryRequest::where('patient_id', $patient->id)
+            ->where('status', 'Reviewed')
+            ->whereNotNull('reviewed_at')
+            ->latest('reviewed_at')
+            ->take(self::PER_SOURCE_LIMIT)
+            ->get()
+            ->map(function (LaboratoryRequest $lab) {
+                $followUp = (bool) $lab->follow_up_recommended;
+
+                return [
+                    'key'        => "lab_reviewed_{$lab->id}_{$lab->reviewed_at->timestamp}",
+                    'category'   => 'laboratory',
+                    'icon'       => $followUp ? 'bx-calendar-plus' : 'bx-check-circle',
+                    'icon_class' => $followUp ? '' : 'notif-item-icon--approved',
+                    'label'      => $followUp ? 'Follow-up' : 'Reviewed',
+                    'label_class'=> $followUp ? 'notif-label--upcoming' : 'notif-label--approved',
+                    'title'      => $followUp ? 'Follow-up Consultation Recommended' : 'Laboratory Result Reviewed',
+                    'message'    => $followUp
+                        ? "Your laboratory result ({$lab->reference_no}) has been reviewed. Your doctor recommends a follow-up consultation regarding your laboratory results."
+                        : "Your laboratory result ({$lab->reference_no}) has been reviewed.",
+                    'url'        => route('patient.laboratory-results.index'),
+                    'timestamp'  => $lab->reviewed_at,
                 ];
             });
     }

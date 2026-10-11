@@ -23,7 +23,7 @@
     <!-- ================================================================
          PENDING ACCOUNTS TABLE
     ================================================================ -->
-    <div class="pa-table-container">
+    <div class="pa-table-container {{ $pendingUsers->total() > 0 ? 'pa-table-container--paginated' : '' }}">
     <table class="pending-accounts-table">
         <colgroup>
             <col class="pa-col-name">
@@ -198,10 +198,14 @@
                                 <div class="info-cell pa-id-cell">
                                     <span class="info-label">Valid ID</span>
                                     <div class="pa-id-thumb-row">
-                                        <a href="{{ asset('storage/' . $user->valid_id) }}" target="_blank" rel="noopener" class="pa-id-thumb-link">
-                                            <img src="{{ asset('storage/' . $user->valid_id) }}" alt="Valid ID" class="pa-id-thumb">
+                                        @if(Str::endsWith(Str::lower($user->valid_id), '.pdf'))
+                                            {{-- PDF IDs (Admin-created patients) have no image thumbnail --}}
+                                        @else
+                                        <a href="{{ route('admin.users.valid-id', $user->id) }}" target="_blank" rel="noopener" class="pa-id-thumb-link">
+                                            <img src="{{ route('admin.users.valid-id', $user->id) }}" alt="Valid ID" class="pa-id-thumb">
                                         </a>
-                                        <a href="{{ asset('storage/' . $user->valid_id) }}" target="_blank" rel="noopener" class="pa-id-view-link">
+                                        @endif
+                                        <a href="{{ route('admin.users.valid-id', $user->id) }}" target="_blank" rel="noopener" class="pa-id-view-link">
                                             <i class='bx bx-expand'></i> View Full ID
                                         </a>
                                     </div>
@@ -288,6 +292,69 @@
         </tbody>
     </table>
     </div>
+
+    <!-- ================= PAGINATION ================= -->
+    @if($pendingUsers->total() > 0)
+    <div class="pagination-wrapper">
+        <div class="pagination-info">
+            Showing <strong>{{ $pendingUsers->firstItem() }}–{{ $pendingUsers->lastItem() }}</strong>
+            of <strong>{{ $pendingUsers->total() }}</strong> result{{ $pendingUsers->total() !== 1 ? 's' : '' }}
+        </div>
+
+        <nav class="pagination-nav" aria-label="Pagination">
+
+            {{-- Previous --}}
+            @if($pendingUsers->onFirstPage())
+                <span class="page-btn disabled">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </span>
+            @else
+                <a class="page-btn" href="{{ $pendingUsers->previousPageUrl() }}">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </a>
+            @endif
+
+            {{-- Page Numbers --}}
+            @php
+                $currentPage = $pendingUsers->currentPage();
+                $lastPage    = $pendingUsers->lastPage();
+
+                $pages = collect(range(1, $lastPage))->filter(function ($p) use ($currentPage, $lastPage) {
+                    return $p === 1
+                        || $p === $lastPage
+                        || abs($p - $currentPage) <= 2;
+                })->values();
+            @endphp
+
+            @php $prev = null; @endphp
+            @foreach($pages as $page)
+                @if($prev !== null && $page - $prev > 1)
+                    <span class="page-ellipsis">…</span>
+                @endif
+
+                @if($page === $currentPage)
+                    <span class="page-btn active">{{ $page }}</span>
+                @else
+                    <a class="page-btn" href="{{ $pendingUsers->url($page) }}">{{ $page }}</a>
+                @endif
+
+                @php $prev = $page; @endphp
+            @endforeach
+
+            {{-- Next --}}
+            @if($pendingUsers->hasMorePages())
+                <a class="page-btn" href="{{ $pendingUsers->nextPageUrl() }}">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            @else
+                <span class="page-btn disabled">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </span>
+            @endif
+
+        </nav>
+    </div>
+    @endif
 
 </div>
 

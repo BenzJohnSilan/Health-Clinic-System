@@ -69,31 +69,39 @@ class PermissionSeeder extends Seeder
             }
         }
 
-        // Backfill: every EXISTING Staff account must also end up with
-        // view_appointments, the same way a brand-new Staff account
-        // gets it automatically via Permission::assignDefaultsTo() in
-        // Admin\UserController::store(). syncWithoutDetaching() only
-        // adds the missing permission — it never touches any other
-        // permission a Staff member already has — so this is safe to
-        // run every time the seeder runs.
-        $viewAppointmentsId = Permission::where('slug', 'view_appointments')->value('id');
+        // Backfill — STAFF: only Staff accounts that have NO permission rows
+        // at all (legacy / never-configured accounts) receive the standard
+        // Staff defaults, the same way a brand-new Staff account gets them
+        // via Permission::assignDefaultsTo() in Admin\UserController::store().
+        //
+        // Deliberately NOT applied to Staff who already have any permission:
+        // once an Admin has customised a Staff member in Manage Permissions
+        // (for example a Cashier limited to Billing & Payments), re-running
+        // this seeder — which is the documented step after adding a new
+        // permission to Permission::catalog() — must never silently hand
+        // back the appointment / medicine / medical-certificate defaults.
+        // Granting or removing permissions for existing Staff is the
+        // Admin's job in Manage Permissions.
+        $staffDefaultIds = Permission::whereIn('slug', Permission::defaultSlugsForRole('Staff'))->pluck('id');
 
-        if ($viewAppointmentsId) {
-            User::where('role', 'Staff')->get()->each(function (User $user) use ($viewAppointmentsId) {
-                $user->permissions()->syncWithoutDetaching([$viewAppointmentsId]);
-            });
+        if ($staffDefaultIds->isNotEmpty()) {
+            User::where('role', 'Staff')
+                ->whereDoesntHave('permissions')
+                ->get()
+                ->each(function (User $user) use ($staffDefaultIds) {
+                    $user->permissions()->syncWithoutDetaching($staffDefaultIds);
+                });
         }
 
-        // Backfill: every EXISTING Staff/Doctor/Patient account also gets
-        // the new Billing & Payments defaults for their role, the same
-        // way a brand-new account gets them via Permission::
-        // assignDefaultsTo() in Admin\UserController::store() (Staff/
-        // Doctor) and Auth\RegisterController::register() (Patient).
+        // Backfill — DOCTOR / PATIENT (unchanged behaviour): every EXISTING
+        // Doctor/Patient account also gets the Billing & Payments defaults
+        // for their role, the same way a brand-new account gets them via
+        // Permission::assignDefaultsTo() in Admin\UserController::store()
+        // (Doctor) and Auth\RegisterController::register() (Patient).
         // syncWithoutDetaching() only adds the missing permissions — it
-        // never touches any permission a user already has (including
-        // any billing permission an Admin already customized) — so this
-        // is safe to run every time the seeder runs.
-        foreach (['Staff', 'Doctor', 'Patient'] as $role) {
+        // never removes any permission a user already has — so this is
+        // safe to run every time the seeder runs.
+        foreach (['Doctor', 'Patient'] as $role) {
             $slugs = Permission::defaultSlugsForRole($role);
             $ids   = Permission::whereIn('slug', $slugs)->pluck('id');
 

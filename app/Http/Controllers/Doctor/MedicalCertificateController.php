@@ -6,10 +6,25 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Appointment;
 use App\Models\MedicalCertificate;
+use App\Services\BillingService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class MedicalCertificateController extends Controller
 {
+    protected BillingService $billing;
+
+    public function __construct(BillingService $billing)
+    {
+        $this->billing = $billing;
+    }
+
+    /**
+     * Statuses that mean "this consultation already has a medical
+     * certificate" (so a second one must not be created for it).
+     */
+    private const ACTIVE_STATUSES = ['issued', 'correction_requested', 'released'];
+
     /**
      * Doctor → Medical Certificates (list, with status filter)
      */
@@ -17,84 +32,174 @@ class MedicalCertificateController extends Controller
     {
         $filter = $request->query('status', 'all');
 
-        $query = MedicalCertificate::with(['patient', 'appointment.walkinPatient'])
+        $query = MedicalCertificate::with(['patient', 'appointment.walkinPatient', 'invoice'])
             ->whereHas('appointment', function ($q) {
                 $q->where('doctor_id', Auth::id());
             });
 
-        if (in_array($filter, ['pending', 'issued', 'rejected', 'correction_requested'])) {
+        if (in_array($filter, ['issued', 'released', 'correction_requested'])) {
             $query->where('status', $filter);
+        } else {
+            $filter = 'all';
         }
 
-        $certificates = $query->latest('requested_at')->paginate(10)->withQueryString();
+        $certificates = $query->latest('id')->paginate(10)->withQueryString();
 
         return view('doctor.medical-certificates.index', compact('certificates', 'filter'));
     }
 
     /**
-     * Doctor → Review a request, or view an already-decided certificate
+     * Doctor → View a medical certificate (details, invoice/payment state,
+     * and the Print button once it is issued and paid).
      */
     public function show(MedicalCertificate $medicalCertificate)
     {
         $this->authorizeDoctor($medicalCertificate);
 
-        $medicalCertificate->load(['patient', 'doctor', 'appointment.medicalRecord', 'appointment.walkinPatient']);
-
-        if ($medicalCertificate->isPending()) {
-            return view('doctor.medical-certificates.review', compact('medicalCertificate'));
-        }
-
         if ($medicalCertificate->isCorrectionRequested()) {
             return redirect()->route('doctor.medical-certificates.correction.review', $medicalCertificate->id);
         }
 
-        $medicalCertificate->load('latestCorrection');
+        $medicalCertificate->load([
+            'patient', 'doctor', 'invoice',
+            'appointment.medicalRecord', 'appointment.walkinPatient',
+            'latestCorrection',
+        ]);
 
         return view('doctor.medical-certificates.view', compact('medicalCertificate'));
     }
 
     /**
-     * Doctor → Create / Edit & Correct Medical Certificate (build the certificate content)
+     * Doctor → Create Medical Certificate (form).
      *
-     * Reused for two situations:
-     *   - status = pending               → normal "Create Medical Certificate"
-     *   - status = correction_requested  → "Edit & Correct Certificate"
+     * One page: pick a COMPLETED consultation of this doctor that does not
+     * have a certificate yet, review the patient/consultation info, then
+     * fill in the certificate details.
      */
-    public function create(MedicalCertificate $medicalCertificate)
+    public function create(Request $request)
+    {
+        $appointments = Appointment::with(['patient', 'walkinPatient'])
+            ->where('doctor_id', Auth::id())
+            ->where('status', 'Completed')
+            ->whereDoesntHave('medicalCertificates', function ($q) {
+                $q->whereIn('status', self::ACTIVE_STATUSES);
+            })
+            ->orderBy('appointment_date', 'desc')
+            ->get();
+
+        $selectedAppointmentId = $request->query('appointment_id');
+        $doctor = Auth::user();
+
+        return view('doctor.medical-certificates.create', compact('appointments', 'selectedAppointmentId', 'doctor'));
+    }
+
+    /**
+     * Doctor → Save the Medical Certificate.
+     *
+     * Creates the certificate directly as ISSUED, then attaches its
+     * invoice through BillingService (added to the consultation invoice
+     * when that is still unpaid, otherwise a separate invoice).
+     */
+    public function store(Request $request)
+    {
+        $doctor = Auth::user();
+
+        $validated = $request->validate([
+            'appointment_id'     => 'required|exists:appointments,id',
+            'purpose'            => 'required|in:School,Work,Sick Leave,Other',
+            'other_purpose'      => 'required_if:purpose,Other|nullable|string|max:150',
+            'request_details'    => 'nullable|string|max:1000',
+            'medical_statement'  => 'required|string|max:2000',
+            'recommendation'     => 'required|string|max:2000',
+            'rest_start_date'    => 'nullable|date',
+            'rest_end_date'      => 'nullable|date|after_or_equal:rest_start_date',
+            'additional_remarks' => 'nullable|string|max:2000',
+        ]);
+
+        // Only a COMPLETED consultation of this doctor can get a certificate.
+        $appointment = Appointment::where('id', $validated['appointment_id'])
+            ->where('doctor_id', $doctor->id)
+            ->where('status', 'Completed')
+            ->firstOrFail();
+
+        $result = DB::transaction(function () use ($appointment, $doctor, $validated) {
+
+            // Lock the consultation so a double click / second tab can't
+            // create two certificates (and two charges) for the same visit.
+            Appointment::whereKey($appointment->id)->lockForUpdate()->first();
+
+            $existing = MedicalCertificate::where('appointment_id', $appointment->id)
+                ->whereIn('status', self::ACTIVE_STATUSES)
+                ->first();
+
+            if ($existing) {
+                return [null, $existing];
+            }
+
+            $certificate = MedicalCertificate::create([
+                'appointment_id'     => $appointment->id,
+                // Null for walk-in patients who have no user account; the
+                // appointment relationship still resolves the right patient.
+                'patient_id'         => $appointment->patient_id,
+                'doctor_id'          => $doctor->id,
+                'purpose'            => $validated['purpose'],
+                'other_purpose'      => $validated['purpose'] === 'Other' ? $validated['other_purpose'] : null,
+                'request_details'    => $validated['request_details'] ?? null,
+                'medical_statement'  => $validated['medical_statement'],
+                'recommendation'     => $validated['recommendation'],
+                'rest_start_date'    => $validated['rest_start_date'] ?? null,
+                'rest_end_date'      => $validated['rest_end_date'] ?? null,
+                'additional_remarks' => $validated['additional_remarks'] ?? null,
+                'certificate_number' => MedicalCertificate::generateCertificateNumber(),
+                'status'             => 'issued',
+                'issued_at'          => now(),
+            ]);
+
+            // Billing is handled entirely by BillingService (combined vs
+            // separate invoice is decided there). Idempotent.
+            $this->billing->ensureInvoiceForMedicalCertificate($certificate, $doctor);
+
+            return [$certificate, null];
+        });
+
+        [$certificate, $existing] = $result;
+
+        if ($existing) {
+            return redirect()
+                ->route('doctor.medical-certificates.show', $existing->id)
+                ->with('error', 'A medical certificate already exists for this consultation.');
+        }
+
+        return redirect()
+            ->route('doctor.medical-certificates.show', $certificate->id)
+            ->with('success', 'Medical certificate created. Its invoice is now in Billing & Payments — print it once the fee is paid.');
+    }
+
+    /**
+     * Doctor → Edit & Correct an issued certificate whose correction was
+     * requested (status = correction_requested).
+     */
+    public function editCorrection(MedicalCertificate $medicalCertificate)
     {
         $this->authorizeDoctor($medicalCertificate);
 
-        if (!$medicalCertificate->isPending() && !$medicalCertificate->isCorrectionRequested()) {
-            return redirect()
-                ->route('doctor.medical-certificates.show', $medicalCertificate->id)
-                ->with('error', 'This request has already been reviewed.');
-        }
+        abort_unless($medicalCertificate->isCorrectionRequested(), 404);
 
         $medicalCertificate->load(['patient', 'appointment.medicalRecord', 'appointment.walkinPatient', 'pendingCorrection']);
         $doctor = Auth::user();
 
-        return view('doctor.medical-certificates.create', compact('medicalCertificate', 'doctor'));
+        return view('doctor.medical-certificates.correction-edit', compact('medicalCertificate', 'doctor'));
     }
 
     /**
-     * Doctor → Sign & Issue the Medical Certificate
-     * (also handles saving the correction when status = correction_requested)
+     * Doctor → Save the correction and re-issue. The certificate number and
+     * invoice stay the same, so a correction never creates a second charge.
      */
-    public function issue(Request $request, MedicalCertificate $medicalCertificate)
+    public function updateCorrection(Request $request, MedicalCertificate $medicalCertificate)
     {
         $this->authorizeDoctor($medicalCertificate);
 
-        if (!$medicalCertificate->isPending() && !$medicalCertificate->isCorrectionRequested()) {
-            return redirect()
-                ->route('doctor.medical-certificates.index')
-                ->with('error', 'This request is no longer pending.');
-        }
-
-        $doctor = Auth::user();
-
-        if (empty($doctor->signature)) {
-            return back()->with('error', 'Please upload your digital signature in Account Settings before issuing a certificate.');
-        }
+        abort_unless($medicalCertificate->isCorrectionRequested(), 404);
 
         $validated = $request->validate([
             'medical_statement'   => 'required|string|max:2000',
@@ -104,63 +209,25 @@ class MedicalCertificateController extends Controller
             'additional_remarks'  => 'nullable|string|max:2000',
         ]);
 
-        $wasCorrection = $medicalCertificate->isCorrectionRequested();
+        DB::transaction(function () use ($medicalCertificate, $validated) {
+            $medicalCertificate->update([
+                'doctor_id'          => Auth::id(),
+                'medical_statement'  => $validated['medical_statement'],
+                'recommendation'     => $validated['recommendation'],
+                'rest_start_date'    => $validated['rest_start_date'] ?? null,
+                'rest_end_date'      => $validated['rest_end_date'] ?? null,
+                'additional_remarks' => $validated['additional_remarks'] ?? null,
+                'status'             => 'issued',
+            ]);
 
-        $medicalCertificate->update([
-            'doctor_id'           => $doctor->id,
-            'medical_statement'   => $validated['medical_statement'],
-            'recommendation'      => $validated['recommendation'],
-            'rest_start_date'     => $validated['rest_start_date'] ?? null,
-            'rest_end_date'       => $validated['rest_end_date'] ?? null,
-            'additional_remarks'  => $validated['additional_remarks'] ?? null,
-            // Keep the same certificate number when correcting an already-
-            // issued certificate; only generate one the first time.
-            'certificate_number'  => $medicalCertificate->certificate_number
-                ?? MedicalCertificate::generateCertificateNumber(),
-            'status'              => 'issued',
-            'issued_at'           => $wasCorrection ? $medicalCertificate->issued_at : now(),
-        ]);
-
-        if ($wasCorrection) {
             $medicalCertificate->pendingCorrection?->update([
                 'status'      => 'resolved',
                 'resolved_at' => now(),
             ]);
-
-            return redirect()->route('doctor.medical-certificates.index')
-                ->with('success', 'Medical certificate corrected and updated successfully!');
-        }
+        });
 
         return redirect()->route('doctor.medical-certificates.index')
-            ->with('success', 'Medical certificate signed and issued successfully!');
-    }
-
-    /**
-     * Doctor → Reject a pending request
-     */
-    public function reject(Request $request, MedicalCertificate $medicalCertificate)
-    {
-        $this->authorizeDoctor($medicalCertificate);
-
-        if (!$medicalCertificate->isPending()) {
-            return redirect()
-                ->route('doctor.medical-certificates.index')
-                ->with('error', 'This request is no longer pending.');
-        }
-
-        $validated = $request->validate([
-            'rejection_reason' => 'required|string|max:1000',
-        ]);
-
-        $medicalCertificate->update([
-            'doctor_id'         => Auth::id(),
-            'status'            => 'rejected',
-            'rejected_at'       => now(),
-            'rejection_reason'  => $validated['rejection_reason'],
-        ]);
-
-        return redirect()->route('doctor.medical-certificates.index')
-            ->with('success', 'Medical certificate request rejected.');
+            ->with('success', 'Medical certificate corrected and updated successfully!');
     }
 
     /**
@@ -216,86 +283,20 @@ class MedicalCertificateController extends Controller
     }
 
     /**
-     * Doctor → Direct creation (walk-in / face-to-face patients)
-     * Step 1: pick the consultation to attach the certificate to.
-     */
-    public function directIndex(Request $request)
-    {
-        $doctorId = Auth::id();
-
-        $appointments = Appointment::with(['patient', 'walkinPatient'])
-            ->where('doctor_id', $doctorId)
-            ->where('status', 'Completed')
-            ->whereDoesntHave('medicalCertificates', function ($q) {
-                $q->whereIn('status', ['pending', 'issued', 'correction_requested']);
-            })
-            ->orderBy('appointment_date', 'desc')
-            ->get();
-
-        $selectedAppointmentId = $request->query('appointment_id');
-
-        return view('doctor.medical-certificates.direct-create', compact('appointments', 'selectedAppointmentId'));
-    }
-
-    /**
-     * Doctor → Direct creation
-     * Step 2: create the certificate request for the chosen consultation,
-     * then continue straight into the normal create/issue form.
-     */
-    public function directStore(Request $request)
-    {
-        $doctorId = Auth::id();
-
-        $validated = $request->validate([
-            'appointment_id'  => 'required|exists:appointments,id',
-            'purpose'         => 'required|in:School,Work,Sick Leave,Other',
-            'other_purpose'   => 'required_if:purpose,Other|nullable|string|max:150',
-            'request_details' => 'nullable|string|max:1000',
-        ]);
-
-        $appointment = Appointment::where('id', $validated['appointment_id'])
-            ->where('doctor_id', $doctorId)
-            ->where('status', 'Completed')
-            ->firstOrFail();
-
-        // Guard against silently creating a duplicate — same rule as the
-        // patient-facing flow: only block on an active request/certificate.
-        $existingActive = MedicalCertificate::where('appointment_id', $appointment->id)
-            ->whereIn('status', ['pending', 'issued', 'correction_requested'])
-            ->first();
-
-        if ($existingActive) {
-            return redirect()
-                ->route('doctor.medical-certificates.show', $existingActive->id)
-                ->with('error', 'A medical certificate request already exists for this consultation.');
-        }
-
-        $medicalCertificate = MedicalCertificate::create([
-            'appointment_id'  => $appointment->id,
-            // Null for walk-in patients who have no user account; the
-            // appointment relationship still resolves the correct patient.
-            'patient_id'      => $appointment->patient_id,
-            'purpose'         => $validated['purpose'],
-            'other_purpose'   => $validated['purpose'] === 'Other' ? $validated['other_purpose'] : null,
-            'request_details' => $validated['request_details'] ?? null,
-            'status'          => 'pending',
-            'requested_at'    => now(),
-        ]);
-
-        return redirect()->route('doctor.medical-certificates.create', $medicalCertificate->id);
-    }
-
-    /**
-     * Doctor → Print an issued Medical Certificate
-     * (covers online requests, walk-in/F2F certificates, and corrected ones —
-     * reuses the same print design/template used on the patient side).
+     * Doctor → Print an issued Medical Certificate.
+     *
+     * Allowed only while the certificate is ISSUED and its fee is PAID.
+     * Printing does NOT release it: the Doctor signs the printed copy by
+     * hand and Staff then releases it (Staff → Medical Certificates).
      */
     public function print(MedicalCertificate $medicalCertificate)
     {
         $this->authorizeDoctor($medicalCertificate);
-        abort_unless($medicalCertificate->isIssued(), 403, 'Only issued certificates can be printed.');
 
-        $medicalCertificate->load(['appointment.walkinPatient', 'appointment.medicalRecord', 'patient', 'doctor']);
+        $medicalCertificate->load(['appointment.walkinPatient', 'appointment.medicalRecord', 'patient', 'doctor', 'invoice']);
+
+        abort_unless($medicalCertificate->isIssued(), 403, 'Only issued certificates can be printed.');
+        abort_unless($medicalCertificate->isPaid(), 403, 'This certificate cannot be printed until its invoice is fully paid.');
 
         return view('patient.medical-certificates.print', [
             'certificate' => $medicalCertificate,

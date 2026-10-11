@@ -653,8 +653,39 @@ body.no-scroll {
     .sidebar { width: 84vw; }
 }
 
-/* ================= LOGOUT MODAL ================= */
-.logout-modal {
+/* ================= LOGOUT MODAL =================
+   Overlay is the ORIGINAL one (plain dark dim, no blur) — untouched.
+
+   Every rule is scoped with #logoutModal (ID specificity) and uses its
+   own "lg-" class names, so no page stylesheet (appointments,
+   laboratory, medical certificates, ...) can restyle it. That is what
+   keeps the modal exactly the same on every patient page. */
+#logoutModal,
+#logoutModal *,
+#logoutModal *::before,
+#logoutModal *::after {
+    box-sizing: border-box;
+}
+
+/* Text font — applied to text elements only. It must NOT be applied to
+   "*" or "*::before": Boxicons draws its glyph in the <i>'s ::before,
+   so overriding the font there turns every icon into an empty box. */
+#logoutModal,
+#logoutModal .lg-box,
+#logoutModal .lg-title,
+#logoutModal .lg-text,
+#logoutModal .lg-btn,
+#logoutModal .lg-btn span {
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+/* Icons always keep the Boxicons font, whatever a page stylesheet says */
+#logoutModal i.bx,
+#logoutModal i.bx::before {
+    font-family: 'boxicons' !important;
+}
+
+#logoutModal {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.50);
@@ -667,29 +698,221 @@ body.no-scroll {
     transition: 0.25s ease;
 }
 
-.logout-modal.active { opacity: 1; visibility: visible; }
+#logoutModal.active { opacity: 1; visibility: visible; }
 
-.logout-box {
-    background: #fff;
-    width: 380px;
+#logoutModal .lg-box {
+    position: relative;
+    background: #ffffff;
+    width: 390px;
     max-width: 90%;
-    padding: 32px 28px;
-    border-radius: 16px;
+    padding: 34px 28px 28px;
+    border-radius: 22px;
     text-align: center;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.18);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.25);
+    overflow: hidden;
     transform: translateY(-20px) scale(0.95);
     transition: 0.25s ease;
 }
 
-.logout-modal.active .logout-box { transform: translateY(0) scale(1); }
+#logoutModal.active .lg-box { transform: translateY(0) scale(1); }
 
-.logout-icon { font-size: 48px; color: #e53935; margin-bottom: 14px; }
+/* Brand accent along the top edge */
+#logoutModal .lg-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, #6a0dad, #9b30ff, #6a0dad);
+}
 
-.logout-box h3 { margin-bottom: 8px; font-size: 21px; font-weight: 700; color: #222; }
-.logout-box p  { font-size: 14px; color: #666; margin-bottom: 24px; }
+/* Soft glow behind the icon */
+#logoutModal .lg-box::after {
+    content: '';
+    position: absolute;
+    top: -60px;
+    left: 50%;
+    width: 200px;
+    height: 200px;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(229,57,53,0.10), rgba(229,57,53,0) 70%);
+    pointer-events: none;
+}
 
-.logout-buttons { display: flex; justify-content: center; gap: 12px; }
+#logoutModal .lg-icon {
+    position: relative;
+    z-index: 1;
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #fff1f1, #ffd6d6);
+    color: #e53935;
+    font-size: 28px;
+    line-height: 1;
+    box-shadow: 0 8px 18px rgba(229, 57, 53, 0.20);
+}
 
+/* Static outer ring */
+#logoutModal .lg-icon::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid rgba(229, 57, 53, 0.14);
+}
+
+/* Slow pulsing ring */
+#logoutModal .lg-icon::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(229, 57, 53, 0.35);
+    opacity: 0;
+}
+
+#logoutModal.active .lg-icon::after {
+    animation: lgPulse 2.4s ease-out 0.4s infinite;
+}
+
+@keyframes lgPulse {
+    0%   { transform: scale(1);    opacity: 0.7; }
+    100% { transform: scale(1.35); opacity: 0; }
+}
+
+#logoutModal .lg-title {
+    position: relative;
+    z-index: 1;
+    margin: 0 0 8px;
+    padding: 0;
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: normal;
+    text-transform: none;
+    color: #1a1a2e;
+}
+
+#logoutModal .lg-text {
+    position: relative;
+    z-index: 1;
+    margin: 0 0 24px;
+    padding: 0;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.6;
+    color: #6b7280;
+}
+
+/* Two equal columns — both buttons always have the exact same width */
+#logoutModal .lg-actions {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+#logoutModal .lg-actions form {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* Both buttons share the exact same box: same width, height, radius, border */
+#logoutModal .lg-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    height: 48px;
+    margin: 0;
+    padding: 0 16px;
+    border-radius: 12px;
+    border: 1.5px solid transparent;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease,
+                box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+#logoutModal .lg-btn i {
+    font-size: 19px;
+    line-height: 1;
+}
+
+#logoutModal .lg-btn:focus-visible {
+    outline: 3px solid rgba(106, 13, 173, 0.35);
+    outline-offset: 2px;
+}
+
+#logoutModal .lg-btn:disabled {
+    opacity: 0.8;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Cancel — calm, neutral, on-brand */
+#logoutModal .lg-btn--cancel {
+    background: #ffffff;
+    color: #4b3a63;
+    border-color: #e3dbf1;
+}
+
+#logoutModal .lg-btn--cancel:hover {
+    background: #f6f0ff;
+    color: #6a0dad;
+    border-color: #cdb8ee;
+    transform: translateY(-1px);
+}
+
+/* Logout — destructive red, same red as the header logout icon */
+#logoutModal .lg-btn--confirm {
+    background: linear-gradient(135deg, #ef4444, #d32f2f);
+    color: #ffffff;
+    box-shadow: 0 8px 18px rgba(229, 57, 53, 0.32);
+}
+
+#logoutModal .lg-btn--confirm:hover:not(:disabled) {
+    background: linear-gradient(135deg, #f25555, #c62828);
+    box-shadow: 0 10px 22px rgba(229, 57, 53, 0.42);
+    transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #logoutModal,
+    #logoutModal .lg-box,
+    #logoutModal .lg-btn {
+        transition: none;
+    }
+
+    #logoutModal.active .lg-icon::after {
+        animation: none;
+    }
+}
+
+@media (max-width: 340px) {
+    #logoutModal .lg-box { padding: 34px 18px 22px; }
+    #logoutModal .lg-actions { grid-template-columns: 1fr; }
+}
+
+/* Generic buttons kept as-is for any patient page that relies on them.
+   They are NOT used by the logout modal anymore. */
 .btn-cancel {
     background: #f1f1f1;
     border: none;
@@ -986,6 +1209,9 @@ body.no-scroll {
     padding: 36px 20px;
     text-align: center;
 }
+
+/* Filter empty-state: must out-rank .notif-empty { display:flex } */
+.notif-empty.notif-hidden { display: none; }
 
 .notif-empty-icon {
     width: 56px;

@@ -48,9 +48,8 @@ class User extends Authenticatable
         'email',
         'password',
 
-        // OTP
-        'email_otp',
-        'otp_expires_at',
+        // NOTE: email_otp / otp_expires_at / otp_attempts are deliberately NOT
+        // mass-assignable. They are only ever written by EmailOtpService.
 
         // ACCOUNT CONTROL
         'role',
@@ -79,6 +78,15 @@ class User extends Authenticatable
         'birthdate'         => 'date',
         'profile_completed' => 'boolean',
     ];
+
+    /**
+     * Send the branded password reset email (see ResetPasswordNotification)
+     * instead of Laravel's default one.
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new \App\Notifications\ResetPasswordNotification($token));
+    }
 
     /**
      * Full name helper (users table has no `name` column,

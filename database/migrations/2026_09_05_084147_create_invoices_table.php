@@ -21,9 +21,13 @@ return new class extends Migration
 
             $table->string('invoice_no')->unique();
 
-            // One invoice per appointment (billing must trace back to a
-            // real appointment/consultation — never created randomly).
+            // The consultation this invoice belongs to. Nullable ONLY for a
+            // Medical Certificate that has to be billed on its own invoice
+            // (its consultation invoice is already paid/finalized). Such an
+            // invoice is linked through medical_certificates.invoice_id, so
+            // Appointment::invoice() (hasOne) never returns it.
             $table->foreignId('appointment_id')
+                ->nullable()
                 ->constrained()
                 ->onDelete('cascade');
 
@@ -56,10 +60,23 @@ return new class extends Migration
 
             $table->timestamps();
         });
+
+        // medical_certificates is created before invoices, so its
+        // invoice_id foreign key can only be attached now.
+        Schema::table('medical_certificates', function (Blueprint $table) {
+            $table->foreign('invoice_id')
+                ->references('id')
+                ->on('invoices')
+                ->nullOnDelete();
+        });
     }
 
     public function down(): void
     {
+        Schema::table('medical_certificates', function (Blueprint $table) {
+            $table->dropForeign(['invoice_id']);
+        });
+
         Schema::dropIfExists('invoices');
     }
 };

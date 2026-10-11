@@ -23,25 +23,27 @@
         $badgeClass = $statusMap[$appointment->status] ?? 'badge-pending';
     @endphp
 
-    {{-- ══════════════════════════════════════════════
-         LEVEL 1 — PAGE HEADER
-    ══════════════════════════════════════════════ --}}
-    <a href="{{ route('doctor.medical-records.index') }}" class="back-btn">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-        Back to Records
-    </a>
-
+    {{-- HERO — same banner style as the dashboard --}}
     <div class="page-header">
-        <div class="page-header-left">
-            <h1 class="page-title">Medical Record</h1>
-            <p class="page-subtitle">Consultation details and clinical information</p>
+        <div class="page-header-main">
+            <div class="page-header-icon"><i class='bx bx-folder-open'></i></div>
+            <div>
+                <div class="page-header-title-row">
+                    <h1 class="page-title">Medical Record</h1>
+                    <span class="badge {{ $badgeClass }}">{{ $appointment->status }}</span>
+                </div>
+                <p class="page-subtitle">
+                    <span><i class='bx bx-user'></i> {{ $patientObj?->first_name ?? '—' }} {{ $patientObj?->last_name ?? '' }}</span>
+                    <span><i class='bx bx-calendar'></i> {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('F d, Y') }}</span>
+                    <span><i class='bx bx-time-five'></i> {{ $appointment->timeLabel('h:i A') }}</span>
+                </p>
+            </div>
         </div>
         <div class="page-header-actions">
             <a href="{{ route('doctor.prescription.print', $appointment->id) }}"
                target="_blank"
                class="action-btn action-btn--violet">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                Print Prescription
+                <i class='bx bx-printer'></i> Print Prescription
             </a>
         </div>
     </div>
@@ -54,9 +56,7 @@
         {{-- RECORD INFORMATION --}}
         <div class="card">
             <div class="card-header">
-                <div class="card-icon card-icon--violet">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                </div>
+                <div class="card-icon"><i class='bx bx-file'></i></div>
                 <h2 class="card-title">Record Information</h2>
             </div>
             <div class="info-grid">
@@ -74,7 +74,7 @@
                 </div>
                 <div class="info-item">
                     <div class="label">Time</div>
-                    <div class="value">{{ \Carbon\Carbon::parse($appointment->appointment_time)->format('h:i A') }}</div>
+                    <div class="value">{{ $appointment->timeLabel('h:i A') }}</div>
                 </div>
             </div>
         </div>
@@ -82,9 +82,7 @@
         {{-- PATIENT INFORMATION --}}
         <div class="card">
             <div class="card-header">
-                <div class="card-icon card-icon--violet">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                </div>
+                <div class="card-icon"><i class='bx bx-user'></i></div>
                 <h2 class="card-title">Patient Information</h2>
                 <span class="patient-type-chip {{ $isWalkIn ? 'chip--walkin' : 'chip--registered' }}">
                     {{ $isWalkIn ? 'Walk-in' : 'Registered' }}
@@ -125,9 +123,7 @@
     ══════════════════════════════════════════════ --}}
     <div class="card card--full">
         <div class="card-header">
-            <div class="card-icon card-icon--blue">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            </div>
+            <div class="card-icon"><i class='bx bx-notepad'></i></div>
             <h2 class="card-title">Clinical Notes</h2>
         </div>
 
@@ -163,7 +159,7 @@
         </div>
         @else
         <div class="empty-state">
-            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            <i class='bx bx-file'></i>
             <p>No medical record found for this appointment.</p>
         </div>
         @endif
@@ -175,49 +171,40 @@
     @if($medicalRecord)
     <div class="card card--full">
         <div class="card-header">
-            <div class="card-icon card-icon--red">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            </div>
+            <div class="card-icon"><i class='bx bx-pulse'></i></div>
             <h2 class="card-title">Vital Signs</h2>
         </div>
 
+        @php
+            $mrVitals = $medicalRecord->vitalsForDisplay();
+            $mrIcons = [
+                'blood_pressure'    => ['vital-icon--bp',     'bx-pulse'],
+                'temperature'       => ['vital-icon--temp',   'bxs-thermometer'],
+                'pulse_rate'        => ['vital-icon--height', 'bx-heart'],
+                'respiratory_rate'  => ['vital-icon--height', 'bx-wind'],
+                'oxygen_saturation' => ['vital-icon--height', 'bx-droplet'],
+                'weight'            => ['vital-icon--weight', 'bx-body'],
+                'height'            => ['vital-icon--height', 'bx-ruler'],
+            ];
+        @endphp
         <div class="vitals-grid">
+            @foreach($mrVitals as $key => $row)
             <div class="vital-tile">
-                <div class="vital-icon vital-icon--bp">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                <div class="vital-icon {{ $mrIcons[$key][0] }}">
+                    <i class='bx {{ $mrIcons[$key][1] }}'></i>
                 </div>
                 <div class="vital-data">
-                    <div class="vital-val">{{ $medicalRecord->blood_pressure ?? '—' }}</div>
-                    <div class="vital-label">Blood Pressure</div>
+                    @if($row['status'] === 'recorded')
+                        <div class="vital-val">{{ $row['value'] }}@if($row['unit']) <small>{{ $row['unit'] }}</small>@endif</div>
+                    @elseif($row['status'] === 'not_taken')
+                        <div class="vital-val">Not taken</div>
+                    @else
+                        <div class="vital-val">—</div>
+                    @endif
+                    <div class="vital-label">{{ $row['label'] }}@if($row['status'] === 'not_taken') · {{ $row['reason'] }}@endif</div>
                 </div>
             </div>
-            <div class="vital-tile">
-                <div class="vital-icon vital-icon--temp">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
-                </div>
-                <div class="vital-data">
-                    <div class="vital-val">{{ $medicalRecord->temperature ?? '—' }}</div>
-                    <div class="vital-label">Temperature</div>
-                </div>
-            </div>
-            <div class="vital-tile">
-                <div class="vital-icon vital-icon--weight">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><path d="M6.5 8a2 2 0 0 0-1.905 1.46L2.1 18.5A2 2 0 0 0 4 21h16a2 2 0 0 0 1.9-2.54L19.4 9.46A2 2 0 0 0 17.5 8z"/></svg>
-                </div>
-                <div class="vital-data">
-                    <div class="vital-val">{{ $medicalRecord->weight ?? '—' }}</div>
-                    <div class="vital-label">Weight</div>
-                </div>
-            </div>
-            <div class="vital-tile">
-                <div class="vital-icon vital-icon--height">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><polyline points="17 7 12 2 7 7"/><polyline points="17 17 12 22 7 17"/></svg>
-                </div>
-                <div class="vital-data">
-                    <div class="vital-val">{{ $medicalRecord->height ?? '—' }}</div>
-                    <div class="vital-label">Height</div>
-                </div>
-            </div>
+            @endforeach
         </div>
     </div>
     @endif
@@ -228,14 +215,12 @@
     @if($review)
     <div class="card card--full">
         <div class="card-header">
-            <div class="card-icon card-icon--teal">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-            </div>
+            <div class="card-icon"><i class='bx bx-calendar-check'></i></div>
             <h2 class="card-title">Follow-up Review</h2>
         </div>
         <div class="followup-block">
             <div class="followup-date">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <i class='bx bx-calendar'></i>
                 Next Review:
                 <strong>
                     {{ $review->next_review_date
@@ -258,9 +243,7 @@
     ══════════════════════════════════════════════ --}}
     <div class="card card--full">
         <div class="card-header">
-            <div class="card-icon card-icon--green">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-            </div>
+            <div class="card-icon"><i class='bx bx-capsule'></i></div>
             <h2 class="card-title">Prescriptions</h2>
         </div>
 
@@ -299,8 +282,67 @@
             </div>
         @else
             <div class="empty-state">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                <i class='bx bx-capsule'></i>
                 <p>No prescriptions recorded.</p>
+            </div>
+        @endif
+    </div>
+
+    {{-- ══════════════════════════════════════════════
+         LEVEL 3 — LABORATORY (summary/history only —
+         the full result review workspace stays under
+         Doctor Sidebar → Laboratory Results)
+    ══════════════════════════════════════════════ --}}
+    <div class="card card--full">
+        <div class="card-header">
+            <div class="card-icon"><i class='bx bxs-flask'></i></div>
+            <h2 class="card-title">Laboratory</h2>
+        </div>
+
+        @if($laboratoryRequests->isNotEmpty())
+            @php
+                $labBadgeMap = [
+                    'Awaiting Result' => 'labawaiting',
+                    'Result Received' => 'labreceived',
+                    'Reviewed'         => 'labreviewed',
+                ];
+            @endphp
+            <div class="table-wrapper">
+                <table class="record-table">
+                    <thead>
+                        <tr>
+                            <th>Reference No.</th>
+                            <th>Requested Tests</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($laboratoryRequests as $labReq)
+                        <tr>
+                            <td>{{ $labReq->reference_no }}</td>
+                            <td>{{ $labReq->testsDisplay() }}</td>
+                            <td>
+                                <span class="status {{ $labBadgeMap[$labReq->status] ?? 'labawaiting' }}">
+                                    {{ $labReq->status }}
+                                </span>
+                            </td>
+                            <td>{{ $labReq->requested_at?->format('M d, Y') ?? '—' }}</td>
+                            <td>
+                                <a href="{{ route('doctor.laboratory-requests.show', $labReq->id) }}" class="btn-view-record">
+                                    <i class='bx bx-show'></i> View Laboratory Result
+                                </a>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <div class="empty-state">
+                <i class='bx bxs-flask'></i>
+                <p>No laboratory tests requested for this consultation.</p>
             </div>
         @endif
     </div>
