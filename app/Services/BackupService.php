@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\BackupLog;
 use FilesystemIterator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
@@ -96,7 +97,9 @@ class BackupService
 
             $this->assertZipAvailable();
             $connection = $this->databaseConfig();
-            $binary     = $this->locateMysqldump();
+            // mysqldump when the host lets PHP start programs; otherwise (e.g. Hostinger,
+            // where proc_open is switched off) a PHP-only dump with the same layout.
+            $binary     = $this->usePhpDumper() ? null : $this->locateMysqldump();
 
             $tmpDir = $this->makeTempDirectory($backupDir);
 
@@ -165,6 +168,8 @@ class BackupService
                 'error'         => $message,
             ]);
         } finally {
+            $this->ensureNoOpenTransaction();
+
             if ($tmpDir) {
                 File::deleteDirectory($tmpDir);
             }
@@ -405,8 +410,32 @@ class BackupService
         return ['SystemRoot' => $root, 'SYSTEMROOT' => $root, 'windir' => $root];
     }
 
-    private function dumpDatabase(string $binary, array $connection, string $tmpDir): string
+    /**
+     * True when the dump must be written by PHP itself.
+     *
+     * BACKUP_DUMP_DRIVER: "auto" (default) = PHP dump only when proc_open is not
+     * available; "php" = always PHP; "mysqldump" = always the program.
+     */
+    private function usePhpDumper(): bool
     {
+        $driver = strtolower((string) config('backup.dump_driver', 'auto'));
+
+        if ($driver === 'php') {
+            return true;
+        }
+        if ($driver === 'mysqldump') {
+            return false;
+        }
+
+        return !function_exists('proc_open');
+    }
+
+    private function dumpDatabase(?string $binary, array $connection, string $tmpDir): string
+    {
+        if ($binary === null) {
+            return $this->dumpDatabaseWithPhp($tmpDir);
+        }
+
         $optionsFile = $tmpDir . DIRECTORY_SEPARATOR . 'client.cnf';
         $dumpPath    = $tmpDir . DIRECTORY_SEPARATOR . 'database.sql';
 
@@ -437,6 +466,69 @@ class BackupService
         }
 
         return $dumpPath;
+    }
+
+    private function dumpDatabaseWithPhp(string $tmpDir): string
+    {
+        $dumpPath = $tmpDir . DIRECTORY_SEPARATOR . 'database.sql';
+        // The dump runs on its OWN database connection (with its own snapshot
+        // transaction), so nothing it does can ever touch the connection that
+        // saves the backup_logs record.
+        $pdo = $this->openDumpConnection();
+
+        // Only real tables (views are not part of the backup, same as the check below).
+        $tables = $this->liveTableNames();
+
+        if (!$tables) {
+            throw new RuntimeException('The database has no tables to back up.');
+        }
+
+        try {
+            (new PhpDatabaseDumper())->dump($pdo, (string) $this->databaseName, $tables, $dumpPath);
+        } finally {
+            $pdo = null; // close the dedicated connection
+        }
+
+        return $dumpPath;
+    }
+
+    /**
+     * A separate PDO connection to the same database, only for the dump.
+     */
+    private function openDumpConnection(): \PDO
+    {
+        $config = config('database.connections.' . $this->connectionName);
+
+        $target = !empty($config['unix_socket'])
+            ? 'unix_socket=' . $config['unix_socket']
+            : 'host=' . ($config['host'] ?? '127.0.0.1') . ';port=' . (int) ($config['port'] ?? 3306);
+
+        $dsn = 'mysql:' . $target . ';dbname=' . $config['database'] . ';charset=utf8mb4';
+
+        return new \PDO($dsn, (string) ($config['username'] ?? ''), (string) ($config['password'] ?? ''), [
+            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+        ]);
+    }
+
+    /**
+     * Safety net: if a transaction is somehow still open on the application's
+     * own connection, the backup_logs update would never be saved (it is rolled
+     * back when the command ends and the row stays "running" for good). Commit
+     * it so the record is saved. Never touches a transaction Laravel itself
+     * opened (transactionLevel() > 0).
+     */
+    private function ensureNoOpenTransaction(): void
+    {
+        try {
+            $connection = DB::connection($this->connectionName ?? config('database.default'));
+
+            if ($connection->transactionLevel() === 0 && $connection->getPdo()->inTransaction()) {
+                Log::warning('Clinic backup: a database transaction was still open after the backup; committing it so the backup record is saved.');
+                $connection->getPdo()->exec('COMMIT');
+            }
+        } catch (Throwable) {
+            // best effort only
+        }
     }
 
     private function writeClientOptionsFile(string $path, array $connection): void

@@ -25,12 +25,9 @@ class LaboratoryRequest extends Model
         'reviewed_by',
         'reviewed_at',
         'review_notes',
-        'follow_up_recommended',
-        'follow_up_instructions',
     ];
 
     protected $casts = [
-        'follow_up_recommended' => 'boolean',
         'requested_at'        => 'datetime',
         'result_received_at'  => 'datetime',
         'reviewed_at'         => 'datetime',
@@ -163,16 +160,6 @@ class LaboratoryRequest extends Model
     }
 
     /**
-     * Follow-up appointments booked for THIS laboratory request (via
-     * appointments.follow_up_laboratory_request_id). Normally zero or
-     * one; more only if an earlier one was Cancelled/Rejected/No Show.
-     */
-    public function followUpAppointments()
-    {
-        return $this->hasMany(Appointment::class, 'follow_up_laboratory_request_id');
-    }
-
-    /**
      * The correction request currently awaiting a new upload, if any —
      * kept ONLY for any legacy/simple "is something pending" checks.
      * Prefer pendingCorrections()/pendingCorrectionsByTest() wherever
@@ -244,48 +231,6 @@ class LaboratoryRequest extends Model
         });
 
         return $names->isEmpty() ? '—' : $names->implode(', ');
-    }
-
-    // ====================
-    // FOLLOW-UP CONSULTATION
-    // ====================
-
-    /**
-     * The follow-up appointment currently "holding" this recommendation
-     * (anything not Cancelled/Rejected/No Show — Completed included),
-     * newest first. Null if none was booked yet or all were cancelled.
-     */
-    public function currentFollowUpAppointment(): ?Appointment
-    {
-        return $this->followUpAppointments
-            ->sortByDesc('created_at')
-            ->first(fn (Appointment $a) => !in_array($a->status, Appointment::INACTIVE_STATUSES, true));
-    }
-
-    /**
-     * True when the Doctor recommended a follow-up on a Reviewed result
-     * and no active/completed follow-up appointment exists for it yet —
-     * i.e. the "Book Follow-up Consultation" action should be offered.
-     */
-    public function needsFollowUpBooking(): bool
-    {
-        return $this->isReviewed()
-            && $this->follow_up_recommended
-            && $this->currentFollowUpAppointment() === null;
-    }
-
-    /**
-     * Query counterpart of needsFollowUpBooking(), used both for listing
-     * and for the authoritative server-side check before a follow-up
-     * appointment is created.
-     */
-    public function scopeAwaitingFollowUpBooking($query)
-    {
-        return $query->where('status', 'Reviewed')
-            ->where('follow_up_recommended', true)
-            ->whereDoesntHave('followUpAppointments', function ($q) {
-                $q->whereNotIn('status', Appointment::INACTIVE_STATUSES);
-            });
     }
 
     public function isAwaitingResult(): bool

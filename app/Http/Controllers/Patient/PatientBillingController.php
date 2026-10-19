@@ -62,6 +62,7 @@ class PatientBillingController extends Controller
 
         $invoice->load(['items', 'patient', 'appointment']);
         $payment->load('receivedBy');
+        $payment->setRelation('invoice', $invoice);
 
         return view('billing.receipt', [
             'invoice'   => $invoice,

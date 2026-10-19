@@ -6,11 +6,17 @@
     font-family: "Poppins", Arial, sans-serif;
 }
 
-html { scroll-behavior: smooth; }
+html {
+    scroll-behavior: smooth;
+    /* Stop iOS Safari from inflating text when the phone is rotated. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
 
 body {
     display: flex;
     min-height: 100vh;
+    min-height: 100dvh;
     background: #f4f0fa;
 }
 
@@ -22,6 +28,10 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    /* Phones: 100vh is taller than what is visible while the browser's URL
+       bar is showing, which pushed the user card off-screen. dvh = the
+       real visible height (browsers without dvh keep the vh line above). */
+    height: 100dvh;
     padding: 0;
     box-shadow: 4px 0 12px rgba(0,0,0,0.15);
     border-radius: 0 20px 20px 0;
@@ -55,6 +65,15 @@ body {
     flex-shrink: 0;
 }
 
+/* Clinic logo uploaded in Admin > System Settings (replaces the default icon) */
+.sidebar-brand .brand-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 10px;
+    background: #fff;
+}
+
 .sidebar-brand .brand-text h2 {
     font-size: 17px;
     font-weight: 700;
@@ -80,7 +99,22 @@ body {
     flex-direction: column;
     padding: 14px 14px;
     gap: 2px;
-    overflow: hidden;
+    /* Scrolls when the screen is too short for every link (small phones,
+       landscape) instead of silently clipping the last items. */
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.28) transparent;
+}
+
+.sidebar-nav-wrapper::-webkit-scrollbar { width: 5px; }
+.sidebar-nav-wrapper::-webkit-scrollbar-track { background: transparent; }
+.sidebar-nav-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.28);
+    border-radius: 6px;
 }
 
 /* ================= SECTION LABELS ================= */
@@ -284,6 +318,11 @@ body {
 /* ================= MAIN CONTENT ================= */
 .main-content {
     flex: 1;
+    /* A flex item defaults to min-width:auto, so one wide table/nowrap row
+       inside a page made the WHOLE page wider than the phone screen.
+       min-width:0 lets it shrink to the viewport (wide tables then scroll
+       inside their own wrappers). */
+    min-width: 0;
     display: flex;
     flex-direction: column;
     margin-left: 260px;
@@ -596,8 +635,24 @@ body.no-scroll {
 
 /* ================= MOBILE (drawer breakpoint) ================= */
 @media screen and (max-width: 900px) {
-    .sidebar { left: -260px; transition: left 0.3s ease; }
-    .sidebar.open { left: 0; }
+    /* Closed drawer: fully off-screen AND invisible, so its shadow no
+       longer bleeds onto the left edge of the page and its links can't be
+       reached with Tab while it is closed. */
+    .sidebar {
+        left: -260px;
+        visibility: hidden;
+        box-shadow: none;
+        transition: left 0.3s ease, box-shadow 0.3s ease, visibility 0s linear 0.3s;
+    }
+    .sidebar.open {
+        left: 0;
+        visibility: visible;
+        box-shadow: 4px 0 24px rgba(0,0,0,0.28);
+        transition: left 0.3s ease, box-shadow 0.3s ease, visibility 0s;
+    }
+
+    /* Thumb-friendly rows */
+    .sidebar-nav-wrapper a { min-height: 44px; }
 
     /* True overlay drawer: the sidebar floats ABOVE the content (it's
        already position:fixed with z-index:1000) instead of pushing the
@@ -626,6 +681,16 @@ body.no-scroll {
     .main-content {
         transition: none;
     }
+}
+
+/* Short screens (phones in landscape): compact brand/footer so more of the
+   menu is visible without scrolling. */
+@media screen and (max-height: 520px) {
+    .sidebar-brand { padding: 12px 18px 10px; }
+    .sidebar-nav-wrapper { padding: 8px 12px; }
+    .sidebar-nav-wrapper a { padding-top: 8px; padding-bottom: 8px; min-height: 40px; }
+    .nav-section-label { padding-top: 6px; }
+    .sidebar-footer { padding: 8px 12px 10px; }
 }
 
 @media screen and (max-width: 768px) {
@@ -1449,4 +1514,317 @@ body.no-scroll {
     .notif-panel { left: 8px; right: 8px; top: 66px; }
     .notif-tab { font-size: 11px; padding: 6px 10px; }
     .notif-item-icon { width: 34px; height: 34px; }
+}
+
+
+/* ================= MOBILE APP FEEL =================
+   1) Bottom tab bar (phones)   2) touch behavior   3) iOS input zoom
+   -------------------------------------------------------------------- */
+.mobile-tabbar { display: none; }
+
+/* Touch devices: no 300ms tap delay / double-tap zoom on controls, and no
+   grey flash when tapping. */
+@media (pointer: coarse) {
+    a, button, label, select, summary, .hamburger, [role="button"] {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+@media screen and (max-width: 640px) {
+    .mobile-tabbar {
+        display: flex;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        /* Below the More sheet (1100) and its backdrop (1090), and below
+           page modals (999-1000), so those always cover the bar. */
+        z-index: 900;
+        background: #ffffff;
+        border-top: 1px solid #ebe6f3;
+        box-shadow: 0 -4px 18px rgba(106, 13, 173, 0.10);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    .mobile-tabbar .tab {
+        flex: 1 1 0;
+        min-width: 0;
+        min-height: 58px;
+        padding: 7px 2px 6px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        position: relative;
+        background: none;
+        border: 0;
+        color: #7a7589;
+        text-decoration: none;
+        font-family: "Poppins", Arial, sans-serif;
+        font-size: 10.5px;
+        font-weight: 600;
+        line-height: 1.2;
+        cursor: pointer;
+        transition: color 0.18s ease, background 0.18s ease;
+    }
+
+    .mobile-tabbar .tab i { font-size: 22px; line-height: 1; }
+
+    .mobile-tabbar .tab span {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .mobile-tabbar .tab.active { color: #6a0dad; }
+
+    .mobile-tabbar .tab.active::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 28%;
+        right: 28%;
+        height: 3px;
+        border-radius: 0 0 4px 4px;
+        background: #6a0dad;
+    }
+
+    .mobile-tabbar .tab:active { background: rgba(106, 13, 173, 0.07); }
+
+    /* Keep the last bit of every page clear of the bar. */
+    .page-content {
+        padding-bottom: calc(58px + 18px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* iOS Safari zooms the whole page when focusing a field whose text is
+       smaller than 16px — keep fields at 16px on phones. */
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]),
+    select,
+    textarea {
+        font-size: 16px;
+    }
+}
+
+@media print {
+    .mobile-tabbar,
+    .more-sheet,
+    .more-backdrop { display: none !important; }
+}
+
+/* ================= MOBILE "MORE" BOTTOM SHEET =================
+   Phones (<= 640px) have NO sidebar: the bottom tab bar is the navigation
+   and "More" opens this sheet with every page. Tablets/desktop keep the
+   normal sidebar. */
+.more-sheet,
+.more-backdrop { display: none; }
+
+@media screen and (max-width: 640px) {
+    /* No sidebar / drawer / hamburger on phones. */
+    .sidebar,
+    .sidebar-backdrop,
+    .hamburger { display: none !important; }
+
+    .more-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(30, 10, 50, 0.45);
+        z-index: 1090;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+    }
+    .more-backdrop.show {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.25s ease, visibility 0s;
+    }
+
+    .more-sheet {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1100;
+        max-height: 88vh;
+        max-height: 88dvh;
+        background: #ffffff;
+        border-radius: 24px 24px 0 0;
+        box-shadow: 0 -10px 40px rgba(60, 10, 100, 0.25);
+        transform: translateY(105%);
+        visibility: hidden;
+        transition: transform 0.3s cubic-bezier(.2, .8, .2, 1), visibility 0s linear 0.3s;
+        overscroll-behavior: contain;
+    }
+    .more-sheet.open {
+        transform: translateY(0);
+        visibility: visible;
+        transition: transform 0.3s cubic-bezier(.2, .8, .2, 1), visibility 0s;
+    }
+
+    .more-handle {
+        width: 40px;
+        height: 4px;
+        border-radius: 4px;
+        background: #ddd3ea;
+        margin: 10px auto 2px;
+        flex-shrink: 0;
+        touch-action: none;
+    }
+
+    .more-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 18px 14px;
+        border-bottom: 1px solid #f0ebf6;
+        flex-shrink: 0;
+        touch-action: none;
+    }
+
+    .more-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #6a0dad;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 15px;
+        flex-shrink: 0;
+    }
+    .more-avatar--img { object-fit: cover; }
+
+    .more-who { flex: 1; min-width: 0; }
+    .more-name {
+        font-size: 15px;
+        font-weight: 700;
+        color: #1f1a2e;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .more-role { font-size: 12px; color: #8a8497; }
+
+    .more-close {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: 0;
+        background: #f3eafd;
+        color: #6a0dad;
+        font-size: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .more-body {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        padding: 6px 14px calc(18px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .more-label {
+        display: block;
+        padding: 14px 8px 6px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #8a8497;
+    }
+
+    .more-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+        min-height: 52px;
+        padding: 6px 10px;
+        border: 0;
+        border-radius: 14px;
+        background: none;
+        color: #2b2540;
+        text-decoration: none;
+        font-family: "Poppins", Arial, sans-serif;
+        font-size: 14.5px;
+        font-weight: 600;
+        text-align: left;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+    .more-item:active { background: #f6f0fc; }
+
+    .more-ico {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        background: #f3eafd;
+        color: #6a0dad;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+
+    .more-text { flex: 1; min-width: 0; }
+
+    .more-item.active { background: #f3eafd; color: #6a0dad; }
+    .more-item.active .more-ico { background: #fff; }
+
+    .more-item--logout {
+        margin-top: 14px;
+        color: #e53935;
+        border-top: 1px solid #f0ebf6;
+        border-radius: 0 0 14px 14px;
+        padding-top: 10px;
+    }
+    .more-item--logout .more-ico { background: #fdeceb; color: #e53935; }
+    .more-item--logout:active { background: #fff3f2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .more-sheet, .more-backdrop { transition: none !important; }
+}
+
+/* Header on narrow phones: the page title may be long ("Account Settings",
+   "Appointment History"). Let the left side shrink and ellipsize instead of
+   pushing the bell / avatar / logout past the screen edge. */
+@media screen and (max-width: 640px) {
+    .admin-header .header-left {
+        flex-shrink: 1;
+        min-width: 0;
+    }
+
+    .admin-header .header-right { flex-shrink: 0; }
+
+    .breadcrumb {
+        min-width: 0;
+        white-space: nowrap;
+    }
+
+    .breadcrumb .bc-page {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+/* Very narrow phones (320px and below): slightly smaller tab labels. */
+@media screen and (max-width: 340px) {
+    .mobile-tabbar .tab { font-size: 9.5px; }
+    .mobile-tabbar .tab i { font-size: 21px; }
 }

@@ -8,13 +8,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * Patient → Medical Certificates (READ-ONLY history).
+ * Patient → Medical Certificates (history + personal copy).
  *
- * A Medical Certificate is never requested, approved, corrected or printed
- * through the patient portal. The Doctor creates it at the clinic, the fee
- * is paid at the counter, and the patient receives the physically signed
- * copy from Staff. This controller only lets the patient look back at
- * certificates that were already RELEASED to them.
+ * A Medical Certificate is never requested, approved or corrected through
+ * the patient portal. The Doctor creates it at the clinic, the fee is paid
+ * at the counter, and the patient receives the physically signed copy from
+ * Staff. This controller lets the patient look back at certificates that
+ * were already RELEASED to them and, once the invoice is fully paid, print
+ * or save a COPY of it (the signed paper copy stays the official one).
  */
 class MedicalCertificateController extends Controller
 {
@@ -45,5 +46,23 @@ class MedicalCertificateController extends Controller
         $medicalCertificate->load(['appointment.doctor', 'doctor']);
 
         return view('patient.medical-certificates.show', compact('medicalCertificate'));
+    }
+
+    /**
+     * Patient → print / save a COPY of a released certificate.
+     * Only the owner, only when RELEASED, and only when the invoice is PAID.
+     */
+    public function print(MedicalCertificate $medicalCertificate)
+    {
+        abort_unless($medicalCertificate->patient_id === Auth::id(), 403);
+        abort_unless($medicalCertificate->isReleased(), 404);
+
+        $medicalCertificate->load(['appointment.walkinPatient', 'appointment.medicalRecord', 'patient', 'doctor', 'invoice']);
+
+        abort_unless($medicalCertificate->isPaid(), 403, 'You can print this certificate once its invoice is fully paid.');
+
+        return view('patient.medical-certificates.print', [
+            'certificate' => $medicalCertificate,
+        ]);
     }
 }

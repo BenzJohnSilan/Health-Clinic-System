@@ -76,33 +76,40 @@
 
     </div>
 
-    <div class="bk-note">
-        <i class="fa-solid fa-shield-halved"></i>
-        <span>Backups hold patient records and uploaded IDs. They are kept in private server storage and only an Admin can download them. Keep any downloaded copy somewhere safe and never share it.</span>
-    </div>
+    {{-- ================= SEARCH & FILTER ================= --}}
+    @if($hasAny)
+        <form method="GET" action="{{ route('admin.backups.index') }}" class="search-filter-bar">
+            <input
+                type="text"
+                name="search"
+                class="filter-input"
+                value="{{ $search }}"
+                placeholder="Search backup filename...">
 
-    {{-- ================= AUTOMATIC BACKUP + RETENTION ================= --}}
-    <div class="bk-note" id="autoBackupNote">
-        <i class="fa-solid fa-calendar-check"></i>
-        <span>
-            @if($schedule['enabled'])
-                Automatic backup runs every day at {{ $schedule['time'] }}.
-                @if($schedule['keep'] === 1)
-                    Only the latest successful backup is kept; older ones are deleted.
-                @else
-                    Only the latest {{ $schedule['keep'] }} successful backups are kept; older ones are deleted.
-                @endif
-                @if($schedule['last'])
-                    Last automatic run: {{ $schedule['last']->started_at->format('M d, Y h:i A') }}
-                    ({{ ucfirst($schedule['last']->status) }}).
-                @else
-                    It has not run yet.
-                @endif
-            @else
-                Automatic backup is turned off. Backups are only created when you use Backup Now.
+            <select name="type" class="filter-input">
+                <option value="">All Types</option>
+                <option value="manual"      {{ $type === 'manual'      ? 'selected' : '' }}>Manual</option>
+                <option value="automatic"   {{ $type === 'automatic'   ? 'selected' : '' }}>Automatic</option>
+                <option value="pre-restore" {{ $type === 'pre-restore' ? 'selected' : '' }}>Pre-restore</option>
+                <option value="restore"     {{ $type === 'restore'     ? 'selected' : '' }}>Restore</option>
+            </select>
+
+            <select name="status" class="filter-input">
+                <option value="">All Status</option>
+                <option value="success" {{ $status === 'success' ? 'selected' : '' }}>Success</option>
+                <option value="failed"  {{ $status === 'failed'  ? 'selected' : '' }}>Failed</option>
+                <option value="running" {{ $status === 'running' ? 'selected' : '' }}>Running</option>
+            </select>
+
+            <button type="submit" class="btn-filter">
+                <i class="fa-solid fa-filter"></i> Filter
+            </button>
+
+            @if($search !== '' || $type !== '' || $status !== '')
+                <a href="{{ route('admin.backups.index') }}" class="btn-clear-filter">Clear</a>
             @endif
-        </span>
-    </div>
+        </form>
+    @endif
 
     @if(!$hasAny)
 
@@ -118,7 +125,9 @@
 
     @else
 
-        {{-- ================= HISTORY TABLE ================= --}}
+        {{-- ================= HISTORY TABLE (table + pagination in one card) ================= --}}
+        <div class="bk-table-card">
+
         <div class="table-wrapper">
 
             <table class="medical-table">
@@ -135,7 +144,7 @@
                 </thead>
 
                 <tbody>
-                    @foreach($backups as $backup)
+                    @forelse($backups as $backup)
                         @php
                             $info      = $details[$backup->id] ?? null;
                             $contents  = $info['contents'] ?? null;
@@ -157,18 +166,12 @@
                                     };
                                 @endphp
                                 <span class="bk-badge {{ $typeStyle[0] }}">{{ $typeStyle[1] }}</span>
-                                @if($backup->creator)
-                                    <span class="bk-sub">by {{ $backup->creator->full_name }}</span>
-                                @endif
-                                @if($backup->details)
-                                    <span class="bk-sub">{{ $backup->details }}</span>
-                                @endif
                             </td>
 
                             <td>
                                 @if($backup->isRestoreOperation())
-                                    <span class="bk-contents-title">Restored backup</span>
-                                    <span class="bk-sub">{{ $backup->filename }}</span>
+                                    <span class="bk-contents-title">System restored</span>
+                                    <span class="bk-sub">From {{ $backup->filename }}</span>
                                 @elseif($backup->isSuccessful())
                                     <span class="bk-contents-title">Database + Files</span>
                                     @if($contents && $contents['tables'] !== null && $contents['files'] !== null)
@@ -217,14 +220,18 @@
                                         <i class="fa-solid fa-circle-info"></i> View details
                                     </button>
                                 @elseif($backup->isSuccessful())
-                                    <span class="bk-muted">Completed</span>
+                                    <span class="bk-muted">&mdash;</span>
                                 @else
                                     <span class="bk-muted">In progress</span>
                                 @endif
                             </td>
 
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="6" class="bk-no-results">No backups match your search/filters.</td>
+                        </tr>
+                    @endforelse
                 </tbody>
 
             </table>
@@ -235,8 +242,12 @@
         <div class="pagination-wrapper">
 
             <div class="pagination-info">
-                Showing <strong>{{ $backups->firstItem() }}–{{ $backups->lastItem() }}</strong>
-                of <strong>{{ $backups->total() }}</strong> backup{{ $backups->total() !== 1 ? 's' : '' }}
+                @if($backups->total() > 0)
+                    Showing <strong>{{ $backups->firstItem() }}–{{ $backups->lastItem() }}</strong>
+                    of <strong>{{ $backups->total() }}</strong> backup{{ $backups->total() !== 1 ? 's' : '' }}
+                @else
+                    No results found
+                @endif
             </div>
 
             <nav class="pagination-nav" aria-label="Pagination">
@@ -282,6 +293,8 @@
 
         </div>
 
+        </div>{{-- /.bk-table-card --}}
+
     @endif
 
 </div>
@@ -296,7 +309,7 @@
         </p>
         <ul class="modal-list">
             <li>All clinic records in the database</li>
-            <li>Profile photos and doctor signatures</li>
+            <li>Profile photos</li>
             <li>Valid ID images and laboratory result files</li>
         </ul>
         <p class="modal-text">

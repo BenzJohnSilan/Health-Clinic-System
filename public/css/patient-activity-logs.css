@@ -360,6 +360,71 @@ body {
     color: #9ca3af;
 }
 
+/* ================= CARDS (MOBILE) =================
+   Hidden by default; shown instead of the table on phones.
+   Same look as the Appointments / History / Billing cards. */
+.log-cards { display: none; }
+
+.log-card {
+    background: #fff;
+    border: 1px solid #f0e6ff;
+    border-radius: 14px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+    padding: 16px;
+}
+
+.log-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f0e6ff;
+}
+.log-card-top .log-action-badge { min-width: 0; white-space: normal; }
+.log-card-no { flex-shrink: 0; font-size: 12px; font-weight: 600; color: #9ca3af; }
+
+.log-card-row {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f5eeff;
+}
+.log-card-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+.log-card-label {
+    padding-top: 1px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    overflow-wrap: normal;
+    word-break: normal;
+}
+
+.log-card-value {
+    min-width: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #374151;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.log-empty {
+    text-align: center;
+    font-style: italic;
+    color: #9ca3af;
+    padding: 32px 16px;
+    background: #fff;
+    border: 1px solid #f0e6ff;
+    border-radius: 14px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+}
+
 /* ================= RESPONSIVE ================= */
 @media screen and (max-width: 900px) {
     .filter-grid {
@@ -373,27 +438,96 @@ body {
     }
 }
 
-@media screen and (max-width: 600px) {
-    .filter-grid {
-        grid-template-columns: 1fr;
-    }
+/* Phones: stacked cards instead of a table. */
+@media screen and (max-width: 640px) {
+    .table-wrapper { display: none; }
+    .log-cards { display: grid; gap: 12px; }
 
-    .filter-actions {
-        justify-content: stretch;
-    }
-
-    .btn-filter {
-        flex: 1;
-    }
-
-    .medical-table th,
-    .medical-table td {
-        padding: 9px 10px;
-        font-size: 12px;
-    }
-
+    /* No table above it any more, so the pagination box is a full card. */
     .pagination-wrapper {
         flex-direction: column;
         align-items: center;
+        border: 1px solid #f0e6ff;
+        border-radius: 12px;
+        margin-top: 16px;
     }
+}
+
+@media screen and (max-width: 600px) {
+    /* The top bar already shows "Activity Logs", so the big page title
+       is hidden on phones. */
+    .page-header--list { display: none; }
+
+    /* App-style filter card, compact:
+         Search (full)  /  Action (full)
+         Month | Year   /  Date from | Date to
+         Reset | Filter                                           */
+    .filter-bar {
+        padding: 14px;
+        border-radius: 14px;
+        margin-bottom: 14px;
+    }
+
+    .filter-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 10px;
+        margin-bottom: 14px;
+    }
+    .filter-group { min-width: 0; }
+    .filter-group--full { grid-column: 1 / -1; }
+
+    .filter-group label { font-size: 11px; }
+
+    .filter-group input,
+    .filter-group select {
+        width: 100%;
+        min-width: 0;
+        height: 48px;
+        padding: 0 14px;
+        border-color: #ece4f7;
+        border-radius: 14px;
+        font-size: 13.5px;
+    }
+    .filter-group select { padding-right: 36px; background-position: right 14px center; }
+    .filter-group input[type="date"] { padding: 0 10px; font-size: 13px; }
+
+    .filter-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        justify-content: stretch;
+        padding-top: 14px;
+    }
+    .btn-filter {
+        flex: none;
+        width: 100%;
+        height: 48px;
+        border-radius: 14px;
+        font-size: 13.5px;
+    }
+    .btn-filter-apply { box-shadow: 0 4px 12px rgba(106, 13, 173, 0.28); }
+    .btn-filter:active { transform: scale(0.97); }
+
+    .active-filters { gap: 6px; margin-bottom: 14px; }
+}
+
+@media screen and (max-width: 420px) {
+    .log-card { padding: 14px 12px; }
+    .log-card-row { grid-template-columns: 64px minmax(0, 1fr); gap: 8px; }
+    .log-card-label { font-size: 10px; }
+    .log-card-value { font-size: 13px; }
+
+    .pagination-wrapper { padding: 12px; }
+    .pagination-info { text-align: center; font-size: 12px; }
+    .pagination-nav { justify-content: center; }
+}
+
+@media screen and (max-width: 340px) {
+    /* Very small phones: dates stack one per row. */
+    .filter-grid { grid-template-columns: 1fr; }
+}
+
+/* Touch devices: no sticky hover lift after a tap. */
+@media (hover: none) {
+    .btn-filter-apply:hover { transform: none; }
 }

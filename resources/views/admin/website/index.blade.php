@@ -193,7 +193,7 @@
             @csrf @method('PUT')
             <div class="ws-card-head"><div class="ws-card-title"><span class="ws-card-icon"><i class='bx bx-dock-bottom'></i></span><h3>Brand &amp; footer</h3></div></div>
             <div class="ws-grid-2">
-                @include('admin.website.partials.field', ['name' => 'brand_name', 'label' => 'Brand name (navigation bar, footer, chatbot)', 'max' => 40, 'required' => true])
+                @include('admin.website.partials.field', ['name' => 'brand_name', 'label' => 'Brand name (navigation bar, footer, chatbot)', 'max' => 40, 'required' => true, 'help' => 'Once a Clinic name is saved in System Settings, that name is shown on the landing page instead.'])
                 @include('admin.website.partials.field', ['name' => 'footer_copyright_name', 'label' => 'Copyright name', 'max' => 80, 'required' => true])
             </div>
             @include('admin.website.partials.field', ['name' => 'footer_description', 'label' => 'Footer description', 'type' => 'textarea', 'rows' => 3, 'max' => 300, 'required' => true])

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Archivable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
@@ -12,9 +13,15 @@ use Carbon\Carbon;
 
 class Appointment extends Model
 {
-    use HasFactory;
+    use HasFactory, Archivable;
 
     protected $table = 'appointments';
+
+    /** Key used in archive_entries for this model. */
+    public static function archiveType(): string
+    {
+        return 'appointment';
+    }
 
     protected $fillable = [
         'patient_id',
@@ -32,14 +39,13 @@ class Appointment extends Model
         'reference_no',
         'booked_by_staff',
         'appointment_type',
-        'follow_up_laboratory_request_id',
         'billing_draft',
         'arrived_at',
         'queue_number',
     ];
 
     // ====================
-    // APPOINTMENT TYPE (Laboratory Result Follow-up Consultation)
+    // APPOINTMENT TYPE
     // ====================
 
     public const TYPE_REGULAR   = 'Regular';
@@ -57,15 +63,6 @@ class Appointment extends Model
 
     /** Statuses in which a walk-in is still part of the ACTIVE queue. */
     public const WALK_IN_ACTIVE_STATUSES = ['Waiting', 'Checked In', 'In Progress'];
-
-    /**
-     * Statuses in which an appointment no longer "holds" a follow-up
-     * recommendation — if the only follow-up booked for a laboratory
-     * request ended in one of these, the patient/staff may book it again.
-     * Everything else (Pending, Approved, Rescheduled, Checked In,
-     * In Progress, Completed) counts as the follow-up being booked/done.
-     */
-    public const INACTIVE_STATUSES = ['Cancelled', 'Rejected', 'No Show'];
 
     protected $casts = [
         'appointment_date' => 'date:Y-m-d',
@@ -209,16 +206,6 @@ class Appointment extends Model
     public function rescheduledBy()
     {
         return $this->belongsTo(User::class, 'rescheduled_by');
-    }
-
-    /**
-     * The ORIGINAL laboratory request this follow-up appointment was
-     * booked for (null for every Regular appointment). Gives the Doctor
-     * Appointment -> Laboratory Request -> tests / results / review.
-     */
-    public function followUpLaboratoryRequest()
-    {
-        return $this->belongsTo(\App\Models\LaboratoryRequest::class, 'follow_up_laboratory_request_id');
     }
 
     public function prescriptions()

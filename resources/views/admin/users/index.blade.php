@@ -83,18 +83,17 @@
                     <button type="button" class="role-card" data-role="Admin">
                         <span class="role-icon">🛡️</span>
                         <span class="role-name">Admin</span>
+                        <span class="role-desc">Manages users and system settings</span>
                     </button>
                     <button type="button" class="role-card" data-role="Doctor">
                         <span class="role-icon">🩺</span>
                         <span class="role-name">Doctor</span>
+                        <span class="role-desc">Handles consultations and prescriptions</span>
                     </button>
                     <button type="button" class="role-card" data-role="Staff">
                         <span class="role-icon">🗂️</span>
                         <span class="role-name">Staff</span>
-                    </button>
-                    <button type="button" class="role-card" data-role="Patient">
-                        <span class="role-icon">🏥</span>
-                        <span class="role-name">Patient</span>
+                        <span class="role-desc">Front desk, billing and inventory</span>
                     </button>
                 </div>
             </div>
@@ -250,8 +249,11 @@
                         </div>
                         <div class="form-group">
                             <label>Position <span class="required">*</span></label>
-                            <input type="text" id="position_field" name="position" value="{{ old('position') }}"
-                                   placeholder="e.g. Nurse, Receptionist, Cashier">
+                            <select id="position_field" name="position">
+                                <option value="">-- Select Position --</option>
+                                <option value="Nurse"   {{ old('position') == 'Nurse'   ? 'selected' : '' }}>Nurse</option>
+                                <option value="Cashier" {{ old('position') == 'Cashier' ? 'selected' : '' }}>Cashier</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <label>Permission Preset</label>
@@ -267,83 +269,6 @@
                                 The Position is only a label. Access comes from the permissions given here;
                                 you can fine-tune them later in Manage Permissions.
                             </small>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- === MEDICAL INFO (Patient only) === -->
-                <div class="form-section role-section" data-for="Patient" style="display:none;">
-                    <div class="section-heading">
-                        <span class="section-badge section-badge--patient">Medical Information</span>
-                    </div>
-                    <div class="form-grid-2">
-                        <div class="form-group">
-                            <label>Blood Type</label>
-                            <select name="blood_type">
-                                <option value="">-- Select --</option>
-                                @foreach(['A+','A-','B+','B-','AB+','AB-','O+','O-'] as $bt)
-                                    <option value="{{ $bt }}" {{ old('blood_type') == $bt ? 'selected' : '' }}>{{ $bt }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Allergies</label>
-                            <input type="text" name="allergies" value="{{ old('allergies') }}"
-                                   placeholder="e.g. Penicillin, Pollen">
-                        </div>
-                        <div class="form-group">
-                            <label>ID Type</label>
-                            <select name="id_type">
-                                <option value="">-- Select --</option>
-                                @foreach(["PhilHealth ID","SSS ID","GSIS ID","Passport","Driver's License","Postal ID","Voter's ID","National ID","School ID","Senior Citizen ID"] as $idType)
-                                    <option value="{{ $idType }}" {{ old('id_type') == $idType ? 'selected' : '' }}>{{ $idType }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Upload Valid ID</label>
-                            <input type="file" name="valid_id" accept=".jpg,.jpeg,.png,.pdf">
-                        </div>
-                        <div class="form-group form-group-full">
-                            <label>Reason for Registration</label>
-                            <select name="reason">
-                                <option value="">-- Select Reason --</option>
-                                <option value="To Book Appointments Online"           {{ old('reason')=='To Book Appointments Online'           ? 'selected':'' }}>To Book Appointments Online</option>
-                                <option value="To Access Clinic Services"             {{ old('reason')=='To Access Clinic Services'             ? 'selected':'' }}>To Access Clinic Services</option>
-                                <option value="To Manage Personal Health Records"     {{ old('reason')=='To Manage Personal Health Records'     ? 'selected':'' }}>To Manage Personal Health Records</option>
-                                <option value="For Easier Communication with the Clinic" {{ old('reason')=='For Easier Communication with the Clinic' ? 'selected':'' }}>For Easier Communication with the Clinic</option>
-                                <option value="Others"                                {{ old('reason')=='Others'                                ? 'selected':'' }}>Others</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- === EMERGENCY CONTACT (Patient only) === -->
-                <div class="form-section role-section" data-for="Patient" style="display:none;">
-                    <div class="section-heading">
-                        <span class="section-badge section-badge--patient">Emergency Contact</span>
-                    </div>
-                    <div class="form-grid-2">
-                        <div class="form-group">
-                            <label>Contact Person Name</label>
-                            <input type="text" name="emergency_name" value="{{ old('emergency_name') }}">
-                        </div>
-                        <div class="form-group">
-                            <label>Relationship</label>
-                            <input type="text" name="relationship" value="{{ old('relationship') }}"
-                                   placeholder="e.g. Spouse, Parent, Sibling">
-                        </div>
-                        <div class="form-group">
-                            <label>Contact Number</label>
-                            <input type="text" name="emergency_contact_number"
-                                   value="{{ old('emergency_contact_number') }}"
-                                   maxlength="11" pattern="\d{11}"
-                                   oninput="this.value=this.value.replace(/[^0-9]/g,'')"
-                                   placeholder="09XXXXXXXXX">
-                        </div>
-                        <div class="form-group">
-                            <label>Address</label>
-                            <input type="text" name="emergency_address" value="{{ old('emergency_address') }}">
                         </div>
                     </div>
                 </div>
@@ -482,14 +407,7 @@
         @forelse($users as $user)
             <tr>
                 <td>{{ $user->id }}</td>
-                <td>
-                    @if($user->avatar)
-                        <img src="{{ asset('storage/' . $user->avatar) }}"
-                             style="width:30px;height:30px;border-radius:50%;object-fit:cover;
-                                    vertical-align:middle;margin-right:6px;">
-                    @endif
-                    {{ $user->first_name }} {{ $user->last_name }}
-                </td>
+                <td>{{ $user->first_name }} {{ $user->last_name }}</td>
                 <td>{{ $user->username }}</td>
                 <td>{{ $user->email }}</td>
                 <td>
@@ -530,14 +448,14 @@
                         <button type="button"
                                 class="btn-delete-disabled"
                                 disabled
-                                title="Hindi mabura ang Admin account">
-                            Delete
+                                title="Admin accounts cannot be archived">
+                            Archive
                         </button>
                     @else
                         <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" style="display:inline;">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" onclick="return confirm('Delete this user?')">Delete</button>
+                            <button type="submit" onclick="return confirm('Archive this account? It will be deactivated and moved to the Archive. Appointments, medical records and billing are kept, and you can restore it any time.')">Archive</button>
                         </form>
                     @endif
 
@@ -647,7 +565,6 @@ const ROLE_META = {
     Admin:   { dot: '#6366f1', label: 'Admin'   },
     Doctor:  { dot: '#22c55e', label: 'Doctor'  },
     Staff:   { dot: '#eab308', label: 'Staff'   },
-    Patient: { dot: '#ec4899', label: 'Patient' },
 };
 
 /* ------------------------------------------------------------------
@@ -727,8 +644,8 @@ document.getElementById('closeEditModal').onclick = () => {
 
 /* ===========================================================
    POSITION -> PRESET (convenience only)
-   Typing "Cashier" as the Position pre-selects the Cashier
-   permission preset so it is not forgotten. The Position never
+   Choosing "Cashier" as the Position pre-selects the Cashier
+   permission preset (Nurse pre-selects Standard Staff) so it is not forgotten. The Position never
    grants access by itself — whatever preset is selected in the
    dropdown (and later edited in Manage Permissions) is what the
    account actually receives.
@@ -738,10 +655,10 @@ document.getElementById('closeEditModal').onclick = () => {
     const presetField   = document.getElementById('permission_preset_field');
     if (!positionField || !presetField) return;
 
-    positionField.addEventListener('input', () => {
-        if (positionField.value.trim().toLowerCase() === 'cashier') {
-            presetField.value = 'cashier';
-        }
+    positionField.addEventListener('change', () => {
+        const position = positionField.value.trim().toLowerCase();
+        if (position === 'cashier') presetField.value = 'cashier';
+        if (position === 'nurse')   presetField.value = 'standard';
     });
 })();
 

@@ -55,10 +55,16 @@ class PermissionController extends Controller
         // Every user's currently assigned permission slugs, keyed by
         // user id, so the Blade view can pre-check the right boxes in
         // each user's Manage panel without an extra query per row.
+        // Only slugs that apply to the user's role are kept.
         $userPermissionSlugs = User::whereIn('id', $users->pluck('id'))
             ->with('permissions:id,slug')
             ->get()
-            ->mapWithKeys(fn ($user) => [$user->id => $user->permissions->pluck('slug')]);
+            ->mapWithKeys(fn ($user) => [
+                $user->id => $user->permissions
+                    ->pluck('slug')
+                    ->filter(fn ($slug) => in_array($slug, Permission::slugsForRole($user->role), true))
+                    ->values(),
+            ]);
 
         $groupedPermissions = Permission::orderBy('id')->get()->groupBy('module');
 
@@ -91,7 +97,18 @@ class PermissionController extends Controller
             'permissions.*' => 'integer|exists:permissions,id',
         ]);
 
-        $user->permissions()->sync($request->input('permissions', []));
+        // Only permissions that apply to this account's role can be saved,
+        // even if a request is tampered with to include others.
+        $allowedIds = Permission::whereIn('slug', Permission::slugsForRole($user->role))
+            ->pluck('id')
+            ->all();
+
+        $ids = array_values(array_intersect(
+            array_map('intval', $request->input('permissions', [])),
+            $allowedIds
+        ));
+
+        $user->permissions()->sync($ids);
 
         UserLog::create([
             'user_id' => auth()->id(),

@@ -10,6 +10,8 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+html { -webkit-text-size-adjust: 100%; }
+
 :root {
     --purple-dark: #6a11cb;
     --purple-light: #a044ff;
@@ -23,11 +25,14 @@ body {
     font-family: 'DM Sans', sans-serif;
     background: var(--bg);
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
+    overflow-x: hidden;
     position: relative;
+    /* top padding keeps the fixed Back to Home pill clear of the card */
+    padding: 72px 16px 24px;
 }
 
 /* ===== BACK TO HOME ===== */
@@ -108,6 +113,7 @@ body {
     z-index: 1;
     display: flex;
     width: 980px;
+    max-width: 100%;
     min-height: 560px;
     background: var(--white);
     border-radius: 28px;
@@ -125,6 +131,7 @@ body {
 /* ===== LEFT PANEL ===== */
 .left {
     width: 46%;
+    min-width: 0;
     background: linear-gradient(145deg, #6a11cb 0%, #8b2fec 50%, #a044ff 100%);
     color: white;
     display: flex;
@@ -221,6 +228,7 @@ body {
 /* ===== RIGHT PANEL ===== */
 .right {
     width: 54%;
+    min-width: 0;
     padding: 52px 52px;
     display: flex;
     flex-direction: column;
@@ -231,6 +239,7 @@ body {
 .right-header { margin-bottom: 28px; }
 
 .right-header h2 {
+    overflow-wrap: anywhere;
     font-family: 'Playfair Display', serif;
     font-size: 28px;
     color: var(--text-dark);
@@ -432,26 +441,64 @@ body {
     gap: 9px;
 }
 
-/* ===== RESPONSIVE ===== */
+/* ===== RESPONSIVE =====
+   Laptop  : <= 1024px
+   Tablet  : <= 900px  (still 2-column, tighter)
+   Mobile  : <= 768px  (stacked layout)
+   Small   : <= 480px / <= 360px
+   ========================================================= */
+@media (prefers-reduced-motion: reduce) {
+    .wrapper, .bg-blob, .left-icon { animation: none; opacity: 1; transform: none; }
+}
+
+/* ----- Laptop / small desktop ----- */
+@media (max-width: 1024px) {
+    .wrapper { width: 92%; min-height: 520px; }
+    .left { padding: 50px 34px; }
+    .right { padding: 44px 40px; }
+    .left h1 { font-size: 23px; }
+}
+
+/* ----- Tablet ----- */
+@media (max-width: 900px) {
+    .wrapper { width: 94%; }
+    .left { width: 42%; padding: 40px 28px; }
+    .right { width: 58%; padding: 40px 32px; }
+    .left h1 { font-size: 21px; }
+    .left p { font-size: 13px; }
+    .bg-blob-1, .bg-blob-2 { opacity: 0.22; }
+}
+
+/* ----- Mobile (stacked layout) ----- */
 @media (max-width: 768px) {
+    body {
+        padding: 60px 12px 16px;
+        align-items: flex-start;
+    }
+
     .wrapper {
         flex-direction: column;
         width: 100%;
-        margin: 16px;
+        max-width: 480px;
+        margin: 0 auto;
         min-height: auto;
         border-radius: 20px;
     }
 
     .left {
         width: 100%;
-        padding: 44px 32px;
+        padding: 40px 28px 34px;
         border-radius: 0;
     }
 
+    .left::before { width: 220px; height: 220px; top: -80px; right: -80px; }
+    .left::after  { width: 160px; height: 160px; bottom: -50px; left: -50px; }
+
+    .left h1 { font-size: 21px; }
 
     .right {
         width: 100%;
-        padding: 36px 28px;
+        padding: 32px 26px 36px;
     }
 
     .back-home {
@@ -460,6 +507,58 @@ body {
         padding: 8px 16px;
         font-size: 12px;
     }
+
+    .bg-blob { display: none; }
+}
+
+/* ----- Small phones ----- */
+@media (max-width: 480px) {
+    .wrapper { border-radius: 16px; }
+
+    .left { padding: 34px 22px 28px; }
+
+    .left-icon {
+        width: 60px; height: 60px;
+        font-size: 26px;
+        margin-bottom: 20px;
+    }
+
+    .left h1 { font-size: 19px; }
+    .left p { font-size: 12.5px; }
+
+    .btn-back-login { padding: 10px 26px; font-size: 13px; }
+
+    .right { padding: 28px 20px 32px; }
+
+    .right-header { margin-bottom: 22px; }
+    .right-header h2 { font-size: 23px; }
+    .right-header p { font-size: 13px; }
+
+    .input-wrap input { padding: 12px 42px; }
+
+    .submit-btn { font-size: 14px; padding: 13px; }
+}
+
+/* ----- Very small phones ----- */
+@media (max-width: 360px) {
+    .back-home { font-size: 11px; padding: 7px 12px; gap: 5px; }
+
+    .left { padding: 28px 16px 24px; }
+    .left h1 { font-size: 17px; }
+
+    .right { padding: 24px 16px 28px; }
+    .right-header h2 { font-size: 21px; }
+
+    .input-icon, .input-toggle { font-size: 15px; }
+    .input-icon { left: 14px; }
+    .input-toggle { right: 14px; }
+}
+
+/* ----- Short screens (landscape phones / small laptops) ----- */
+@media (max-height: 620px) and (min-width: 769px) {
+    body { padding-top: 64px; }
+    .wrapper { min-height: auto; }
+    .left, .right { padding-top: 32px; padding-bottom: 32px; }
 }
 </style>
 </head>

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\LandingItem;
+use App\Models\SystemSetting;
 use App\Models\WebsiteSetting;
 use App\Support\LandingDefaults;
 use Illuminate\Http\UploadedFile;
@@ -62,6 +63,14 @@ class LandingPageContent
             if (array_key_exists($key, $settings)) {
                 $settings[$key] = (string) $value;
             }
+        }
+
+        // The clinic name saved in Admin > System Settings is the clinic's
+        // official name and wins over the landing "Brand name". Only an
+        // actually saved, non-empty value counts; never the default.
+        $official = trim((string) SystemSetting::query()->where('key', 'clinic_name')->value('value'));
+        if ($official !== '') {
+            $settings['brand_name'] = $official;
         }
 
         $all = LandingItem::query()->orderBy('sort_order')->orderBy('id')->get();

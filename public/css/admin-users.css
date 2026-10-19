@@ -176,50 +176,64 @@ select.filter-input {
     padding-left: 18px;
 }
 
-/* ================= MODAL ================= */
+/* ================= MODAL =================
+   Shared by the Create User and Edit User modals. */
 .modal {
     display: none;
     position: fixed;
     inset: 0;
-    background-color: rgba(0,0,0,0.5);
+    /* Same backdrop as the Patient Details modal: plain dim, no blur. */
+    background-color: rgba(0, 0, 0, 0.45);
     justify-content: center;
     align-items: flex-start;
     z-index: 1000;
-    padding: 20px;
+    padding: 24px 20px;
     overflow-y: auto;
 }
 
 .modal-content {
     background-color: #fff;
-    padding: 28px;
-    width: 680px;
+    padding: 32px;
+    width: 720px;
     max-width: 100%;
-    border-radius: 14px;
+    border-radius: 16px;
     position: relative;
     margin: auto;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.18);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+    animation: modalIn 0.22s ease-out;
+}
+
+@keyframes modalIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .modal-content { animation: none; }
 }
 
 .modal-content h3 {
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 700;
-    color: #111827;
-    margin-bottom: 20px;
+    letter-spacing: -0.01em;
+    color: #1f1633;
+    margin: 0 0 6px;
+    padding-right: 44px;
 }
 
 .modal-close {
     position: absolute;
-    top: 14px;
-    right: 14px;
-    background: #f3f4f6;
+    top: 22px;
+    right: 22px;
+    background: #f4f0fa;
     border: none;
-    font-size: 18px;
+    font-size: 20px;
     cursor: pointer;
-    color: #6b7280;
+    color: #6b6478;
     line-height: 1;
     transition: background 0.2s, color 0.2s;
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -227,55 +241,79 @@ select.filter-input {
 }
 
 .modal-close:hover {
-    background: #e5e7eb;
-    color: #111827;
+    background: #e8ddf5;
+    color: #6a0dad;
+}
+
+.modal-close:focus-visible,
+.role-card:focus-visible,
+.btn-back-role:focus-visible {
+    outline: 3px solid rgba(106, 13, 173, 0.35);
+    outline-offset: 2px;
 }
 
 /* ================= ROLE PICKER ================= */
 .step-hint {
-    font-size: 13px;
-    color: #6b7280;
-    margin-bottom: 14px;
+    font-size: 14px;
+    color: #6b6478;
+    margin: 0 0 22px;
 }
 
 .role-cards {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
 }
 
 .role-card {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 20px 10px;
-    border: 2px solid #e5e7eb;
-    border-radius: 12px;
+    justify-content: flex-start;
+    gap: 6px;
+    padding: 24px 14px 22px;
+    border: 1.5px solid #ebe4f4;
+    border-radius: 16px;
     cursor: pointer;
-    background: #f9fafb;
-    transition: border-color 0.2s, background 0.2s, transform 0.15s, box-shadow 0.2s;
+    background: #fff;
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
     font-family: inherit;
+    text-align: center;
 }
 
 .role-card:hover {
-    border-color: #a5b4fc;
-    background: #eef2ff;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 14px rgba(79,70,229,0.12);
+    border-color: #6a0dad;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 26px rgba(106, 13, 173, 0.14);
 }
 
 .role-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 58px;
+    height: 58px;
+    border-radius: 16px;
     font-size: 28px;
     line-height: 1;
+    margin-bottom: 8px;
+    background: #f4f0fa;
 }
 
+.role-card[data-role="Admin"]  .role-icon { background: #e8eaff; }
+.role-card[data-role="Doctor"] .role-icon { background: #dff6e6; }
+.role-card[data-role="Staff"]  .role-icon { background: #fdf3c8; }
+
 .role-name {
-    font-size: 13px;
+    font-size: 16px;
     font-weight: 700;
-    color: #374151;
-    letter-spacing: 0.02em;
+    color: #1f1633;
+}
+
+.role-desc {
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: #6b6478;
 }
 
 /* ================= ROLE BREADCRUMB BAR ================= */
@@ -283,11 +321,10 @@ select.filter-input {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #f8faff;
-    border: 1px solid #e0e7ff;
-    border-radius: 10px;
+    background: #f4f0fa;
+    border-radius: 12px;
     padding: 10px 14px;
-    margin-bottom: 18px;
+    margin: 18px 0 20px;
     gap: 12px;
 }
 
@@ -296,11 +333,11 @@ select.filter-input {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    padding: 6px 12px;
-    border: 1.5px solid #c7d2fe;
-    border-radius: 7px;
+    padding: 7px 13px;
+    border: 1.5px solid #d9c6ee;
+    border-radius: 8px;
     background: #fff;
-    color: #4f46e5;
+    color: #6a0dad;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
@@ -316,9 +353,9 @@ select.filter-input {
 }
 
 .btn-back-role:hover {
-    background: #eef2ff;
-    border-color: #818cf8;
-    color: #3730a3;
+    background: #f9f4fe;
+    border-color: #6a0dad;
+    color: #560aaf;
 }
 
 .btn-back-role:hover svg {
@@ -343,23 +380,23 @@ select.filter-input {
 
 .role-breadcrumb-label {
     font-size: 13px;
-    color: #6b7280;
+    color: #6b6478;
     white-space: nowrap;
 }
 
 .role-breadcrumb-value {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
-    color: #111827;
+    color: #1f1633;
 }
 
 /* ================= FORM SECTIONS ================= */
 .form-section {
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    padding: 16px 18px;
+    border: 1px solid #ebe4f4;
+    border-radius: 14px;
+    padding: 18px 20px 20px;
     margin-bottom: 16px;
-    background: #fafafa;
+    background: #fff;
 }
 
 .section-heading {
@@ -368,31 +405,29 @@ select.filter-input {
 
 .section-badge {
     display: inline-block;
-    padding: 3px 11px;
+    padding: 4px 12px;
     border-radius: 20px;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    background: #e0e7ff;
-    color: #3730a3;
+    background: #f1e8fb;
+    color: #5a0b91;
 }
 
-.section-badge--doctor  { background: #dcfce7; color: #166534; }
-.section-badge--staff   { background: #fef9c3; color: #713f12; }
+.section-badge--doctor  { background: #dff6e6; color: #166534; }
+.section-badge--staff   { background: #fdf3c8; color: #713f12; }
 .section-badge--patient { background: #fce7f3; color: #9d174d; }
 
 /* ================= FORM GRID ================= */
 .form-grid-2 {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px 16px;
+    gap: 14px 16px;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 6px;
 }
 
 .form-group-full {
@@ -402,32 +437,56 @@ select.filter-input {
 .form-group label {
     font-size: 13px;
     font-weight: 600;
-    color: #374151;
+    color: #4b4458;
 }
 
-.required { color: #ef4444; }
+.required { color: #dc2626; }
 
 .form-group input,
 .form-group select {
-    padding: 9px 11px;
-    border: 1px solid #d1d5db;
-    border-radius: 7px;
+    padding: 10px 12px;
+    border: 1.5px solid #e3dcee;
+    border-radius: 10px;
     font-size: 14px;
     width: 100%;
     background: #fff;
-    transition: border 0.2s, box-shadow 0.2s;
+    color: #1f1633;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input::placeholder {
+    color: #a39cb0;
 }
 
 .form-group input[type="file"] {
-    padding: 6px 8px;
+    padding: 7px 9px;
     font-size: 13px;
 }
 
 .form-group input:focus,
 .form-group select:focus {
     outline: none;
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 2px rgba(79,70,229,0.15);
+    border-color: #6a0dad;
+    box-shadow: 0 0 0 3px rgba(106, 13, 173, 0.15);
+}
+
+/* Submit button inside the modals */
+.modal .btn-submit {
+    background-color: #6a0dad;
+    border-radius: 12px;
+    padding: 14px;
+    margin-top: 8px;
+    box-shadow: 0 6px 16px rgba(106, 13, 173, 0.25);
+}
+
+.modal .btn-submit:hover {
+    background-color: #560aaf;
+}
+
+.modal .btn-submit:focus-visible {
+    outline: 3px solid rgba(106, 13, 173, 0.35);
+    outline-offset: 2px;
 }
 
 /* ================= INPUT WITH BADGE (Employee ID) ================= */
@@ -438,7 +497,7 @@ select.filter-input {
 }
 
 .input-with-badge input {
-    padding-right: 110px;
+    padding-right: 120px;
 }
 
 .input-badge {
@@ -446,27 +505,25 @@ select.filter-input {
     right: 8px;
     top: 50%;
     transform: translateY(-50%);
-    background: #fef9c3;
+    background: #fdf3c8;
     color: #713f12;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 3px 8px;
+    padding: 3px 9px;
     border-radius: 20px;
     pointer-events: none;
     white-space: nowrap;
 }
 
 .input-readonly {
-    background: #f9fafb !important;
-    color: #374151;
+    background: #f9f7fc !important;
+    color: #4b4458;
     font-weight: 600;
     cursor: default;
 }
 
 .input-readonly:focus {
-    border-color: #d1d5db !important;
+    border-color: #e3dcee !important;
     box-shadow: none !important;
 }
 
@@ -679,9 +736,9 @@ select.filter-input {
 
 /* ================= RESPONSIVE ================= */
 @media screen and (max-width: 700px) {
-    .modal-content  { width: 98%; padding: 18px; }
+    .modal-content  { width: 98%; padding: 22px 18px; }
 
-    .role-cards     { grid-template-columns: repeat(2, 1fr); }
+    .role-cards     { grid-template-columns: 1fr; }
     .form-grid-2    { grid-template-columns: 1fr; }
 
     .role-breadcrumb         { flex-wrap: wrap; }

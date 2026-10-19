@@ -13,6 +13,8 @@ use App\Mail\AccountCreated;
 use App\Mail\AccountApproved;
 use App\Mail\AccountRejected;
 use Illuminate\Validation\Rule;
+use App\Services\Archive\ArchiveException;
+use App\Services\Archive\ArchiveService;
 
 class UserController extends Controller
 {
@@ -24,7 +26,8 @@ class UserController extends Controller
     // =========================================================
     public function index(Request $request)
     {
-        $query = User::where('approval_status', 'Approved');
+        // Archived accounts are listed in Admin > Archive instead.
+        $query = User::where('approval_status', 'Approved')->notArchived();
 
         if ($search = trim((string) $request->query('search'))) {
             $query->where(function ($q) use ($search) {
@@ -53,7 +56,9 @@ class UserController extends Controller
     }
 
     // =========================================================
-    //  STORE  –  role-based validation + conditional approval
+    //  STORE  –  role-based validation
+    //  Admin can only create Admin / Doctor / Staff accounts.
+    //  Patients register themselves through the public registration page.
     // =========================================================
     public function store(Request $request)
     {
@@ -73,7 +78,7 @@ class UserController extends Controller
             'contact_number' => 'required|digits:11|unique:users,contact_number',
             'username'       => 'required|string|max:50|unique:users,username',
             'email'          => 'required|email|max:255|unique:users,email',
-            'role'           => 'required|in:Admin,Doctor,Staff,Patient',
+            'role'           => 'required|in:Admin,Doctor,Staff',
             'status'         => 'required|in:Active,Inactive',
         ];
 
@@ -85,22 +90,11 @@ class UserController extends Controller
             ],
             'Staff'   => [
                 'employee_id' => 'required|string|max:20|unique:users,employee_id',
-                'position'    => 'required|string|max:50',
+                'position'    => ['required', Rule::in(['Nurse', 'Cashier'])],
                 // Optional starting permission set (e.g. Cashier). The
                 // Position text above is only a label — it never grants
                 // access; the permissions assigned below do.
                 'permission_preset' => ['nullable', Rule::in(array_keys(\App\Models\Permission::presets()))],
-            ],
-            'Patient' => [
-                'blood_type'               => 'nullable|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
-                'allergies'                => 'nullable|string|max:255',
-                'id_type'                  => 'nullable|string|max:50',
-                'valid_id'                 => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:4096',
-                'reason'                   => 'nullable|in:Check-up / Consultation,Appointment Booking,Medical Record Access,Others',
-                'emergency_name'           => 'nullable|string|max:100',
-                'relationship'             => 'nullable|string|max:50',
-                'emergency_contact_number' => 'nullable|digits:11',
-                'emergency_address'        => 'nullable|string|max:100',
             ],
             default => [],
         };
@@ -108,23 +102,17 @@ class UserController extends Controller
         $request->validate(array_merge($rules, $roleRules));
 
         // --- 3. Handle file uploads ---
-        $avatarPath  = null;
-        $validIdPath = null;
+        $avatarPath = null;
 
         if ($request->hasFile('avatar')) {
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
         }
 
-        if ($request->hasFile('valid_id')) {
-            // Valid IDs are sensitive: private disk only (never `public`).
-            $validIdPath = $request->file('valid_id')->store('valid_ids', 'private');
-        }
-
         // --- 4. Auto-generated password ---
         $plainPassword = Str::random(10);
 
-        // --- 5. Conditional approval (Patients wait for review) ---
-        $approvalStatus = ($role === 'Patient') ? 'Pending' : 'Approved';
+        // --- 5. Admin-created accounts are approved right away ---
+        $approvalStatus = 'Approved';
 
         // --- 6. Build data array (shared fields) ---
         $data = [
@@ -156,17 +144,6 @@ class UserController extends Controller
                 'employee_id' => $request->employee_id,
                 'position'    => $request->position,
             ],
-            'Patient' => [
-                'blood_type'               => $request->blood_type,
-                'allergies'                => $request->allergies,
-                'id_type'                  => $request->id_type,
-                'valid_id'                 => $validIdPath,
-                'reason'                   => $request->reason,
-                'emergency_name'           => $request->emergency_name,
-                'relationship'             => $request->relationship,
-                'emergency_contact_number' => $request->emergency_contact_number,
-                'emergency_address'        => $request->emergency_address,
-            ],
             default => [],
         });
 
@@ -178,7 +155,7 @@ class UserController extends Controller
         // 'cashier' = billing permissions only). Admin can adjust these
         // afterwards from Manage Permissions. The preset is only read for
         // Staff — Permission::assignDefaultsTo() ignores it for every
-        // other role, and Patient is never considered here.
+        // other role.
         \App\Models\Permission::assignDefaultsTo(
             $user,
             $role === 'Staff' ? $request->input('permission_preset') : null
@@ -188,9 +165,7 @@ class UserController extends Controller
         event(new Registered($user));
         Mail::to($user->email)->send(new AccountCreated($user, $plainPassword));
 
-        $message = $approvalStatus === 'Pending'
-            ? 'Patient account created and is pending approval.'
-            : "User ({$role}) created successfully. Login credentials sent to email.";
+        $message = "User ({$role}) created successfully. Login credentials sent to email.";
 
         return redirect()->route('admin.users.index')->with('success', $message);
     }
@@ -241,23 +216,26 @@ class UserController extends Controller
     }
 
     // =========================================================
-    //  DESTROY  –  Admin accounts are protected from deletion
-    //  Ang cascade delete ay hawak ng User model boot() event
+    //  DESTROY  –  now ARCHIVES the account (deactivates it).
+    //  Nothing is deleted: appointments, medical records and billing
+    //  stay intact. Restore or permanently delete it from Admin > Archive
+    //  (permanent delete is refused while any history is linked).
     // =========================================================
-    public function destroy(User $user)
+    public function destroy(User $user, ArchiveService $archive)
     {
         if ($user->role === 'Admin') {
             return redirect()->route('admin.users.index')
-                             ->with('error', 'Admin accounts cannot be deleted.');
+                             ->with('error', 'Admin accounts cannot be archived or deleted.');
         }
 
-        // $user->delete() na ang mag-trigger ng cascade
-        // sa boot() ng User model — lahat ng appointments
-        // at related records ay matatanggal din
-        $user->delete();
+        try {
+            $archive->archive('user', $user->id, auth()->user());
+        } catch (ArchiveException $e) {
+            return redirect()->route('admin.users.index')->with('error', $e->getMessage());
+        }
 
         return redirect()->route('admin.users.index')
-                         ->with('success', 'User and all related records deleted successfully.');
+                         ->with('success', $user->full_name . ' was moved to the Archive and can no longer log in. All records were kept.');
     }
 
     // =========================================================

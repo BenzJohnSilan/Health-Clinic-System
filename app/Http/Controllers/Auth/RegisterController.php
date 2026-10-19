@@ -196,7 +196,8 @@ class RegisterController extends Controller
             'middle_name'  => ['nullable', 'string', 'max:50', "regex:/^[\\p{L}\\p{M}\\s.'\\-]+$/u"],
             'last_name'    => ['required', 'string', 'max:50', "regex:/^[\\p{L}\\p{M}\\s.'\\-]+$/u"],
             'suffix'       => ['nullable', 'string', 'max:10', 'regex:/^[A-Za-z0-9.\\s]+$/'],
-            'birthdate'    => ['required', 'date', 'before:today', 'after:1900-01-01'],
+            // Patients must be at least 18 years old: the birthdate can be no later than today minus 18 years
+            'birthdate'    => ['required', 'date', 'after:1900-01-01', 'before_or_equal:' . now()->subYearsNoOverflow(18)->toDateString()],
             'gender'       => ['required', Rule::in(['Male', 'Female', 'Other'])],
             'civil_status' => ['required', Rule::in(['Single', 'Married', 'Widowed', 'Separated'])],
             'address'      => ['required', 'string', 'max:100'],
@@ -220,7 +221,7 @@ class RegisterController extends Controller
                 Password::min(8)->uncompromised(),
             ],
 
-            // Privacy Notice must be ticked
+            // Terms and Conditions + Privacy Policy checkbox must be ticked
             'consent' => ['accepted'],
         ];
     }
@@ -238,6 +239,7 @@ class RegisterController extends Controller
             'middle_name.regex' => 'Middle name may only contain letters, spaces, apostrophes, hyphens and periods.',
             'last_name.regex'   => 'Last name may only contain letters, spaces, apostrophes, hyphens and periods.',
             'suffix.regex'      => 'Suffix may only contain letters, numbers, spaces and periods.',
+            'birthdate.before_or_equal' => 'You must be at least 18 years old to register.',
             'contact_number.regex'  => 'Contact number must start with 09 and be exactly 11 digits.',
             'contact_number.unique' => 'This contact number is already registered. Please use a different number.',
             'email.unique'          => 'This email is already registered. Please log in or use a different email.',
@@ -253,7 +255,7 @@ class RegisterController extends Controller
             'password.confirmed'    => 'Password confirmation does not match.',
             'password.min'          => 'Password must be at least 8 characters long.',
             'password.different'    => 'Your password must not be the same as your username or email.',
-            'consent.accepted'      => 'You must agree to the Privacy Notice to create an account.',
+            'consent.accepted'      => 'You must accept the Terms and Conditions and Privacy Policy to create an account.',
         ];
     }
 

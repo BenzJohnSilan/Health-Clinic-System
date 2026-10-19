@@ -13,6 +13,10 @@ return new class extends Migration
 
             $table->unsignedBigInteger('appointment_id');
 
+            // The Follow-up appointment created from this consultation's
+            // Follow-up Schedule — saving again updates the SAME appointment.
+            $table->unsignedBigInteger('follow_up_appointment_id')->nullable();
+
             $table->date('next_review_date')->nullable();
             $table->text('message')->nullable();
 
@@ -22,6 +26,11 @@ return new class extends Migration
                 ->references('id')
                 ->on('appointments')
                 ->onDelete('cascade');
+
+            $table->foreign('follow_up_appointment_id')
+                ->references('id')
+                ->on('appointments')
+                ->nullOnDelete();
         });
     }
 

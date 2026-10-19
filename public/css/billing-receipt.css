@@ -1,6 +1,8 @@
 /* ==========================================================
    PAYMENT RECEIPT — billing-receipt.css
-   Black & white. Fixed table columns so every figure lines up,
+   Receipt sheet stays black & white (ink only); the page background and
+   the Back / Print buttons use the clinic's purple theme (same as the
+   Prescription print). Fixed table columns so every figure lines up,
    and a print layout that fits on ONE page.
    ========================================================== */
 
@@ -12,7 +14,7 @@
 }
 
 body {
-    background: #f2f2f2;
+    background: #f4f0fa;
     padding: 40px 20px;
     color: #000;
     -webkit-print-color-adjust: exact;
@@ -32,29 +34,30 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    padding: 9px 18px;
-    border-radius: 6px;
+    padding: 9px 20px;
+    border-radius: 5px;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 500;
     cursor: pointer;
     text-decoration: none;
+    transition: background 0.2s, color 0.2s;
 }
 
 .btn-rc-back {
     background: #fff;
-    color: #000;
-    border: 1px solid #000;
+    color: #6a0dad;
+    border: 1.5px solid #6a0dad;
 }
 
-.btn-rc-back:hover { background: #000; color: #fff; }
+.btn-rc-back:hover { background: #6a0dad; color: #fff; }
 
 .btn-rc-print {
-    background: #000;
+    background: #6a0dad;
     color: #fff;
-    border: 1px solid #000;
+    border: none;
 }
 
-.btn-rc-print:hover { background: #333; border-color: #333; }
+.btn-rc-print:hover { background: #783d7d; }
 
 /* ── Receipt sheet ── */
 .rc-page {

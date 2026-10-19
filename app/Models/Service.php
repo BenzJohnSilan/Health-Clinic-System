@@ -2,12 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Archivable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Service extends Model
 {
-    use HasFactory;
+    use HasFactory, Archivable;
+
+    /** Key used in archive_entries for this model. */
+    public static function archiveType(): string
+    {
+        return 'service';
+    }
 
     /**
      * Name of the clinic service that holds the Medical Certificate fee

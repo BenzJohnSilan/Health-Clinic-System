@@ -229,6 +229,108 @@
     font-size: 13px;
 }
 
+/* ================= INVOICES LIST (scoped override) =================
+   Makes the Admin Billing invoices table match Patient List / Appointments /
+   Manage Users: purple header, zebra rows, hover, attached pagination footer.
+   Scoped to .invoices-page so Staff Billing (which shares this stylesheet)
+   is untouched. */
+.invoices-page .patients-table {
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+}
+
+.invoices-page .patients-table thead { background: #6a0dad; }
+
+.invoices-page .patients-table th {
+    background-color: #6a0dad;
+    color: #fff;
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    border-bottom: 1px solid #f0e6ff;
+    vertical-align: middle;
+}
+
+.invoices-page .patients-table td {
+    font-size: 14px;
+    border-bottom: 1px solid #f0e6ff;
+    vertical-align: middle;
+}
+
+.invoices-page .patients-table tbody tr:nth-child(even) td { background-color: #f9f5ff; }
+.invoices-page .patients-table tbody tr:nth-child(odd) td  { background-color: #ffffff; }
+
+.invoices-page .patients-table tbody tr:hover td {
+    background-color: #ede9f7;
+    transition: background-color 0.2s ease;
+}
+
+.invoices-page .patients-table tbody tr:last-child td { border-bottom: none; }
+
+.invoices-page .empty-row {
+    font-style: italic;
+    background-color: #fff !important;
+    padding: 32px 0 !important;
+}
+
+.invoices-page .btn-view {
+    background-color: #6a0dad;
+    color: #fff;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.invoices-page .btn-view:hover {
+    background-color: #560aaf;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(106, 13, 173, 0.3);
+}
+
+.invoices-page .pagination-wrapper {
+    margin-top: 0;
+    padding: 14px 18px;
+    background: #fff;
+    border: 1px solid #f0e6ff;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+    margin-bottom: 30px;
+}
+
+.invoices-page .pagination-info strong { color: #374151; font-weight: 600; }
+
+.invoices-page .page-btn {
+    padding: 0 10px;
+    border: 1.5px solid #e9d5ff;
+    color: #6a0dad;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.invoices-page .page-btn:hover { background: #f3e8ff; border-color: #c084fc; }
+
+.invoices-page .page-btn.active {
+    background: #6a0dad;
+    border-color: #6a0dad;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(106, 13, 173, 0.3);
+    cursor: default;
+    pointer-events: none;
+}
+
+.invoices-page .page-btn.disabled {
+    color: #d1d5db;
+    border-color: #f3f4f6;
+    background: #f9fafb;
+    pointer-events: none;
+}
+
 /* ================= STATUS BADGE ================= */
 .status-badge {
     display: inline-block; font-size: 11px; font-weight: 700; padding: 4px 12px;

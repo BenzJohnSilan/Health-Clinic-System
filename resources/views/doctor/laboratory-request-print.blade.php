@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laboratory Request</title>
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
 
         * {
@@ -13,16 +14,17 @@
         }
 
         body {
-            font-family: Arial, Helvetica, sans-serif;
-            background: #e9e9e9;
+            font-family: 'DM Sans', Arial, Helvetica, sans-serif;
+            background: #f4f0fa;
             padding: 40px 20px;
-            color: #000;
+            color: #1a1a1a;
         }
 
         /* ── Action Bar ── */
         .lr-action-bar {
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
+            align-items: center;
             max-width: 620px;
             margin: 0 auto 16px;
         }
@@ -32,16 +34,33 @@
             align-items: center;
             gap: 7px;
             padding: 9px 20px;
-            background: #000;
+            background: #6a0dad;
             color: #fff;
             border: none;
             border-radius: 5px;
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: 'DM Sans', Arial, Helvetica, sans-serif;
             font-size: 13px;
             font-weight: 500;
             cursor: pointer;
         }
-        .btn-lr-print:hover { background: #333; }
+        .btn-lr-print:hover { background: #783d7d; }
+
+        .btn-lr-close {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px 20px;
+            background: #ffffff;
+            color: #6a0dad;
+            border: 1.5px solid #6a0dad;
+            border-radius: 5px;
+            font-family: 'DM Sans', Arial, Helvetica, sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .btn-lr-close:hover { background: #6a0dad; color: #ffffff; }
 
         /* ── Document Page ── */
         .lr-page {
@@ -49,17 +68,21 @@
             max-width: 620px;
             margin: 0 auto 60px;
             background: #ffffff;
-            border: 1px solid #000;
+            border: 1px solid #e3d6f3;
+            border-radius: 3px;
+            box-shadow: 0 6px 28px rgba(106, 13, 173, 0.12);
             padding: 30px 38px 34px;
             box-sizing: border-box;
         }
 
-        /* ── Clinic Header (kept as-is) ── */
-        .lr-clinic-header { text-align: center; margin-bottom: 14px; }
+        /* ── Clinic Header (same as the Prescription) ── */
+        .lr-clinic-header { text-align: center; margin-bottom: 26px; }
 
         .lr-clinic-name {
-            font-size: 24px;
-            font-weight: 700;
+            font-family: 'EB Garamond', serif;
+            font-size: 28px;
+            font-weight: 600;
+            color: #1a1a2e;
             letter-spacing: 0.5px;
             line-height: 1.1;
         }
@@ -67,16 +90,17 @@
         .lr-clinic-specialty {
             font-size: 10px;
             font-weight: 600;
-            letter-spacing: 2px;
+            letter-spacing: 2.5px;
             text-transform: uppercase;
-            color: #333;
+            color: #555;
             margin-top: 3px;
         }
 
         .lr-clinic-address {
             font-size: 11px;
-            color: #333;
+            color: #666;
             margin-top: 4px;
+            font-style: italic;
         }
 
         .lr-clinic-hours {
@@ -85,11 +109,9 @@
             gap: 6px;
             flex-wrap: wrap;
             font-size: 10px;
-            color: #444;
+            color: #888;
             margin-top: 6px;
         }
-
-        .lr-divider-thick { border: none; border-top: 2px solid #000; margin: 10px 0 18px; }
 
         /* ── Patient Info ── */
         .lr-patient-line {
@@ -216,7 +238,11 @@
         .lr-sig-line img { max-height: 34px; max-width: 100%; object-fit: contain; }
 
         .lr-sig-caption {
-            font-size: 12.5px;
+            font-family: 'EB Garamond', serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a2e;
+            line-height: 1.3;
             margin-top: 3px;
         }
 
@@ -232,23 +258,29 @@
            PRINT STYLES
         ══════════════════════ */
         @media print {
-            @page { size: letter portrait; margin: 12mm 14mm; }
+            /* Prints exactly like the on-screen form: same bordered card, same size and spacing.
+               "auto" = uses whatever paper is selected in the print dialog (Letter, A4, ...). */
+            @page { size: auto; margin: 10mm; }
 
-            body { background: #fff; padding: 0; }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
 
-            body * { visibility: hidden !important; }
-            #lr-printable, #lr-printable * { visibility: visible !important; }
+            html, body { background: #fff !important; padding: 0 !important; margin: 0 !important; }
+
             .no-print { display: none !important; }
 
             #lr-printable {
-                position: absolute !important;
-                top: 0 !important;
-                left: 0 !important;
                 width: 100% !important;
-                max-width: 100% !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                border: none !important;
+                max-width: 620px !important;
+                margin: 0 auto !important;
+                padding: 30px 38px 34px !important;
+                border: 1px solid #d0cdc8 !important;
+                border-radius: 3px !important;
+                box-shadow: none !important;
+                break-inside: avoid;
+                page-break-inside: avoid;
             }
         }
 
@@ -293,6 +325,14 @@
 
     {{-- ── Action Bar (hidden on print) ── --}}
     <div class="lr-action-bar no-print">
+        <button type="button" class="btn-lr-close" id="lrCloseBtn" data-fallback="{{ url()->previous() }}">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor" stroke-width="2" width="15" height="15">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            Close
+        </button>
+
         <button class="btn-lr-print" onclick="window.print()">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                  stroke="currentColor" stroke-width="2" width="15" height="15">
@@ -320,8 +360,6 @@
                 <span>Sun – Closed</span>
             </div>
         </div>
-
-        <div class="lr-divider-thick"></div>
 
         {{-- ── Patient Info ── --}}
         <div class="lr-patient-line">
@@ -419,6 +457,20 @@
         </div>
 
     </div>{{-- /#lr-printable --}}
+
+    <script>
+        // Opened in its own tab: close it. If the browser won't let the script
+        // close the tab, go back to the page the doctor came from instead.
+        (function () {
+            var btn = document.getElementById('lrCloseBtn');
+            btn.addEventListener('click', function () {
+                window.close();
+                setTimeout(function () {
+                    if (!window.closed) { window.location.href = btn.dataset.fallback; }
+                }, 250);
+            });
+        })();
+    </script>
 
 </body>
 </html>

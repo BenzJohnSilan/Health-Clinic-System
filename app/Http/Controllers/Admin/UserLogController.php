@@ -66,7 +66,7 @@ class UserLogController extends Controller
             $query->whereDate('created_at', '<=', $dateTo);
         }
 
-        $logs = $query->paginate(15)->withQueryString();
+        $logs = $query->paginate(10)->withQueryString();
 
         $roles   = self::ROLES;
         $modules = UserLog::MODULES;

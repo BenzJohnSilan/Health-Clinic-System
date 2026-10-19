@@ -1,21 +1,49 @@
-@extends('layouts.doctor')
-
-@section('head')
-<link rel="stylesheet" href="{{ asset('css/patient-prescription.css') }}">
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-@endsection
-
-@section('content')
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prescription</title>
+    <link rel="stylesheet" href="{{ asset('css/patient-prescription.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* Standalone page (no sidebar / top bar), same look as the Laboratory Request print page. */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', Arial, Helvetica, sans-serif;
+            background: #f4f0fa;
+            padding: 40px 20px;
+            color: #000;
+        }
+        .rx-action-bar { margin-top: 0; }
+        .rx-page { margin-bottom: 0; }
+        @media print {
+            /* Printed sheet = the prescription itself, same size & spacing as on screen (no extra white paper) */
+            @page { size: 138mm 156mm; margin: 0; }
+            html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+            #rx-printable {
+                position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important;
+                width: 100% !important; max-width: none !important; margin: 0 !important;
+                padding: 32px 38px 28px !important;
+                border: none !important; border-radius: 0 !important; box-shadow: none !important;
+            }
+            .rx-body { min-height: 180px !important; padding: 10px 0 170px !important; }
+            .rx-divider-thin { margin: 14px 0 !important; }
+            .rx-footer-row { break-inside: avoid; page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
 
 {{-- Same prescription print template used by the Patient Panel --}}
 <div class="rx-action-bar no-print">
-    <a href="{{ url()->previous() }}" class="btn-rx-back">
+    <button type="button" class="btn-rx-back" id="rxCloseBtn" data-fallback="{{ url()->previous() }}">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
              stroke="currentColor" stroke-width="2" width="15" height="15">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
         </svg>
-        Back
-    </a>
+        Close
+    </button>
 
     <button class="btn-rx-print" onclick="window.print()">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -155,4 +183,19 @@
 
 </div>
 
-@endsection
+<script>
+    // Opened in its own tab: close it. If the browser won't let the script
+    // close the tab, go back to the page the doctor came from instead.
+    (function () {
+        var btn = document.getElementById('rxCloseBtn');
+        btn.addEventListener('click', function () {
+            window.close();
+            setTimeout(function () {
+                if (!window.closed) { window.location.href = btn.dataset.fallback; }
+            }, 250);
+        });
+    })();
+</script>
+
+</body>
+</html>

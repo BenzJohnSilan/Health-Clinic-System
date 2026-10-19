@@ -1,0 +1,336 @@
+/* =====================================================================
+   Admin > Archive
+   Builds on admin-users.css (filter bar, table, pagination, alerts).
+   Same violet theme (#6a0dad). All new classes are prefixed "arc-".
+   ===================================================================== */
+
+.arc-subtitle {
+    margin-top: 4px;
+    max-width: 720px;
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.arc-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.arc-date .filter-input {
+    min-width: 140px;
+}
+
+.arc-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #f9f5ff;
+    border: 1px solid #f0e6ff;
+    border-radius: 10px;
+    color: #4b5563;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+}
+
+.arc-note i {
+    color: #6a0dad;
+    margin-top: 2px;
+}
+
+/* ---------- table cells ---------- */
+.arc-table th:nth-child(1) { width: 25%; }
+.arc-table th:nth-child(2) { width: 14%; }
+.arc-table th:nth-child(3) { width: 17%; }
+.arc-table th:nth-child(4) { width: 15%; }
+.arc-table th:nth-child(5) { width: 29%; }
+
+.arc-table td { vertical-align: top; }
+.arc-table td:nth-child(2) { white-space: nowrap; }
+.arc-table td:nth-child(4) { word-break: break-word; }
+
+.arc-name {
+    display: block;
+    font-weight: 600;
+    color: #111827;
+}
+
+.arc-sub {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.arc-date-cell {
+    white-space: nowrap;
+    color: #4b5563;
+}
+
+.arc-why {
+    display: block;
+    max-width: 260px;
+    margin-top: 6px;
+    line-height: 1.4;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* ---------- empty state ---------- */
+.arc-table--empty { border-radius: 12px; }
+
+.arc-table tbody tr.arc-empty-row td,
+.arc-table tbody tr.arc-empty-row:hover td {
+    background: #fff;
+    border-bottom: none;
+}
+
+.arc-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    padding: 44px 16px;
+}
+
+.arc-empty__icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #f3e8ff;
+    color: #6a0dad;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    margin-bottom: 6px;
+}
+
+.arc-empty h3 {
+    font-size: 17px;
+    color: #111827;
+    margin: 0;
+}
+
+.arc-empty p {
+    max-width: 420px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #6b7280;
+    margin: 0 0 6px;
+}
+
+.arc-empty .arc-btn {
+    text-decoration: none;
+    margin-top: 4px;
+}
+
+/* ---------- module badges ---------- */
+.arc-type                  { background: #ede9fe; color: #5b21b6; }
+.arc-type--user            { background: #e0e7ff; color: #3730a3; }
+.arc-type--walkin-patient  { background: #fce7f3; color: #9d174d; }
+.arc-type--appointment     { background: #dbeafe; color: #1e40af; }
+.arc-type--service         { background: #fef9c3; color: #713f12; }
+.arc-type--contact-message { background: #d1fae5; color: #065f46; }
+.arc-type--landing-item    { background: #ffedd5; color: #9a3412; }
+.arc-type--medicine        { background: #dcfce7; color: #166534; }
+
+/* ---------- buttons (override ".users-table button" red default) ---------- */
+.arc-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+}
+
+.arc-btn,
+.users-table .arc-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.arc-btn--restore,
+.users-table .arc-btn--restore       { background: #6a0dad; color: #fff; }
+.arc-btn--restore:hover,
+.users-table .arc-btn--restore:hover { background: #560aaf; }
+
+.arc-btn--delete,
+.users-table .arc-btn--delete        { background: #ef4444; color: #fff; }
+.arc-btn--delete:hover,
+.users-table .arc-btn--delete:hover  { background: #dc2626; }
+
+.arc-btn--cancel                     { background: #f3f4f6; color: #374151; }
+.arc-btn--cancel:hover               { background: #e5e7eb; }
+
+.arc-btn--locked,
+.users-table .arc-btn--locked,
+.users-table .arc-btn--locked:hover  { background: #e5e7eb; color: #6b7280; cursor: not-allowed; }
+
+.arc-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.arc-btn:focus-visible,
+.filter-input:focus-visible {
+    outline: 2px solid #6a0dad;
+    outline-offset: 2px;
+}
+
+/* ---------- confirmation dialog ---------- */
+.arc-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(17, 24, 39, 0.55);
+}
+
+.arc-modal[hidden] { display: none; }
+
+.arc-modal__box {
+    width: 100%;
+    max-width: 440px;
+    max-height: 92vh;
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.arc-modal__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #fee2e2;
+    color: #dc2626;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    margin-bottom: 12px;
+}
+
+.arc-modal__box h3 {
+    font-size: 18px;
+    color: #111827;
+    margin-bottom: 8px;
+}
+
+.arc-modal__record {
+    background: #f9f5ff;
+    border: 1px solid #f0e6ff;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 14px;
+    color: #374151;
+    margin-bottom: 10px;
+    word-break: break-word;
+}
+
+.arc-modal__warn {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #4b5563;
+    margin-bottom: 14px;
+}
+
+.arc-modal__field {
+    display: block;
+    font-size: 13px;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.arc-modal__box input.filter-input {
+    width: 100%;
+    flex: none;
+}
+
+.arc-modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+/* ---------- responsive ---------- */
+@media screen and (max-width: 1100px) {
+    .arc-actions { flex-wrap: wrap; }
+}
+
+@media screen and (max-width: 900px) {
+    .arc-date .filter-input { min-width: 120px; }
+}
+
+/* Phones: each row becomes a stacked card instead of a wide table. */
+@media screen and (max-width: 700px) {
+    .arc-table,
+    .arc-table thead,
+    .arc-table tbody,
+    .arc-table tr,
+    .arc-table td { display: block; width: 100%; }
+
+    .arc-table thead { display: none; }
+
+    .arc-table tr {
+        background: #fff;
+        border: 1px solid #f0e6ff;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        padding: 6px 0;
+    }
+
+    .arc-table td,
+    .arc-table tbody tr:nth-child(even) td,
+    .arc-table tbody tr:nth-child(odd) td {
+        background: transparent !important;
+        border-bottom: none;
+        padding: 8px 14px;
+    }
+
+    .arc-table td[data-label]::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #9ca3af;
+        margin-bottom: 2px;
+    }
+
+    .arc-table tr.arc-empty-row { padding: 0; }
+    .arc-table tr.arc-empty-row td { padding: 0; }
+
+    .arc-actions .arc-btn { flex: 1 1 140px; justify-content: center; }
+
+    /* In the stacked filter bar the search box must not stretch vertically. */
+    .arc-filter input.filter-input,
+    .arc-filter select.filter-input { flex: none; width: 100%; }
+
+    .arc-date { width: 100%; }
+    .arc-date .filter-input { flex: 1; width: auto; min-width: 0; }
+
+    .arc-modal { align-items: flex-end; padding: 0; }
+    .arc-modal__box { max-width: none; border-radius: 16px 16px 0 0; }
+    .arc-modal__actions .arc-btn { flex: 1; justify-content: center; }
+}
+
+.arc-lock { display: inline-flex; cursor: not-allowed; }
+.arc-lock .arc-btn { pointer-events: none; }

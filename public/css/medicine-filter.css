@@ -1,0 +1,179 @@
+/* ==========================================================
+   MEDICINE INVENTORY - SEARCH & FILTER BAR + EMPTY STATE
+   (medicine-filter.css)
+
+   Same look as the filter bar on the Appointments pages:
+   one white rounded card, search + dropdowns on a single row,
+   purple focus ring. Loaded after doctor-medicines.css.
+   ========================================================== */
+
+/* ================= SEARCH & FILTER BAR ================= */
+.med-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+    padding: 14px 16px;
+    background: #fff;
+    border: 1px solid #f0e6ff;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Search box with a leading icon */
+.med-filter-search {
+    position: relative;
+    flex: 1 1 260px;
+    min-width: 200px;
+}
+
+.med-filter-search i {
+    position: absolute;
+    top: 50%;
+    left: 13px;
+    transform: translateY(-50%);
+    font-size: 13px;
+    color: #9ca3af;
+    pointer-events: none;
+    transition: color 0.15s;
+}
+
+.med-filter-search:focus-within i {
+    color: #6a0dad;
+}
+
+.med-filter-search input {
+    width: 100%;
+    padding: 9px 12px 9px 36px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    background: #f9fafb;
+    color: #111827;
+    font-size: 13px;
+    font-family: "Poppins", Arial, sans-serif;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.med-filter-search input::placeholder {
+    color: #9ca3af;
+}
+
+.med-filter-search input:focus {
+    border-color: #6a0dad;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(106, 13, 173, 0.10);
+}
+
+/* Dropdowns */
+.med-filter-select {
+    flex: 0 1 190px;
+    min-width: 150px;
+    padding: 9px 12px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    background: #f9fafb;
+    color: #111827;
+    font-size: 13px;
+    font-family: "Poppins", Arial, sans-serif;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.med-filter-select:hover {
+    border-color: #c084fc;
+}
+
+.med-filter-select:focus {
+    border-color: #6a0dad;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(106, 13, 173, 0.10);
+}
+
+/* Clear — only visible while a search/filter is active */
+.med-filter-clear {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 14px;
+    border: 1.5px solid #e9d5ff;
+    border-radius: 8px;
+    background: #f3e8ff;
+    color: #6a0dad;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: "Poppins", Arial, sans-serif;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.med-filter-clear:hover {
+    background: #e9d5ff;
+    border-color: #c084fc;
+}
+
+.med-filter-clear[hidden] {
+    display: none;
+}
+
+/* ================= EMPTY STATE (single message) ================= */
+.med-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 44px 20px 48px;
+    background: #fff;
+    text-align: center;
+}
+
+.med-empty[hidden] {
+    display: none;
+}
+
+.med-empty-icon {
+    width: 58px;
+    height: 58px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f3e8ff;
+    color: #6a0dad;
+    font-size: 24px;
+}
+
+.med-empty h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.med-empty p {
+    margin: 0;
+    font-size: 13.5px;
+    color: #9ca3af;
+}
+
+/* ================= RESPONSIVE ================= */
+@media screen and (max-width: 700px) {
+    .med-filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .med-filter-search,
+    .med-filter-select {
+        flex: 1 1 auto;
+        width: 100%;
+    }
+
+    .med-filter-clear {
+        justify-content: center;
+    }
+}

@@ -8,6 +8,8 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Payment;
 use App\Models\UserLog;
+use App\Services\BillingReportService;
+use App\Support\Money;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -24,8 +26,8 @@ class StaffController extends Controller
      *  - view_appointments  -> appointment summary cards, Today's
      *                          Appointments, pending appointments alert
      *  - view_billing       -> Unpaid Invoices card, billing alerts
-     *  - view_billing_reports -> Today's Sales / Transactions / Discounts /
-     *                          Cash Revenue cards (same data the Billing
+     *  - view_billing_reports -> Today's Collections / Transactions /
+     *                          Discounts / Cash Collections cards (same data the Billing
      *                          report cards are gated by)
      *  - view_payment_history -> Today's Transactions list (+ receipt links)
      *
@@ -147,17 +149,23 @@ class StaffController extends Controller
         $paymentsToday = fn () => Payment::whereBetween('paid_at', [$start, $end]);
 
         if ($withReports) {
-            $summary['todaySales']        = (float) $paymentsToday()->sum('amount');
-            $summary['transactionsToday'] = $paymentsToday()->count();
-            $summary['cashRevenue']       = (float) $paymentsToday()->where('payment_method', 'Cash')->sum('amount');
+            // Collections = money actually received today (payment date), read
+            // through the SAME service method the Revenue Report uses, so the
+            // dashboard and the report can never disagree.
+            $pay = app(BillingReportService::class)->paymentTotals($start, $end);
 
-            // Today's Discounts = the line-item discounts
-            // (invoice_items.discount_amount) of invoices that received
-            // their FIRST payment today. Discounts are locked once a
-            // payment exists, so this is the moment the discount is
-            // actually applied to a transaction; counting by first payment
-            // also means an invoice paid in several instalments (or across
-            // several days) never has its discount counted twice.
+            $summary['todaySales']        = $pay['total'];          // card: Today's Collections
+            $summary['transactionsToday'] = $pay['transactions'];
+            $summary['cashRevenue']       = $pay['cash'];           // card: Cash Collections
+
+            // Today's Discounts = the discount (invoices.discount, which is
+            // the sum of the line discounts) of invoices that received their
+            // FIRST payment today. Discounts are locked once a payment exists,
+            // so this is the moment the discount is actually applied to a
+            // transaction; counting by first payment also means an invoice
+            // paid in several instalments (or across several days) never has
+            // its discount counted twice. (The Revenue Report instead counts
+            // invoices CREATED in the period - see its definitions box.)
             $paidTodayIds = $paymentsToday()->distinct()->pluck('invoice_id');
 
             if ($paidTodayIds->isNotEmpty()) {
@@ -169,8 +177,9 @@ class StaffController extends Controller
                 $firstPaidToday = $paidTodayIds->diff($paidBeforeToday);
 
                 if ($firstPaidToday->isNotEmpty()) {
-                    $summary['todayDiscounts'] = (float) InvoiceItem::whereIn('invoice_id', $firstPaidToday)
-                        ->sum('discount_amount');
+                    $summary['todayDiscounts'] = Money::pesos(Money::cents(
+                        Invoice::whereIn('id', $firstPaidToday)->sum('discount')
+                    ));
                 }
             }
         }

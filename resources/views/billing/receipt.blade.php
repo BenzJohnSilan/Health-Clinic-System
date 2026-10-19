@@ -10,9 +10,17 @@
 </head>
 <body>
 
+@php
+    // Figures AS OF THIS PAYMENT. A later payment on the same invoice must
+    // never change what an earlier receipt says, so these are derived from
+    // the payments up to and including this one (not the invoice's live fields).
+    $snap       = $payment->snapshotAfter();
+    $afterState = $snap['balance'] <= 0 ? 'Paid' : 'Partially Paid';
+@endphp
+
 <div class="rc-action-bar">
-    <a href="{{ $backRoute }}" class="btn-rc-back">
-        <i class="fa-solid fa-arrow-left"></i> Back
+    <a href="{{ $backRoute }}" class="btn-rc-back" id="rcCloseBtn">
+        <i class="fa-solid fa-xmark"></i> Close
     </a>
     <button type="button" class="btn-rc-print" onclick="window.print()">
         <i class="fa-solid fa-print"></i> Print Receipt
@@ -24,7 +32,7 @@
     <!-- ================= HEADER ================= -->
     <div class="rc-header">
         <div class="rc-clinic-icon"><i class="fa-solid fa-staff-snake"></i></div>
-        <div class="rc-clinic-name">Health Clinic Record Management System</div>
+        <div class="rc-clinic-name">Clinic RMS</div>
         <div class="rc-clinic-tag">Official Clinic Payment Receipt</div>
     </div>
 
@@ -49,7 +57,7 @@
             </td>
             <td>
                 <span class="rc-meta-label">Received By</span>
-                <span class="rc-meta-value">{{ $payment->receivedBy->first_name ?? '—' }} {{ $payment->receivedBy->last_name ?? '' }}</span>
+                <span class="rc-meta-value">{{ $payment->receivedByName() }}</span>
             </td>
         </tr>
     </table>
@@ -60,11 +68,16 @@
     <div class="rc-block">
         <div class="rc-block-label">Patient</div>
         <div class="rc-block-value">{{ $invoice->patientName() }}</div>
-        @if($invoice->appointment)
+        @if($invoice->appointmentRef())
             <div class="rc-block-sub">
-                Appointment {{ $invoice->appointment->reference_no }} ·
-                {{ \Carbon\Carbon::parse($invoice->appointment->appointment_date)->format('F d, Y') }}
+                Appointment {{ $invoice->appointmentRef() }}
+                @if($invoice->appointment)
+                    · {{ \Carbon\Carbon::parse($invoice->appointment->appointment_date)->format('F d, Y') }}
+                @endif
             </div>
+        @endif
+        @if($invoice->discount_id_number)
+            <div class="rc-block-sub">Discount ID No.: {{ $invoice->discount_id_number }}</div>
         @endif
     </div>
 
@@ -145,17 +158,17 @@
             </tr>
             @endif
             <tr>
-                <td>Amount Paid (Total)</td>
-                <td class="rc-num">₱{{ number_format($invoice->amount_paid, 2) }}</td>
+                <td>Total Paid (up to this payment)</td>
+                <td class="rc-num">₱{{ number_format($snap['paid_total'], 2) }}</td>
             </tr>
             <tr class="rc-total-row">
                 <td>Remaining Balance</td>
-                <td class="rc-num">₱{{ number_format($invoice->balance, 2) }}</td>
+                <td class="rc-num">₱{{ number_format($snap['balance'], 2) }}</td>
             </tr>
         </table>
     </div>
 
-    <div class="rc-status">{{ $invoice->status }}</div>
+    <div class="rc-status">{{ $afterState }}</div>
 
     <hr class="rc-divider-thin">
 
@@ -164,6 +177,22 @@
     </p>
 
 </div>
+
+<script>
+    // The receipt opens in its own tab: Close shuts that tab. If the browser
+    // won't let the script close it, the link falls back to the invoice page.
+    (function () {
+        var btn = document.getElementById('rcCloseBtn');
+        if (!btn) return;
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            window.close();
+            setTimeout(function () {
+                if (!window.closed) { window.location.href = btn.getAttribute('href'); }
+            }, 250);
+        });
+    })();
+</script>
 
 </body>
 </html>

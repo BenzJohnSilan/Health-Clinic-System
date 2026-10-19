@@ -23,8 +23,8 @@
     gap: 7px;
     padding: 9px 20px;
     background: #ffffff;
-    color: #1a1a2e;
-    border: 1.5px solid #1a1a2e;
+    color: #6a0dad;
+    border: 1.5px solid #6a0dad;
     border-radius: 5px;
     font-family: 'DM Sans', sans-serif;
     font-size: 13px;
@@ -35,7 +35,7 @@
 }
 
 .btn-rx-back:hover {
-    background: #1a1a2e;
+    background: #6a0dad;
     color: #ffffff;
 }
 
@@ -50,7 +50,7 @@
     align-items: center;
     gap: 7px;
     padding: 9px 20px;
-    background: #1a1a2e;
+    background: #6a0dad;
     color: #fff;
     border: none;
     border-radius: 5px;
@@ -60,7 +60,7 @@
     cursor: pointer;
     transition: background 0.2s;
 }
-.btn-rx-print:hover { background: #2d2d4a; }
+.btn-rx-print:hover { background: #783d7d; }
 
 /* ══════════════════════════════════════════
    RX PAGE  — the actual prescription slip

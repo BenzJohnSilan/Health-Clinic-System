@@ -39,7 +39,7 @@ class LaboratoryResultController extends Controller
             $statusFilter = 'All';
         }
 
-        $laboratoryRequests = LaboratoryRequest::with(['tests', 'results', 'doctor', 'appointment', 'corrections', 'reviewedBy', 'followUpAppointments'])
+        $laboratoryRequests = LaboratoryRequest::with(['tests', 'results', 'doctor', 'appointment', 'corrections', 'reviewedBy'])
             ->where('patient_id', $patient->id)
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {

@@ -139,7 +139,7 @@
                 </div>
             </div>
 
-            {{-- Follow-up --}}
+            {{-- Latest Medical Certificate --}}
             <div class="info-card">
                 <div class="info-card-header">
                     <div class="info-card-title">
@@ -185,7 +185,7 @@
     <div class="swap-item swap-real">
 
         <!-- ===== 2x2 OVERVIEW GRID: Upcoming Appointment / Profile Status /
-             Latest Laboratory Result / Follow-up ===== -->
+             Latest Laboratory Result / Latest Medical Certificate ===== -->
         <div class="overview-grid">
 
             <!-- UPCOMING APPOINTMENT -->
@@ -215,7 +215,7 @@
                             <span class="info-row-item"><i class='bx bx-user'></i> {{ $doctorFullName !== '' ? 'Dr. ' . $doctorFullName : 'Doctor to be assigned' }}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-row-item"><i class='bx bxs-stethoscope'></i> {{ $nextAppointment->reason ?: 'Consultation' }}</span>
+                            <span class="info-row-item"><i class='bx bx-plus-medical'></i> {{ $nextAppointment->reason ?: 'Consultation' }}</span>
                         </div>
                     </div>
 
@@ -323,38 +323,40 @@
                 @endif
             </div>
 
-            <!-- FOLLOW-UP -->
+            <!-- LATEST MEDICAL CERTIFICATE -->
             <div class="info-card">
                 <div class="info-card-header">
                     <div class="info-card-title">
-                        <span class="info-card-icon info-card-icon--purple"><i class='bx bx-calendar-plus'></i></span>
-                        <h3>Follow-up</h3>
+                        <span class="info-card-icon info-card-icon--purple"><i class='bx bx-file-blank'></i></span>
+                        <h3>Latest Medical Certificate</h3>
                     </div>
-                    @if($followUpLabRequest)
-                        <span class="status-pill status-pill--amber"><i class='bx bx-time-five'></i> Not Scheduled</span>
+                    @if($latestCertificate)
+                        <span class="status-pill status-pill--green"><i class='bx bx-check-circle'></i> {{ ucfirst($latestCertificate->status) }}</span>
                     @endif
                 </div>
 
-                @if($followUpLabRequest)
+                @if($latestCertificate)
                     <div class="info-card-body">
-                        <div class="followup-row">
-                            <span class="followup-icon"><i class='bx bx-plus-medical'></i></span>
-                            <span class="info-card-main-text">Follow-up Consultation</span>
+                        <p class="info-card-main-text">{{ $latestCertificate->displayPurpose() }}</p>
+                        @if($latestCertificate->released_at)
+                            <div class="info-row">
+                                <span class="info-row-item"><i class='bx bx-calendar'></i> {{ $latestCertificate->released_at->format('F d, Y') }}</span>
+                            </div>
+                        @endif
+                        <div class="info-row">
+                            <span class="info-row-item"><i class='bx bx-file'></i> {{ $latestCertificate->certificate_number }}</span>
                         </div>
-                        <p class="followup-reason">
-                            Reason: {{ $followUpLabRequest->follow_up_instructions ?: 'Review of laboratory results' }}
-                        </p>
                     </div>
 
                     <div class="info-card-footer">
-                        <a href="{{ route('patient.appointments.index', ['follow_up' => $followUpLabRequest->id]) }}" class="card-view-btn">
-                            View Details <i class='bx bx-chevron-right'></i>
+                        <a href="{{ route('patient.medical-certificates.show', $latestCertificate->id) }}" class="card-view-btn">
+                            View Certificate <i class='bx bx-chevron-right'></i>
                         </a>
                     </div>
                 @else
                     <div class="info-card-empty">
-                        <i class='bx bx-calendar-check'></i>
-                        <p>No follow-up currently recommended.</p>
+                        <i class='bx bx-file-blank'></i>
+                        <p>No medical certificates yet.</p>
                     </div>
                 @endif
             </div>

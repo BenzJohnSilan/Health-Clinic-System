@@ -228,8 +228,10 @@ body {
     border: 1.5px solid #6a0dad;
     padding: 7px 12px;
     border-radius: 8px;
+    font-family: "Poppins", Arial, sans-serif;
     font-size: 13px;
     font-weight: 600;
+    line-height: 1.2;
     cursor: pointer;
     text-decoration: none;
     display: inline-flex;
@@ -246,15 +248,22 @@ body {
     transform: translateY(-1px);
 }
 
+/* Same box model as .btn-view-appt (1.5px border, same font + line-height)
+   so View and Cancel are always exactly the same height side by side. */
 .btn-cancel-appt {
     background-color: #ef4444;
     color: #fff;
-    border: none;
+    border: 1.5px solid #ef4444;
     padding: 7px 12px;
     border-radius: 8px;
+    font-family: "Poppins", Arial, sans-serif;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
+    line-height: 1.2;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
     white-space: nowrap;
     flex-shrink: 0;
@@ -262,12 +271,13 @@ body {
 
 .btn-cancel-appt:hover {
     background-color: #dc2626;
+    border-color: #dc2626;
     transform: translateY(-1px);
     box-shadow: 0 4px 10px rgba(239, 68, 68, 0.35);
 }
 .btn-cancel-appt:disabled {
     background-color: #f3f4f6;
-    border: 1px solid #d1d5db;
+    border: 1.5px solid #d1d5db;
     color: #9ca3af;
     cursor: not-allowed;
     opacity: 1;
@@ -277,13 +287,17 @@ body {
 }
 
 .no-cancel-hint {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
+    line-height: 1.2;
     color: #9ca3af;
     background-color: #f3f4f6;
-    padding: 5px 10px;
-    border-radius: 6px;
+    border: 1.5px solid #e5e7eb;
+    padding: 7px 12px;
+    border-radius: 8px;
     cursor: default;
     white-space: nowrap;
 }
@@ -344,29 +358,41 @@ body {
     overflow-wrap: anywhere;
 }
 
+/* On cards there is room for two lines of the reason before cutting it off
+   with "..." (the full text is on the View page). */
 .appt-card-value.reason-preview {
     max-width: 100%;
+    display: -webkit-box;
+    white-space: normal;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
 }
 
+/* Two equal columns: View and Cancel (or Locked) always have identical
+   width and height, whatever the screen size. */
 .appt-card-actions {
-    display: flex;
-    align-items: center;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
     gap: 10px;
     margin-top: 12px;
 }
 
 .appt-card-actions .btn-view-appt,
-.appt-card-actions .btn-cancel-appt {
-    flex: 1;
-    text-align: center;
-    padding: 10px 14px;
-}
-
+.appt-card-actions .btn-cancel-appt,
 .appt-card-actions .no-cancel-hint,
 .appt-card-actions .no-action {
-    flex: 1;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;           /* comfortable touch target */
+    padding: 10px 12px;
+    font-size: 14px;
     text-align: center;
+    justify-content: center;
 }
+
+.appt-card-actions .no-action { display: flex; align-items: center; }
 
 /* ================= EMPTY ROW ================= */
 .empty-row {
@@ -713,16 +739,32 @@ textarea.form-input {
     }
 }
 
+/* ---- Phones ---- */
 @media screen and (max-width: 600px) {
+    /* Book button full width. The wrapper must be 100% wide too —
+       otherwise the button is only as wide as its text. */
     .page-header {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
+        align-items: stretch;
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    /* The top bar already shows "Appointments", so the big page title is
+       hidden on phones. */
+    .page-header .header-left { display: none; }
+
+    .page-header .header-right {
+        width: 100%;
     }
 
     .page-header .btn-add {
         width: 100%;
+        min-height: 48px;
         justify-content: center;
+        text-align: center;
+        text-decoration: none;
+        line-height: 1.25;
     }
 
     .pagination-wrapper {
@@ -730,15 +772,41 @@ textarea.form-input {
         align-items: center;
     }
 
-    .modal-box {
-        width: calc(100% - 24px);
-        margin: 12px;
-        padding: 24px 20px;
-        max-height: calc(100dvh - 24px);
+    /* Booking / cancel dialogs become a bottom sheet: full width, thumb
+       reachable, scrolls inside itself, respects the iPhone home bar. */
+    .modal-overlay {
+        align-items: flex-end;
+        justify-content: center;
     }
 
+    .modal-box {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 22px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+        border-radius: 20px 20px 0 0;
+        max-height: 92vh;
+        max-height: 92dvh;
+        overscroll-behavior: contain;
+        animation: modalSheetIn 0.28s ease;
+    }
+
+    .modal-close-btn {
+        top: 10px;
+        right: 12px;
+        width: 40px;
+        height: 40px;
+        font-size: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Main action on top, Cancel/Back underneath — all the same size. */
     .modal-actions {
-        flex-direction: column;
+        flex-direction: column-reverse;
+        gap: 10px;
+        margin-top: 20px;
     }
 
     .btn-back,
@@ -746,13 +814,19 @@ textarea.form-input {
     .btn-confirm,
     .btn-danger {
         width: 100%;
+        min-height: 48px;
         text-align: center;
     }
 }
 
+@keyframes modalSheetIn {
+    from { opacity: 0; transform: translateY(40px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
 @media screen and (max-width: 420px) {
     .page-header h1 { font-size: 24px; }
-    .page-header .btn-add { font-size: 13px; padding: 11px 14px; }
+    .page-header .btn-add { font-size: 14px; padding: 12px 14px; }
 
     .alert-success,
     .alert-error { padding: 11px 12px; font-size: 13px; line-height: 1.45; }
@@ -763,12 +837,41 @@ textarea.form-input {
     .appt-card-value { font-size: 13px; }
     .appt-card-actions { gap: 8px; }
     .appt-card-actions .btn-view-appt,
-    .appt-card-actions .btn-cancel-appt { padding: 9px 8px; font-size: 12px; }
+    .appt-card-actions .btn-cancel-appt,
+    .appt-card-actions .no-cancel-hint { padding: 10px 8px; font-size: 13px; }
 
     .pagination-wrapper { padding: 12px; }
     .pagination-info { text-align: center; font-size: 12px; }
     .pagination-nav { justify-content: center; }
-    .page-btn, .page-ellipsis { min-width: 30px; height: 30px; padding: 0 7px; }
+    .page-btn, .page-ellipsis { min-width: 34px; height: 34px; padding: 0 8px; }
+}
+
+/* Very narrow phones (320px class): tighter labels, keep buttons legible. */
+@media screen and (max-width: 340px) {
+    .appt-card-row { grid-template-columns: 62px minmax(0, 1fr); }
+    .appt-card-actions .btn-view-appt,
+    .appt-card-actions .btn-cancel-appt,
+    .appt-card-actions .no-cancel-hint { font-size: 12px; padding: 10px 6px; }
+    .page-btn, .page-ellipsis { min-width: 30px; height: 30px; padding: 0 6px; }
+}
+
+/* Phones in landscape (short screens): keep the dialog fully scrollable. */
+@media screen and (max-height: 520px) {
+    .modal-overlay { align-items: center; }
+    .modal-box {
+        max-height: calc(100dvh - 16px);
+        border-radius: 16px;
+        margin: 8px;
+        width: calc(100% - 16px);
+    }
+    .modal-actions { flex-direction: row-reverse; }
+}
+
+/* Touch devices: no sticky hover lift on buttons after a tap. */
+@media (hover: none) {
+    .btn-view-appt:hover,
+    .btn-cancel-appt:hover,
+    .page-header .btn-add:hover { transform: none; }
 }
 
 /* ================= FOLLOW-UP CONSULTATION ================= */

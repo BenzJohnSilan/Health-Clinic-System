@@ -69,8 +69,8 @@
                             'image' => $item->image_url,
                         ]) }}"><i class='bx bx-edit'></i></button>
                 <form method="POST" action="{{ route('admin.website.items.destroy', $item) }}"
-                      data-confirm="Delete “{{ $item->title }}”? This cannot be undone.">@csrf @method('DELETE')
-                    <button class="ws-icon-btn is-danger" title="Delete" aria-label="Delete"><i class='bx bx-trash'></i></button>
+                      data-confirm="Move “{{ $item->title }}” to the Archive? It will be hidden from the website, and you can restore it any time.">@csrf @method('DELETE')
+                    <button class="ws-icon-btn is-danger" title="Archive" aria-label="Archive"><i class='bx bx-archive'></i></button>
                 </form>
             </div>
         </li>

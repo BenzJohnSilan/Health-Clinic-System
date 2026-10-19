@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\LandingItem;
 use App\Models\UserLog;
 use App\Models\WebsiteSetting;
+use App\Services\Archive\ArchiveException;
+use App\Services\Archive\ArchiveService;
 use App\Services\LandingPageContent;
 use App\Support\LandingDefaults;
 use App\Support\LandingText;
@@ -175,16 +177,22 @@ class WebsiteManagementController extends Controller
         return $this->back($item->section, null);
     }
 
-    public function destroyItem(LandingItem $item)
+    /**
+     * Archives the item instead of deleting it: it disappears from this page
+     * and from the public landing page, but its row AND image file are kept.
+     * Restore or permanently delete it from Admin > Archive.
+     */
+    public function destroyItem(LandingItem $item, ArchiveService $archive)
     {
         $section = $item->section;
-        $title   = $item->title;
 
-        $item->delete();   // model event removes its image file
+        try {
+            $archive->archive('landing_item', $item->id, auth()->user());
+        } catch (ArchiveException $e) {
+            return redirect()->route('admin.website.index', ['tab' => $section])->with('error', $e->getMessage());
+        }
 
-        $this->log('Deleted Website Item', "{$section}: {$title}");
-
-        return $this->back($section, 'Item deleted.');
+        return $this->back($section, 'Item moved to the Archive.');
     }
 
     // ------------------------------------------------------------------

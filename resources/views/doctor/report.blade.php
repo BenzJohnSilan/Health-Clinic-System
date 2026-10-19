@@ -107,7 +107,7 @@
 
     <!-- REVIEW SCHEDULE (view only) -->
     <div class="card">
-        <h3 class="section-title">Review Schedule</h3>
+        <h3 class="section-title">Follow-up Schedule</h3>
 
         @if($review)
             <table class="info-table">

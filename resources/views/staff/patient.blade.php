@@ -100,11 +100,6 @@
                         @else
                             <span class="type-badge registered">Registered</span>
                         @endif
-                        @if($followUpsByPatient->has($patient['id']))
-                            <span class="type-badge followup" title="Doctor recommended a follow-up consultation for a laboratory result">
-                                Follow-up recommended
-                            </span>
-                        @endif
                     </td>
                     <td>
                     <div class="action-cell">
@@ -164,16 +159,6 @@
                                     )">
                                     <i class="fa-solid fa-calendar-plus"></i> Schedule Appointment
                                 </button>
-                                @if($followUpsByPatient->has($patient['id']))
-                                <button type="button" class="action-menu-item"
-                                    onclick="openAppointmentModal(
-                                        '{{ $patient['raw_id'] }}',
-                                        '{{ $patient['type'] }}',
-                                        {{ $followUpsByPatient[$patient['id']]->first()['id'] }}
-                                    )">
-                                    <i class="fa-solid fa-rotate-left"></i> Schedule Follow-up
-                                </button>
-                                @endif
                                 @endif
 
                                 @if($canViewAppointments)
@@ -712,17 +697,6 @@
                 </div>
             @endif
 
-            <!-- Appointment Type — only shown when this patient has a
-                 doctor-recommended follow-up waiting to be booked.
-                 Defaults to Regular; re-validated on the server. -->
-            <div class="form-group" id="appt_type_group" style="margin-bottom:16px; display:none;">
-                <label class="form-label">Appointment Type <span class="required">*</span></label>
-                <select class="form-input" name="follow_up_laboratory_request_id" id="appt_follow_up">
-                    <option value="">Regular Consultation</option>
-                </select>
-                <div id="appt_follow_up_info" class="followup-info" style="display:none;"></div>
-            </div>
-
             <!-- Date -->
             <div class="form-group" style="margin-bottom:16px;">
                 <label class="form-label">Date <span class="required">*</span></label>
@@ -761,21 +735,7 @@
                 <label class="form-label">Time Slot <span class="required">*</span></label>
                 <select class="form-input" name="appointment_time" id="appt_time" required>
                     <option value="">-- Select Time Slot --</option>
-                    <option value="09:00">9:00 AM – 9:30 AM</option>
-                    <option value="09:30">9:30 AM – 10:00 AM</option>
-                    <option value="10:00">10:00 AM – 10:30 AM</option>
-                    <option value="10:30">10:30 AM – 11:00 AM</option>
-                    <option value="11:00">11:00 AM – 11:30 AM</option>
-                    <option value="11:30">11:30 AM – 12:00 PM</option>
-                    <option value="12:00" data-lunch="true" disabled>12:00 PM – 1:00 PM (Lunch Break)</option>
-                    <option value="13:00">1:00 PM – 1:30 PM</option>
-                    <option value="13:30">1:30 PM – 2:00 PM</option>
-                    <option value="14:00">2:00 PM – 2:30 PM</option>
-                    <option value="14:30">2:30 PM – 3:00 PM</option>
-                    <option value="15:00">3:00 PM – 3:30 PM</option>
-                    <option value="15:30">3:30 PM – 4:00 PM</option>
-                    <option value="16:00">4:00 PM – 4:30 PM</option>
-                    <option value="16:30">4:30 PM – 5:00 PM</option>
+                    @include('partials.time-slot-options')
                 </select>
             </div>
 
@@ -963,51 +923,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const apptDateInput   = document.getElementById('appt_date');
     const apptDoctorInput = document.getElementById('appt_doctor_id');
     const apptTimeSelect  = document.getElementById('appt_time');
-
-    // ===== FOLLOW-UP CONSULTATION (Laboratory result) =====
-    // Keyed "user_{id}" / "patient_{id}". Client-side convenience only;
-    // StaffAppointmentController::store() re-validates everything.
-    const FOLLOW_UPS       = @json($followUpsByPatient);
-    const apptTypeGroup    = document.getElementById('appt_type_group');
-    const apptFollowUp     = document.getElementById('appt_follow_up');
-    const apptFollowUpInfo = document.getElementById('appt_follow_up_info');
-    const apptReason       = document.getElementById('appt_reason');
-    let currentFollowUps   = [];
-
-    function applyFollowUpSelection() {
-        const fu = currentFollowUps.find(f => String(f.id) === apptFollowUp.value) || null;
-
-        // Follow-up is with the reviewing Doctor only.
-        if (apptDoctorInput && apptDoctorInput.tagName === 'SELECT') {
-            Array.from(apptDoctorInput.options).forEach(function (opt) {
-                if (!opt.value) return;
-                opt.disabled = !!(fu && fu.doctor_id && String(fu.doctor_id) !== opt.value);
-            });
-            if (fu && fu.doctor_id) apptDoctorInput.value = String(fu.doctor_id);
-        }
-
-        if (fu) {
-            apptFollowUpInfo.style.display = '';
-            apptFollowUpInfo.textContent = 'Tests: ' + fu.tests
-                + (fu.doctor_name ? ' · Dr. ' + fu.doctor_name : '')
-                + (fu.instructions ? ' — ' + fu.instructions : '');
-            if (!apptReason.value.trim() || apptReason.value.indexOf('Follow-up consultation for laboratory result') === 0) {
-                apptReason.value = 'Follow-up consultation for laboratory result ' + fu.reference_no;
-            }
-        } else {
-            apptFollowUpInfo.style.display = 'none';
-            if (apptReason.value.indexOf('Follow-up consultation for laboratory result') === 0) {
-                apptReason.value = '';
-            }
-        }
-
-        updateStaffTimeSlots();
-    }
-
-    if (apptFollowUp) apptFollowUp.addEventListener('change', applyFollowUpSelection);
+    const apptReason      = document.getElementById('appt_reason');
 
     // Set default date to today when modal opens
-    window.openAppointmentModal = function (patientId, patientType, followUpLabId) {
+    window.openAppointmentModal = function (patientId, patientType) {
         document.getElementById('appointment_patient_id').value   = patientId;
         document.getElementById('appointment_patient_type').value = patientType;
 
@@ -1018,24 +937,12 @@ document.addEventListener('DOMContentLoaded', function () {
             apptDoctorInput.value = '';
         }
 
-        // Appointment Type: Regular unless Staff explicitly picks a follow-up.
-        currentFollowUps = FOLLOW_UPS[patientType + '_' + patientId] || [];
-        apptFollowUp.innerHTML = '<option value="">Regular Consultation</option>';
-        currentFollowUps.forEach(function (f) {
-            const opt = document.createElement('option');
-            opt.value = f.id;
-            opt.textContent = 'Follow-up — ' + f.reference_no;
-            apptFollowUp.appendChild(opt);
-        });
-        apptTypeGroup.style.display = currentFollowUps.length ? '' : 'none';
-        apptFollowUp.value = followUpLabId ? String(followUpLabId) : '';
-
         // Default date to today
         if (!apptDateInput.value) {
             apptDateInput.value = new Date().toISOString().split('T')[0];
         }
 
-        applyFollowUpSelection();
+        updateStaffTimeSlots();
         openModal('appointmentModal');
     };
 
@@ -1091,10 +998,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Reopen the Schedule Appointment modal after a failed submit, or when
-    // arriving from the Laboratory Results "Schedule Follow-up" link.
+    // Reopen the Schedule Appointment modal after a failed submit.
     @if($isAppointmentError)
-        openAppointmentModal(@json(old('patient_id')), @json(old('patient_type')), @json(old('follow_up_laboratory_request_id')));
+        openAppointmentModal(@json(old('patient_id')), @json(old('patient_type')));
         apptDateInput.value = @json(old('appointment_date', ''));
         if (apptDoctorInput && apptDoctorInput.tagName === 'SELECT' && !apptDoctorInput.value) {
             apptDoctorInput.value = @json((string) old('doctor_id', ''));
@@ -1102,8 +1008,6 @@ document.addEventListener('DOMContentLoaded', function () {
         apptReason.value = @json(old('reason', ''));
         updateStaffTimeSlots();
         apptTimeSelect.value = @json(old('appointment_time', ''));
-    @elseif($autoFollowUp)
-        openAppointmentModal(@json((string) $autoFollowUp['patient_id']), @json($autoFollowUp['patient_type']), {{ $autoFollowUp['lab_id'] }});
     @endif
 
     // ===== ALLERGY / RELATIONSHIP TOGGLE HELPERS (shared by Add + Edit) =====

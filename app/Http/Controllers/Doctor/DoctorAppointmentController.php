@@ -14,6 +14,7 @@ use App\Models\Review;
 use App\Models\Service;
 use App\Models\UserLog;
 use App\Services\BillingService;
+use App\Services\ClinicSchedule;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -151,7 +152,7 @@ class DoctorAppointmentController extends Controller
             $dateFilter = 'All Dates';
         }
 
-        $query = Appointment::with(['patient', 'walkinPatient', 'followUpLaboratoryRequest'])
+        $query = Appointment::with(['patient', 'walkinPatient'])
             ->where('doctor_id', $doctor->id)
             ->whereIn('status', self::ACTIVE_STATUSES);
 
@@ -213,12 +214,12 @@ class DoctorAppointmentController extends Controller
                 ->with('error', 'Only approved or rescheduled appointments can be marked as No Show.');
         }
 
-        // Appointment slots in ClinicRMS are 30 minutes long.
+        // Appointment slot length comes from Admin > System Settings (30 min by default).
         // The stored appointment_time is the slot start time.
         $appointmentStart = Carbon::parse(
             $appointment->appointment_date->format('Y-m-d') . ' ' . $appointment->appointment_time
         );
-        $appointmentEnd = $appointmentStart->copy()->addMinutes(30);
+        $appointmentEnd = $appointmentStart->copy()->addMinutes(ClinicSchedule::slotMinutes());
 
         if (Carbon::now()->lt($appointmentEnd)) {
             return redirect()->back()
@@ -251,7 +252,7 @@ class DoctorAppointmentController extends Controller
     public function show($id)
     {
         $appointment = Appointment::where('doctor_id', auth()->id())
-            ->with(['patient', 'walkinPatient', 'followUpLaboratoryRequest.tests', 'followUpLaboratoryRequest.reviewedBy'])
+            ->with(['patient', 'walkinPatient'])
             ->findOrFail($id);
 
         // Not yet checked in — no consultation access at all.
@@ -687,6 +688,10 @@ class DoctorAppointmentController extends Controller
             'reschedule_reason' => 'required|string|max:500',
         ]);
 
+        if (!ClinicSchedule::isBookableTime($request->appointment_time)) {
+            return redirect()->back()->with('error', ClinicSchedule::INVALID_TIME_MESSAGE);
+        }
+
         $appointment = Appointment::with(['patient', 'walkinPatient'])
             ->where('doctor_id', auth()->id())
             ->findOrFail($id);
@@ -730,17 +735,27 @@ class DoctorAppointmentController extends Controller
     }
 
     /**
-     * Save the review/follow-up. This NEVER completes the appointment —
-     * only completeConsultation() may set status to Completed (Section
-     * 11 of the workflow spec). Only usable while In Progress, same as
-     * every other consultation-editing endpoint.
+     * Save the Follow-up Schedule (Next Review date + time + message).
+     * This NEVER completes the appointment — only completeConsultation()
+     * may set status to Completed (Section 11 of the workflow spec). Only
+     * usable while In Progress, same as every other consultation-editing
+     * endpoint.
+     *
+     * Setting a date + time also creates (or, on a later save, updates) ONE
+     * Follow-up appointment for the same patient and doctor, Approved right
+     * away (the patient agreed to it in the consultation). Clearing the date
+     * cancels that appointment while it is still only scheduled.
      */
     public function storeReview(Request $request)
     {
         $request->validate([
             'appointment_id'   => 'required|exists:appointments,id',
-            'next_review_date' => 'nullable|date',
+            'next_review_date' => 'nullable|date|after_or_equal:today',
+            'next_review_time' => 'nullable|required_with:next_review_date',
             'message'          => 'nullable|string',
+        ], [
+            'next_review_date.after_or_equal' => 'The follow-up date cannot be in the past.',
+            'next_review_time.required_with'  => 'Please choose a time slot for the follow-up.',
         ]);
 
         $appointment = Appointment::where('doctor_id', auth()->id())
@@ -751,18 +766,105 @@ class DoctorAppointmentController extends Controller
                 ->with('error', 'The review can only be saved while the consultation is In Progress.');
         }
 
-        Review::updateOrCreate(
-            ['appointment_id' => $appointment->id],
-            [
-                'next_review_date' => $request->next_review_date,
-                'message'          => $request->message,
-            ]
-        );
+        $date = $request->filled('next_review_date') ? $request->next_review_date : null;
+        $time = ($date && $request->filled('next_review_time')) ? substr($request->next_review_time, 0, 5) : null;
+
+        if ($date) {
+            if (!ClinicSchedule::isBookableTime($time)) {
+                return redirect()->back()->withInput()->with('error', ClinicSchedule::INVALID_TIME_MESSAGE);
+            }
+
+            if (Carbon::parse($date . ' ' . $time)->lte(now())) {
+                return redirect()->back()->withInput()
+                    ->with('error', 'Please choose a follow-up time that is later than now.');
+            }
+        }
+
+        // States in which the follow-up appointment may still be moved or cancelled.
+        $scheduledStatuses = ['Pending', 'Approved', 'Rescheduled'];
+
+        $error    = null;
+        $followUp = null;
+
+        DB::transaction(function () use ($request, $appointment, $date, $time, $scheduledStatuses, &$error, &$followUp) {
+            $review   = Review::where('appointment_id', $appointment->id)->lockForUpdate()->first()
+                ?? new Review(['appointment_id' => $appointment->id]);
+            $existing = $review->follow_up_appointment_id
+                ? Appointment::lockForUpdate()->find($review->follow_up_appointment_id)
+                : null;
+
+            if ($existing && in_array($existing->status, ['Checked In', 'In Progress', 'Completed'], true)) {
+                $error = 'The follow-up appointment ' . $existing->reference_no . ' has already started, so its schedule can no longer be changed.';
+                return;
+            }
+
+            // A cancelled / rejected / no-show follow-up is finished — a new date starts a new one.
+            $editable = $existing && in_array($existing->status, $scheduledStatuses, true) ? $existing : null;
+
+            if ($date) {
+                $taken = Appointment::where('doctor_id', $appointment->doctor_id)
+                    ->where('appointment_date', $date)
+                    ->where('appointment_time', $time)
+                    ->when($editable, fn ($q) => $q->where('id', '!=', $editable->id))
+                    ->exists();
+
+                if ($taken) {
+                    $error = 'You already have an appointment at the selected date and time. Please choose a different time slot.';
+                    return;
+                }
+
+                $fields = [
+                    'doctor_id'        => $appointment->doctor_id,
+                    'appointment_date' => $date,
+                    'appointment_time' => $time,
+                    'reason'           => 'Follow-up consultation (from ' . $appointment->reference_no . ')',
+                ];
+
+                if ($editable) {
+                    $editable->update($fields);
+                    $followUp = $editable;
+                } else {
+                    $followUp = Appointment::create($fields + [
+                        'patient_id'        => $appointment->patient_id,
+                        'walkin_patient_id' => $appointment->walkin_patient_id,
+                        'status'            => 'Approved',
+                        'appointment_type'  => Appointment::TYPE_FOLLOW_UP,
+                    ]);
+                }
+            } elseif ($editable) {
+                // Date cleared: cancel the follow-up that was only scheduled.
+                $editable->update(['status' => 'Cancelled']);
+            }
+
+            $review->fill([
+                'next_review_date'         => $date,
+                'message'                  => $request->message,
+                'follow_up_appointment_id' => $followUp?->id ?? $review->follow_up_appointment_id,
+            ])->save();
+        });
+
+        if ($error) {
+            return redirect()->back()->withInput()->with('error', $error);
+        }
+
+        if ($followUp) {
+            UserLog::create([
+                'user_id' => auth()->id(),
+                'action'  => 'Scheduled Follow-up',
+                'module'  => 'Appointments',
+                'details' => 'Scheduled follow-up ' . $followUp->reference_no
+                           . ' for ' . $appointment->patientName()
+                           . ' on ' . $followUp->appointment_date->format('F d, Y') . ' at ' . $followUp->timeLabel('h:i A') . '.',
+            ]);
+        }
 
         // Review lives on Step 3 (Prescription & Review) — stay there.
         $this->rememberStep($appointment, 3);
 
-        return redirect()->back()->with('success', 'Review notes saved.');
+        return redirect()->back()->with('success', $followUp
+            ? 'Follow-up saved. Appointment ' . $followUp->reference_no . ' is set for '
+              . $followUp->appointment_date->format('F d, Y') . ' at ' . $followUp->timeLabel('h:i A') . '.'
+            : 'Review notes saved.');
     }
 
     /**

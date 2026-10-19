@@ -28,6 +28,15 @@ return [
     */
     'mysqldump_path' => env('BACKUP_MYSQLDUMP_PATH'),
 
+    /*
+    | How the database is dumped:
+    |   auto      mysqldump, or - when the host switched off proc_open (Hostinger)
+    |             - a PHP-only dump with the same file layout (default)
+    |   php       always the PHP-only dump
+    |   mysqldump always the mysqldump program
+    */
+    'dump_driver' => env('BACKUP_DUMP_DRIVER', 'auto'),
+
     // Seconds before a stuck mysqldump run is aborted.
     'dump_timeout' => (int) env('BACKUP_DUMP_TIMEOUT', 600),
 

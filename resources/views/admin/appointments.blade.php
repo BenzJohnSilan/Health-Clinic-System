@@ -125,7 +125,7 @@
 
                     $slotEnd = \Carbon\Carbon::parse(
                         $date->format('Y-m-d') . ' ' . $time->format('H:i:s')
-                    )->addMinutes(30);
+                    )->addMinutes(\App\Services\ClinicSchedule::slotMinutes());
                     $isNoShowEligible = $isReschedulable && \Carbon\Carbon::now()->gte($slotEnd);
 
                     $isCheckInEligible = $appointment->canBeCheckedIn();
@@ -249,15 +249,15 @@
     @if($canDelete)
     <div class="action-menu-divider"></div>
 
-    {{-- Delete (Admin only) --}}
+    {{-- Archive (Admin only) — finished appointments only; nothing is deleted --}}
     <form action="{{ route('admin.appointments.destroy', $appointment->id) }}" method="POST">
         @csrf
         @method('DELETE')
         <button
             type="submit"
-            class="action-menu-item action-menu-delete"
-            onclick="return confirm('Delete this appointment? This cannot be undone.')">
-            <i class="fa-solid fa-trash"></i> Delete
+            class="action-menu-item"
+            onclick="return confirm('Move appointment {{ $appointment->reference_no }} to the Archive? Its medical, prescription and billing records are kept. You can restore it any time.')">
+            <i class="fa-solid fa-box-archive"></i> Archive
         </button>
     </form>
     @endif

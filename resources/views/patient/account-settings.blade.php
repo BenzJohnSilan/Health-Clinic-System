@@ -9,7 +9,7 @@
 <div class="settings-wrapper">
 
     {{-- ===== PAGE HEADER ===== --}}
-    <div class="settings-header">
+    <div class="settings-header settings-header--page">
         <div class="settings-header-icon">
             <i class='bx bx-cog'></i>
         </div>
@@ -241,7 +241,7 @@
                                 @error('address')<span class="field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>@enderror
                             </div>
 
-                            <div class="form-group">
+                            <div class="form-group mobile-full">
                                 <label>Contact Number <span class="required">*</span></label>
                                 <input type="text" name="contact_number"
                                        value="{{ old('contact_number', $patient->contact_number) }}"
@@ -260,7 +260,7 @@
                         </h3>
                         <div class="form-grid">
 
-                            <div class="form-group">
+                            <div class="form-group mobile-full">
                                 <label>Blood Type <span class="required">*</span></label>
                                 <select name="blood_type"
                                         class="{{ $errors->has('blood_type') ? 'is-invalid' : '' }}" required>
@@ -351,7 +351,7 @@
                                 @error('relationship')<span class="field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>@enderror
                             </div>
 
-                            <div class="form-group">
+                            <div class="form-group mobile-full">
                                 <label>Contact Number <span class="required">*</span></label>
                                 <input type="text" name="emergency_contact_number"
                                        value="{{ old('emergency_contact_number', $patient->emergency_contact_number) }}"
@@ -378,7 +378,7 @@
                         </h3>
                         <div class="form-grid">
 
-                            <div class="form-group">
+                            <div class="form-group mobile-full">
                                 <label>Username <span class="required">*</span></label>
                                 <input type="text" name="username"
                                        value="{{ old('username', $patient->username) }}"
@@ -387,7 +387,7 @@
                                 @error('username')<span class="field-error"><i class='bx bx-error-circle'></i> {{ $message }}</span>@enderror
                             </div>
 
-                            <div class="form-group">
+                            <div class="form-group mobile-full">
                                 <label>Email Address <span class="required">*</span></label>
                                 <input type="email" name="email"
                                        value="{{ old('email', $patient->email) }}"

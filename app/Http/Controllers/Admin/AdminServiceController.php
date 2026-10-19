@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Service;
 use App\Models\UserLog;
+use App\Services\Archive\ArchiveException;
+use App\Services\Archive\ArchiveService;
 use Illuminate\Http\Request;
 
 /**
@@ -16,7 +18,8 @@ class AdminServiceController extends Controller
 {
     public function index()
     {
-        $services = Service::orderBy('name')->get();
+        // Archived services are listed in Admin > Archive instead.
+        $services = Service::notArchived()->orderBy('name')->get();
 
         return view('admin.billing.services', compact('services'));
     }
@@ -49,6 +52,9 @@ class AdminServiceController extends Controller
 
     public function update(Request $request, Service $service)
     {
+        // An archived service must be restored from Admin > Archive before it can be edited.
+        abort_if($service->isArchived(), 404);
+
         $request->validate([
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
@@ -74,18 +80,21 @@ class AdminServiceController extends Controller
             ->with('success', 'Service updated successfully!');
     }
 
-    public function destroy(Service $service)
+    /**
+     * Used to hard-delete the service, which blanked the service on every
+     * past invoice line (invoice_items.service_id is SET NULL). It now
+     * ARCHIVES it: the service is deactivated and its history stays linked.
+     * The Consultation and Medical Certificate services are refused.
+     */
+    public function destroy(Service $service, ArchiveService $archive)
     {
-        UserLog::create([
-            'user_id' => auth()->id(),
-            'action'  => 'Deleted Service',
-            'module'  => 'Services',
-            'details' => $service->name,
-        ]);
-
-        $service->delete();
+        try {
+            $archive->archive('service', $service->id, auth()->user());
+        } catch (ArchiveException $e) {
+            return redirect()->route('admin.services.index')->with('error', $e->getMessage());
+        }
 
         return redirect()->route('admin.services.index')
-            ->with('success', 'Service deleted successfully!');
+            ->with('success', '"' . $service->name . '" was moved to the Archive.');
     }
 }

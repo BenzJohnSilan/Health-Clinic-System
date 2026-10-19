@@ -7,7 +7,7 @@
 }
 
 body {
-    background: #f4f6f8;
+    background: #f4f0fa;
     color: #333;
 }
 
@@ -886,4 +886,14 @@ textarea.form-input {
     display: inline-block;
     font-size: 11.5px;
     color: #6b7280;
+}
+
+/* Long reasons are cut with "..." (same as the Patient Appointments page);
+   the full text is in the tooltip and on the Appointment Details page. */
+.reason-preview {
+    display: block;
+    max-width: 160px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }

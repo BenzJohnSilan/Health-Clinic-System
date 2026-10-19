@@ -50,7 +50,7 @@ class MedicalCertificateController extends Controller
 
     /**
      * Doctor → View a medical certificate (details, invoice/payment state,
-     * and the Print button once it is issued and paid).
+     * and the Print button for issued/released certificates, paid or not).
      */
     public function show(MedicalCertificate $medicalCertificate)
     {
@@ -172,7 +172,7 @@ class MedicalCertificateController extends Controller
 
         return redirect()
             ->route('doctor.medical-certificates.show', $certificate->id)
-            ->with('success', 'Medical certificate created. Its invoice is now in Billing & Payments — print it once the fee is paid.');
+            ->with('success', 'Medical certificate created. Its invoice is now in Billing & Payments. You can print it now; the invoice payment status is shown on this page.');
     }
 
     /**
@@ -283,11 +283,13 @@ class MedicalCertificateController extends Controller
     }
 
     /**
-     * Doctor → Print an issued Medical Certificate.
+     * Doctor → Print a Medical Certificate.
      *
-     * Allowed only while the certificate is ISSUED and its fee is PAID.
+     * Allowed while the certificate is ISSUED or RELEASED, whether or not
+     * its fee is paid yet (the doctor only sees the payment state).
      * Printing does NOT release it: the Doctor signs the printed copy by
-     * hand and Staff then releases it (Staff → Medical Certificates).
+     * hand and Staff then releases it (Staff → Medical Certificates),
+     * which still requires the invoice to be paid.
      */
     public function print(MedicalCertificate $medicalCertificate)
     {
@@ -295,8 +297,7 @@ class MedicalCertificateController extends Controller
 
         $medicalCertificate->load(['appointment.walkinPatient', 'appointment.medicalRecord', 'patient', 'doctor', 'invoice']);
 
-        abort_unless($medicalCertificate->isIssued(), 403, 'Only issued certificates can be printed.');
-        abort_unless($medicalCertificate->isPaid(), 403, 'This certificate cannot be printed until its invoice is fully paid.');
+        abort_unless($medicalCertificate->canBePrinted(), 403, 'Only issued or released certificates can be printed.');
 
         return view('patient.medical-certificates.print', [
             'certificate' => $medicalCertificate,

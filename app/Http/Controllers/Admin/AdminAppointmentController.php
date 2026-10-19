@@ -4,7 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Staff\StaffAppointmentController;
 use App\Models\Appointment;
-use App\Models\UserLog;
+use App\Services\Archive\ArchiveException;
+use App\Services\Archive\ArchiveService;
 
 /**
  * Admin's single, centralized Appointments page.
@@ -45,6 +46,12 @@ class AdminAppointmentController extends StaffAppointmentController
         return 'admin.appointments.index';
     }
 
+    /** Archived appointments are hidden from the Admin list and status counts. */
+    protected function applyArchiveVisibility($query)
+    {
+        return $query->notArchived();
+    }
+
     // ================= SHOW APPOINTMENT DETAILS (read-only) =================
     /**
      * A simpler details view than Staff's — just the patient info,
@@ -59,26 +66,25 @@ class AdminAppointmentController extends StaffAppointmentController
         return view('admin.appointment-show', compact('appointment'));
     }
 
-    // ================= DELETE APPOINTMENT (Admin-only) =================
+    // ================= ARCHIVE APPOINTMENT (Admin-only) =================
     /**
-     * Staff has no equivalent action — Delete is only ever offered to
-     * Admin, straight from the three-dot menu on the Appointments page.
+     * This used to hard-delete the appointment, which also wiped its medical
+     * record and prescriptions through database cascades. It now ARCHIVES it:
+     * the row and everything linked to it stay; only finished appointments
+     * (Completed / Cancelled / Rejected / No Show) are accepted. Restore or
+     * permanently delete it from Admin > Archive.
      */
-    public function destroy($id)
+    public function destroy($id, ArchiveService $archive)
     {
         $appointment = Appointment::findOrFail($id);
 
-        UserLog::create([
-            'user_id' => auth()->id(),
-            'action'  => 'Deleted Appointment',
-            'module'  => 'Appointments',
-            'details' => 'Deleted appointment ' . $appointment->reference_no
-                       . ' for ' . $appointment->patientName() . '.',
-        ]);
-
-        $appointment->delete();
+        try {
+            $archive->archive('appointment', $appointment->id, auth()->user());
+        } catch (ArchiveException $e) {
+            return redirect()->route('admin.appointments.index')->with('error', $e->getMessage());
+        }
 
         return redirect()->route('admin.appointments.index')
-            ->with('success', 'Appointment deleted successfully!');
+            ->with('success', 'Appointment ' . $appointment->reference_no . ' was moved to the Archive.');
     }
 }

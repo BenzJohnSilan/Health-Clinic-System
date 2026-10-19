@@ -33,6 +33,10 @@ use Carbon\Carbon;
  */
 class AdminDashboardService
 {
+    public function __construct(private BillingReportService $reports)
+    {
+    }
+
     /** Rows shown in the dashboard's compact lists. */
     public const TODAY_LIST_LIMIT   = 8;
     public const ACTIVITY_LIMIT     = 5;
@@ -306,7 +310,12 @@ class AdminDashboardService
     // =====================================================================
     private function billingOverview(Carbon $today): array
     {
-        $billedToday = Invoice::whereDate('created_at', $today)
+        // Day boundaries instead of whereDate(): same rows, but the database
+        // can use its date indexes and the whole last second of the day counts.
+        $dayStart = $today->copy()->startOfDay();
+        $dayEnd   = $today->copy()->endOfDay();
+
+        $billedToday = Invoice::whereBetween('created_at', [$dayStart, $dayEnd])
             ->where('status', '!=', 'Cancelled');
 
         $byStatus = Invoice::selectRaw('status, COUNT(*) as total')
@@ -316,12 +325,14 @@ class AdminDashboardService
         return [
             'billedToday'    => (float) (clone $billedToday)->sum('total_amount'),
             'invoicesToday'  => (clone $billedToday)->count(),
-            'collectedToday' => (float) Payment::whereDate('paid_at', $today)->sum('amount'),
+            // Money received today (payment date) - the same figure as the
+            // Revenue Report's "Total Collected" for the Today filter.
+            'collectedToday' => $this->reports->paymentTotals($dayStart, $dayEnd)['total'],
             'paid'           => (int) ($byStatus['Paid'] ?? 0),
             'partial'        => (int) ($byStatus['Partially Paid'] ?? 0),
             'unpaid'         => (int) ($byStatus['Unpaid'] ?? 0),
-            // Same formula the Admin Billing page uses for "outstanding".
-            'outstanding'    => (float) Invoice::whereIn('status', ['Unpaid', 'Partially Paid'])->sum('balance'),
+            // Same rule as the Revenue Report's Outstanding Balance card.
+            'outstanding'    => $this->reports->outstandingTotal(),
         ];
     }
 

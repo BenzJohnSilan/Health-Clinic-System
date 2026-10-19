@@ -1,0 +1,198 @@
+/* ==========================================================
+   STAFF - REVENUE REPORT  (staff-revenue-report.css)
+   Loaded AFTER staff-medicine-reports.css, which already gives
+   the page the Inventory Reports look (hero, summary cards,
+   white sections, tables). This file only adds what the revenue
+   page needs on top of it. Everything is scoped to .reports-page.
+   ========================================================== */
+
+/* ── Hero: two buttons side by side ── */
+.reports-page .page-hero-actions {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Print = translucent button, Back = white button */
+.reports-page .back-btn.back-btn--ghost {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.55);
+    box-shadow: none;
+}
+
+.reports-page .back-btn.back-btn--ghost:hover,
+.reports-page .back-btn.back-btn--ghost:focus-visible {
+    background: #fff;
+    border-color: #fff;
+    color: var(--primary);
+    transform: translateY(-1px);
+}
+
+/* ── Date range bar ── */
+.reports-page .rr-filter {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px 18px;
+    margin-bottom: 24px;
+    padding: 14px 18px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.reports-page .rr-tabs {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--primary-soft);
+    border-radius: 12px;
+}
+
+.reports-page .rr-tab {
+    position: relative;
+    cursor: pointer;
+}
+
+.reports-page .rr-tab input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.reports-page .rr-tab span {
+    display: block;
+    padding: 8px 18px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    white-space: nowrap;
+    transition: background var(--transition), color var(--transition), box-shadow var(--transition);
+}
+
+.reports-page .rr-tab:hover span { background: rgba(106, 13, 173, 0.10); }
+
+.reports-page .rr-tab.active span {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(106, 13, 173, 0.30);
+}
+
+.reports-page .rr-tab input:focus-visible + span {
+    outline: 3px solid var(--primary-light);
+    outline-offset: 2px;
+}
+
+.reports-page .rr-custom {
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-light);
+}
+
+.reports-page .rr-custom input[type="date"] {
+    padding: 8px 12px;
+    font: inherit;
+    font-size: 13px;
+    color: var(--text-dark);
+    background: #fff;
+    border: 1.5px solid #e9d5ff;
+    border-radius: var(--radius-sm);
+}
+
+.reports-page .rr-custom input[type="date"]:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 3px rgba(155, 48, 255, 0.15);
+}
+
+.reports-page .rr-apply {
+    padding: 9px 18px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--primary);
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background var(--transition), transform var(--transition);
+}
+
+.reports-page .rr-apply:hover { background: #560aaf; transform: translateY(-1px); }
+
+.reports-page .rr-showing {
+    margin-left: auto;
+    font-size: 13.5px;
+    color: var(--text-light);
+}
+
+.reports-page .rr-showing strong { color: var(--text-dark); font-weight: 700; }
+
+/* ── Summary cards: one extra color + the caption under them ── */
+.reports-page .report-card.card-blue .report-card-icon { background: #eff6ff; color: #2563eb; }
+
+.reports-page .rr-cards-note {
+    margin: -8px 4px 24px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--text-light);
+}
+
+/* ── Tables ── */
+.reports-page .medicine-table td.col-num,
+.reports-page .medicine-table th.col-num {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* Totals row */
+.reports-page .medicine-table tfoot td {
+    padding: 14px 18px;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    background: var(--primary-soft);
+    border-top: 1px solid #e9d5ff;
+    border-bottom: none;
+}
+
+.reports-page .medicine-table tfoot td.col-num { color: var(--primary); }
+
+/* Category dots (reuse the movement-label dot from Inventory Reports) */
+.reports-page .movement-label.cat-consultation::before        { background: var(--green); }
+.reports-page .movement-label.cat-medical_certificate::before { background: #3b82f6; }
+.reports-page .movement-label.cat-medicine::before            { background: var(--red); }
+.reports-page .movement-label.cat-other::before               { background: #9ca3af; }
+
+.reports-page .rr-note {
+    margin: 14px 2px 0;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--text-light);
+}
+
+/* ── Responsive ── */
+@media screen and (max-width: 900px) {
+    .reports-page .rr-showing { margin-left: 0; width: 100%; }
+}
+
+@media screen and (max-width: 640px) {
+    .reports-page .page-hero-actions { width: 100%; }
+    .reports-page .page-hero-actions .back-btn { flex: 1 1 100%; }
+
+    .reports-page .rr-filter { padding: 12px; }
+    .reports-page .rr-tabs { width: 100%; overflow-x: auto; }
+    .reports-page .rr-tab { flex: 1 0 auto; }
+    .reports-page .rr-tab span { padding: 8px 12px; text-align: center; }
+
+    .reports-page .medicine-table tfoot td { padding: 11px 12px; font-size: 13px; }
+}

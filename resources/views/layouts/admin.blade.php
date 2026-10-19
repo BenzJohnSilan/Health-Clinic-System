@@ -31,7 +31,11 @@
 
     <div class="sidebar-brand">
         <div class="brand-icon">
-            <i class='bx bx-plus-medical'></i>
+            @if($__clinicLogo = \App\Services\SystemSettings::logoUrl())
+                <img src="{{ $__clinicLogo }}" alt="{{ \App\Services\SystemSettings::clinicName() }} logo">
+            @else
+                <i class='bx bx-plus-medical'></i>
+            @endif
         </div>
         <div class="brand-text">
             <h2>Clinic Record</h2>
@@ -106,6 +110,14 @@
             <i class='bx bx-globe'></i>
             <span>Website Management</span>
         </a>
+        <a href="{{ route('admin.contact-messages.index') }}"
+           class="{{ request()->routeIs('admin.contact-messages.*') ? 'active' : '' }}">
+            <i class='bx bx-envelope'></i>
+            <span>Contact Messages</span>
+            @if(($contactUnreadCount ?? 0) > 0)
+                <span style="margin-left:auto;background:#ef4444;color:#fff;border-radius:10px;font-size:11px;font-weight:600;padding:1px 7px;line-height:1.5;">{{ $contactUnreadCount > 99 ? '99+' : $contactUnreadCount }}</span>
+            @endif
+        </a>
 
         <span class="nav-section-label">System</span>
         <a href="{{ route('admin.user-logs') }}"
@@ -113,10 +125,20 @@
             <i class='bx bx-history'></i>
             <span>User Logs</span>
         </a>
+        <a href="{{ route('admin.archive.index') }}"
+           class="{{ request()->routeIs('admin.archive.*') ? 'active' : '' }}">
+            <i class='bx bx-archive'></i>
+            <span>Archive</span>
+        </a>
         <a href="{{ route('admin.backups.index') }}"
            class="{{ request()->routeIs('admin.backups.*') ? 'active' : '' }}">
             <i class='bx bx-data'></i>
             <span>Backup &amp; Recovery</span>
+        </a>
+        <a href="{{ route('admin.system-settings.index') }}"
+           class="{{ request()->routeIs('admin.system-settings.*') ? 'active' : '' }}">
+            <i class='bx bx-slider-alt'></i>
+            <span>System Settings</span>
         </a>
 
         <span class="nav-section-label">Account</span>
@@ -576,6 +598,7 @@ setInterval(updateDateTime, 1000);
         'permissions':          'Manage Permissions',
         'user-logs':            'User Logs',
         'backups':              'Backup & Recovery',
+        'system-settings':      'System Settings',
         'account-settings':     'Account Settings',
         'dashboard':            'Dashboard',
     };

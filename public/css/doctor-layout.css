@@ -11,7 +11,7 @@ html { scroll-behavior: smooth; }
 body {
     display: flex;
     min-height: 100vh;
-    background: #f4f6f8;
+    background: #f4f0fa;
 }
 
 /* ================= SIDEBAR ================= */
@@ -53,6 +53,15 @@ body {
     justify-content: center;
     font-size: 22px;
     flex-shrink: 0;
+}
+
+/* Clinic logo uploaded in Admin > System Settings (replaces the default icon) */
+.sidebar-brand .brand-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 10px;
+    background: #fff;
 }
 
 .sidebar-brand .brand-text h2 {
@@ -1062,3 +1071,85 @@ body {
 }
 
 .btn-confirm:hover { background: #c62828; }
+
+/* Logout modal — look the same on EVERY page.
+   Several Admin/Doctor pages define their own generic .btn-confirm /
+   .btn-cancel (for example Backup & Recovery makes .btn-confirm purple), and
+   because the page stylesheet loads after this one it used to win, so the
+   Logout button changed color from page to page. These rules are scoped under
+   .logout-modal (higher specificity) and set every value explicitly, so no
+   page stylesheet can restyle the modal. */
+.logout-modal .logout-icon,
+#logoutModal .logout-icon {
+    font-size: 48px;
+    color: #e53935;
+    margin-bottom: 14px;
+}
+
+.logout-modal .logout-box h3,
+#logoutModal .logout-box h3 {
+    margin: 0 0 8px;
+    font-family: "Poppins", Arial, sans-serif;
+    font-size: 21px;
+    font-weight: 700;
+    color: #222;
+}
+
+.logout-modal .logout-box p,
+#logoutModal .logout-box p {
+    margin: 0 0 24px;
+    font-family: "Poppins", Arial, sans-serif;
+    font-size: 14px;
+    color: #666;
+}
+
+.logout-modal .logout-buttons form,
+#logoutModal .logout-buttons form {
+    margin: 0;
+}
+
+.logout-modal .logout-buttons .btn-cancel,
+#logoutModal .logout-buttons .btn-cancel,
+.logout-modal .logout-buttons .btn-confirm,
+#logoutModal .logout-buttons .btn-confirm {
+    display: inline-block;
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    box-shadow: none;
+    cursor: pointer;
+    font-family: "Poppins", Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: normal;
+    transition: background 0.2s;
+}
+
+.logout-modal .logout-buttons .btn-cancel,
+#logoutModal .logout-buttons .btn-cancel {
+    background: #f1f1f1;
+    color: #333;
+}
+
+.logout-modal .logout-buttons .btn-cancel:hover,
+#logoutModal .logout-buttons .btn-cancel:hover {
+    background: #e0e0e0;
+    color: #333;
+    border: none;
+}
+
+.logout-modal .logout-buttons .btn-confirm,
+#logoutModal .logout-buttons .btn-confirm {
+    background: #e53935;
+    color: #fff;
+}
+
+.logout-modal .logout-buttons .btn-confirm:hover,
+#logoutModal .logout-buttons .btn-confirm:hover {
+    background: #c62828;
+    color: #fff;
+    box-shadow: none;
+}

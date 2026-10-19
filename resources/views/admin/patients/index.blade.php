@@ -119,7 +119,7 @@
                             View
                         </button>
 
-                        @if($canScheduleAppointment || $canViewAppointments)
+                        @if($canScheduleAppointment || $canViewAppointments || $patient['type'] === 'patient')
                         <div class="action-menu">
                             <button type="button" class="action-menu-toggle" aria-haspopup="true" aria-expanded="false" aria-label="More actions">
                                 <i class="fa-solid fa-ellipsis-vertical"></i>
@@ -141,6 +141,20 @@
                                     class="action-menu-item">
                                     <i class="fa-solid fa-calendar-days"></i> View Appointments
                                 </a>
+                                @endif
+
+                                {{-- Walk-in patients only. Registered patients are archived
+                                     from Manage Users (that deactivates the account). --}}
+                                @if($patient['type'] === 'patient')
+                                <form method="POST" action="{{ route('admin.archive.store') }}">
+                                    @csrf
+                                    <input type="hidden" name="type" value="walkin_patient">
+                                    <input type="hidden" name="id" value="{{ $patient['raw_id'] }}">
+                                    <button type="submit" class="action-menu-item"
+                                        onclick="return confirm('Move this walk-in patient to the Archive? Appointments and records are kept, and you can restore it any time.')">
+                                        <i class="fa-solid fa-box-archive"></i> Archive
+                                    </button>
+                                </form>
                                 @endif
                             </div>
                         </div>
@@ -699,21 +713,7 @@
                 <label class="form-label">Time Slot <span class="required">*</span></label>
                 <select class="form-input" name="appointment_time" id="appt_time" required>
                     <option value="">-- Select Time Slot --</option>
-                    <option value="09:00">9:00 AM – 9:30 AM</option>
-                    <option value="09:30">9:30 AM – 10:00 AM</option>
-                    <option value="10:00">10:00 AM – 10:30 AM</option>
-                    <option value="10:30">10:30 AM – 11:00 AM</option>
-                    <option value="11:00">11:00 AM – 11:30 AM</option>
-                    <option value="11:30">11:30 AM – 12:00 PM</option>
-                    <option value="12:00" data-lunch="true" disabled>12:00 PM – 1:00 PM (Lunch Break)</option>
-                    <option value="13:00">1:00 PM – 1:30 PM</option>
-                    <option value="13:30">1:30 PM – 2:00 PM</option>
-                    <option value="14:00">2:00 PM – 2:30 PM</option>
-                    <option value="14:30">2:30 PM – 3:00 PM</option>
-                    <option value="15:00">3:00 PM – 3:30 PM</option>
-                    <option value="15:30">3:30 PM – 4:00 PM</option>
-                    <option value="16:00">4:00 PM – 4:30 PM</option>
-                    <option value="16:30">4:30 PM – 5:00 PM</option>
+                    @include('partials.time-slot-options')
                 </select>
             </div>
 

@@ -23,7 +23,7 @@
     // (view_billing_reports); Unpaid Invoices only needs view_billing.
     $billingCards = [];
     if ($showBillingStats) {
-        $billingCards[] = ['label' => "Today's Sales",      'value' => '₱' . number_format($billing['todaySales'], 2),     'icon' => 'bx-wallet', 'money' => true];
+        $billingCards[] = ['label' => "Today's Collections", 'value' => '₱' . number_format($billing['todaySales'], 2),     'icon' => 'bx-wallet', 'money' => true];
         $billingCards[] = ['label' => 'Transactions Today', 'value' => number_format($billing['transactionsToday']),        'icon' => 'bx-transfer-alt', 'money' => false];
     }
     if ($can['billing']) {
@@ -31,7 +31,7 @@
     }
     if ($showBillingStats) {
         $billingCards[] = ['label' => "Today's Discounts",  'value' => '₱' . number_format($billing['todayDiscounts'], 2), 'icon' => 'bx-purchase-tag', 'money' => true];
-        $billingCards[] = ['label' => 'Cash Revenue',       'value' => '₱' . number_format($billing['cashRevenue'], 2),    'icon' => 'bx-money', 'money' => true];
+        $billingCards[] = ['label' => 'Cash Collections',   'value' => '₱' . number_format($billing['cashRevenue'], 2),    'icon' => 'bx-money', 'money' => true];
     }
 
     // Needs Attention — only items this account can actually act on.
@@ -336,8 +336,8 @@
 
         {{-- ============================================================
              TODAY'S TRANSACTIONS  (view_billing + view_payment_history)
-             Latest recorded payments today. Each row opens the existing
-             receipt page, which is itself gated by view_payment_history.
+             Latest recorded payments today. Each row opens the invoice's
+             billing page (gated by view_billing).
              ============================================================ --}}
         @if($showTransactions)
         <div class="today-wrapper" id="txnWrapper">
@@ -378,9 +378,9 @@
                     <div class="today-list">
                         @forelse($billing['transactions'] as $payment)
                             @php $txnInvoice = $payment->invoice; @endphp
-                            <a href="{{ route('staff.billing.receipt', ['invoice' => $payment->invoice_id, 'payment' => $payment->id]) }}"
+                            <a href="{{ route('staff.billing.show', $payment->invoice_id) }}"
                                class="today-row"
-                               title="View receipt">
+                               title="View invoice">
                                 <div class="today-time">{{ $payment->paid_at->format('h:i A') }}</div>
                                 <div class="today-details">
                                     <p class="today-patient">{{ $txnInvoice ? $txnInvoice->patientName() : 'Unknown Patient' }}</p>

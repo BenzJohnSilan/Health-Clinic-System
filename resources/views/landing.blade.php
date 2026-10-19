@@ -5,6 +5,8 @@
     // with the original text as fallback). All text is escaped; see App\Support\LandingText.
     $s = $settings;
     $url = fn ($u, $default) => ($u !== '' && $u !== null && T::isSafeUrl($u)) ? $u : $default;
+    // Footer legal links: an empty or "#" setting falls back to the built-in pages.
+    $legalUrl = fn ($u, $routeName) => in_array($u, ['', '#', null], true) ? route($routeName) : $url($u, route($routeName));
     $heroPrimaryUrl   = $url($s['hero_primary_url'], route('register'));
     $heroSecondaryUrl = $url($s['hero_secondary_url'], '#about');
     $mapDefault = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3868.1!2d121.3167!3d14.1500!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33bd5b2e2e2e2e2f%3A0x0!2sBrgy.+Dayap%2C+Calauan%2C+Laguna!5e0!3m2!1sen!2sph!4v1';
@@ -38,6 +40,25 @@
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ asset('css/landing-page.css') }}">
+<script>
+// landing-page.css sets `html { scroll-behavior: smooth }`. That makes the
+// browser SLIDE from the top to "#contact" after the Contact form redirect
+// and after a refresh (first it shows the top, then it scrolls down).
+// Keep scrolling instant while the page is loading so it opens already in
+// place, then give smooth scrolling back for the navbar links.
+(function () {
+    var root = document.documentElement;
+    var restored = false;
+    function restoreSmooth() {
+        if (restored) return;
+        restored = true;
+        root.style.scrollBehavior = '';
+    }
+    root.style.scrollBehavior = 'auto';
+    window.addEventListener('load', function () { setTimeout(restoreSmooth, 150); });
+    setTimeout(restoreSmooth, 6000); // safety net if "load" is slow (map/iframes)
+})();
+</script>
 </head>
 
 <body>
@@ -46,28 +67,35 @@
 
 <!-- ===== NAVBAR ===== -->
 <nav aria-label="Main navigation">
+    <a class="nav-brand" href="#home">
+        @if($__clinicLogo = \App\Services\SystemSettings::logoUrl())
+            <span class="nav-brand-mark has-logo"><img src="{{ $__clinicLogo }}" alt=""></span>
+        @else
+            <span class="nav-brand-mark"><i class='bx bx-plus-medical' aria-hidden="true"></i></span>
+        @endif
+        <span class="nav-brand-name">{{ $s['brand_name'] }}</span>
+    </a>
+
+    {{-- Hamburger sits on the right on mobile/tablet (hidden on desktop) --}}
     <button class="nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="primaryNavigation" aria-label="Open navigation menu">
         <i class='bx bx-menu'></i>
     </button>
 
-    <a class="nav-brand" href="#home">
-        <i class='bx bx-plus-medical' style="font-size:18px; vertical-align:middle;"></i>
-        {{ $s['brand_name'] }}
-    </a>
+    {{-- Desktop: shown inline. Mobile/tablet: dropdown opened by the hamburger, with Login/Register inside --}}
+    <div class="nav-menu" id="primaryNavigation">
+        <ul class="nav-center">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#about">About Us</a></li>
+            <li><a href="#services">Services</a></li>
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
 
-    <ul class="nav-center" id="primaryNavigation">
-        <li><a href="#home">Home</a></li>
-        <li><a href="#about">About Us</a></li>
-        <li><a href="#services">Services</a></li>
-        <li><a href="#how-it-works">How It Works</a></li>
-        <li><a href="#contact">Contact</a></li>
-    </ul>
-
-    <div class="nav-links">
-        <a href="{{ route('login') }}" class="btn-nav-outline">Login</a>
-        <a href="{{ route('register') }}" class="btn-nav-fill">Register</a>
+        <div class="nav-links">
+            <a href="{{ route('login') }}" class="btn-nav-outline">Login</a>
+            <a href="{{ route('register') }}" class="btn-nav-fill">Register <i class='bx bx-right-arrow-alt' aria-hidden="true"></i></a>
+        </div>
     </div>
-
 </nav>
 
 <main id="main-content">
@@ -277,7 +305,7 @@
                     {{ $faq['title'] }}
                     <span class="faq-icon"><i class='bx bx-plus'></i></span>
                 </button>
-                <div class="faq-answer"><p>{{ T::format($faq['body']) }}</p></div>
+                <div class="faq-answer"><div class="faq-answer-inner"><p>{{ T::format($faq['body']) }}</p></div></div>
             </div>
             @endforeach
         </div>
@@ -318,33 +346,94 @@
         </div>
 
 
-        <div class="contact-form reveal">
+        <form class="contact-form reveal" id="contactForm" method="POST" action="{{ route('contact.store') }}#contact">
+            @csrf
+
+            @if(session('contact_success'))
+                <div class="contact-alert contact-alert-success" role="status">
+                    <i class='bx bx-check-circle'></i> <span>{{ session('contact_success') }}</span>
+                </div>
+            @endif
+
+            @if(session('contact_error'))
+                <div class="contact-alert contact-alert-error" role="alert">
+                    <i class='bx bx-error-circle'></i> <span>{{ session('contact_error') }}</span>
+                </div>
+            @elseif($errors->any())
+                <div class="contact-alert contact-alert-error" role="alert">
+                    <i class='bx bx-error-circle'></i> <span>Please check the highlighted fields and try again.</span>
+                </div>
+            @endif
+
             <div class="form-row">
                 <div class="form-group">
-                    <label>First Name</label>
-                    <input type="text" placeholder="First name">
+                    <label for="cf_first_name">First Name <span class="req" aria-hidden="true">*</span></label>
+                    <input type="text" id="cf_first_name" name="first_name" placeholder="First name"
+                           value="{{ old('first_name') }}" maxlength="60" required autocomplete="given-name"
+                           class="{{ $errors->has('first_name') ? 'is-invalid' : '' }}">
+                    @error('first_name')<p class="field-error">{{ $message }}</p>@enderror
                 </div>
                 <div class="form-group">
-                    <label>Last Name</label>
-                    <input type="text" placeholder="Last name">
+                    <label for="cf_last_name">Last Name <span class="req" aria-hidden="true">*</span></label>
+                    <input type="text" id="cf_last_name" name="last_name" placeholder="Last name"
+                           value="{{ old('last_name') }}" maxlength="60" required autocomplete="family-name"
+                           class="{{ $errors->has('last_name') ? 'is-invalid' : '' }}">
+                    @error('last_name')<p class="field-error">{{ $message }}</p>@enderror
                 </div>
             </div>
             <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" placeholder="you@email.com">
+                <label for="cf_email">Email Address <span class="req" aria-hidden="true">*</span></label>
+                <input type="email" id="cf_email" name="email" placeholder="you@email.com"
+                       value="{{ old('email') }}" maxlength="150" required autocomplete="email"
+                       class="{{ $errors->has('email') ? 'is-invalid' : '' }}">
+                @error('email')<p class="field-error">{{ $message }}</p>@enderror
             </div>
             <div class="form-group">
-                <label>Subject</label>
-                <input type="text" placeholder="How can we help you?">
+                <label for="cf_contact_number">Contact Number <span class="req" aria-hidden="true">*</span></label>
+                <input type="tel" id="cf_contact_number" name="contact_number" placeholder="e.g. 0917 123 4567"
+                       value="{{ old('contact_number') }}" maxlength="20" required autocomplete="tel"
+                       class="{{ $errors->has('contact_number') ? 'is-invalid' : '' }}">
+                @error('contact_number')<p class="field-error">{{ $message }}</p>@enderror
             </div>
             <div class="form-group">
-                <label>Message</label>
-                <textarea placeholder="Write your message here..."></textarea>
+                <label for="cf_message">Message <span class="req" aria-hidden="true">*</span></label>
+                <textarea id="cf_message" name="message" placeholder="Write your message here..."
+                          maxlength="2000" required
+                          class="{{ $errors->has('message') ? 'is-invalid' : '' }}">{{ old('message') }}</textarea>
+                @error('message')<p class="field-error">{{ $message }}</p>@enderror
             </div>
-            <button class="btn-send">
-                Send Message <i class='bx bx-send'></i>
+
+            {{-- Honeypot: hidden from people, bots fill it in. Leave it empty. --}}
+            <div class="cf-hp" aria-hidden="true">
+                <label for="cf_website">Website</label>
+                <input type="text" id="cf_website" name="website" tabindex="-1" autocomplete="off" value="">
+            </div>
+
+            <button type="submit" class="btn-send" id="contactSubmit">
+                <span class="btn-send-label">Send Message</span> <i class='bx bx-send'></i>
             </button>
-        </div>
+        </form>
+        <script>
+            // Prevent double submission: lock the button once the form is sent.
+            (function () {
+                var form = document.getElementById('contactForm');
+                if (!form) return;
+                form.addEventListener('submit', function () {
+                    var btn = document.getElementById('contactSubmit');
+                    if (!btn || btn.disabled) return;
+                    btn.disabled = true;
+                    btn.querySelector('.btn-send-label').textContent = 'Sending...';
+                });
+                // Back/forward cache: never leave the button stuck on "Sending..."
+                window.addEventListener('pageshow', function (e) {
+                    var btn = document.getElementById('contactSubmit');
+                    if (e.persisted && btn) {
+                        btn.disabled = false;
+                        btn.querySelector('.btn-send-label').textContent = 'Send Message';
+                    }
+                });
+            })();
+        </script>
     </div>
 </section>
 
@@ -408,7 +497,12 @@
     <div class="footer-inner">
         <div class="footer-col footer-brand">
             <a class="footer-logo" href="#home">
-                <i class='bx bx-plus-medical'></i> {{ $s['brand_name'] }}
+                @if($__clinicLogo = \App\Services\SystemSettings::logoUrl())
+                    <img src="{{ $__clinicLogo }}" alt="" style="height:26px; width:auto; max-width:60px; object-fit:contain; vertical-align:middle; border-radius:4px;">
+                @else
+                    <i class='bx bx-plus-medical'></i>
+                @endif
+                {{ $s['brand_name'] }}
             </a>
             <p>{{ $s['footer_description'] }}</p>
         </div>
@@ -438,9 +532,9 @@
     <div class="footer-bottom">
         <p>&copy; {{ date('Y') }} {{ $s['footer_copyright_name'] }}. All rights reserved.</p>
         <div class="footer-legal">
-            <a href="{{ $url($s['footer_privacy_url'], '#') }}">Privacy Policy</a>
+            <a href="{{ $legalUrl($s['footer_privacy_url'], 'privacy') }}">Privacy Policy</a>
             <span>·</span>
-            <a href="{{ $url($s['footer_terms_url'], '#') }}">Terms of Use</a>
+            <a href="{{ $legalUrl($s['footer_terms_url'], 'terms') }}">Terms and Conditions</a>
         </div>
     </div>
 </footer>
@@ -482,21 +576,30 @@
 <script>
 // ===== SCROLL REVEAL =====
 const navToggle = document.getElementById('navToggle');
+const navToggleIcon = navToggle.querySelector('i');
 const primaryNavigation = document.getElementById('primaryNavigation');
 
-navToggle.addEventListener('click', () => {
-    const isOpen = primaryNavigation.classList.toggle('is-open');
+// Open/close the mobile menu. The icon element is kept and only its class is
+// swapped, so tapping the icon itself never detaches the click target.
+function setNavOpen(isOpen) {
+    primaryNavigation.classList.toggle('is-open', isOpen);
     navToggle.setAttribute('aria-expanded', isOpen);
     navToggle.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
-    navToggle.innerHTML = `<i class='bx ${isOpen ? 'bx-x' : 'bx-menu'}'></i>`;
+    navToggleIcon.classList.toggle('bx-x', isOpen);
+    navToggleIcon.classList.toggle('bx-menu', !isOpen);
+}
+
+navToggle.addEventListener('click', () => {
+    setNavOpen(!primaryNavigation.classList.contains('is-open'));
 });
 
-primaryNavigation.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
-    primaryNavigation.classList.remove('is-open');
-    navToggle.setAttribute('aria-expanded', 'false');
-    navToggle.setAttribute('aria-label', 'Open navigation menu');
-    navToggle.innerHTML = "<i class='bx bx-menu'></i>";
-}));
+primaryNavigation.querySelectorAll('a').forEach(link => link.addEventListener('click', () => setNavOpen(false)));
+
+// ===== NAVBAR SHADOW ON SCROLL =====
+const siteNav = document.querySelector('nav');
+const syncNavShadow = () => siteNav.classList.toggle('is-scrolled', window.scrollY > 8);
+window.addEventListener('scroll', syncNavShadow, { passive: true });
+syncNavShadow();
 
 // ===== ACTIVE NAV LINK =====
 // Highlights the link of the section being viewed, and the one just clicked.
@@ -534,9 +637,16 @@ window.addEventListener('scroll', updateActiveNav, { passive: true });
 window.addEventListener('resize', updateActiveNav);
 updateActiveNav();
 
+// Close the mobile menu when tapping anywhere outside the navbar
+document.addEventListener('click', event => {
+    if (primaryNavigation.classList.contains('is-open') && !event.target.closest('nav')) {
+        setNavOpen(false);
+    }
+});
+
 document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && primaryNavigation.classList.contains('is-open')) {
-        navToggle.click();
+        setNavOpen(false);
         navToggle.focus();
     }
 });
@@ -732,6 +842,22 @@ vioraClose.addEventListener('click', () => {
     vioraWindow.classList.remove('open');
     vioraIcon.className = 'bx bx-bot';
 });
+
+// On phones/tablets the chat button slides out of the way while scrolling down
+// (so it does not cover content) and comes back on scroll up or after a short pause.
+(function () {
+    let lastY = window.scrollY, timer;
+    window.addEventListener('scroll', () => {
+        if (chatOpen || window.innerWidth > 960) { vioraTrigger.classList.remove('is-tucked'); lastY = window.scrollY; return; }
+        const y = window.scrollY;
+        const down = y > lastY + 6, up = y < lastY - 6;
+        if (down && y > 160) vioraTrigger.classList.add('is-tucked');
+        else if (up) vioraTrigger.classList.remove('is-tucked');
+        if (down || up) lastY = y;
+        clearTimeout(timer);
+        timer = setTimeout(() => vioraTrigger.classList.remove('is-tucked'), 1400);
+    }, { passive: true });
+})();
 
 vioraSend.addEventListener('click', () => sendMessage(vioraInput.value));
 vioraInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(vioraInput.value); });

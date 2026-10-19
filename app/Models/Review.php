@@ -14,6 +14,7 @@ class Review extends Model
 
     protected $fillable = [
         'appointment_id',
+        'follow_up_appointment_id',
         'next_review_date',
         'message',
     ];
@@ -21,5 +22,11 @@ class Review extends Model
     public function appointment()
     {
         return $this->belongsTo(Appointment::class);
+    }
+
+    /** The Follow-up appointment created from this review's schedule. */
+    public function followUpAppointment()
+    {
+        return $this->belongsTo(Appointment::class, 'follow_up_appointment_id');
     }
 }

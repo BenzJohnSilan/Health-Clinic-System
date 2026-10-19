@@ -749,3 +749,11 @@ body { background: #f4f0fa; }
     .bs-page .bs-hero .page-title { font-size: 19px; }
     .bs-page .bs-hero__icon { width: 46px; height: 46px; font-size: 22px; }
 }
+
+/* ============================================================
+   BILLING AUDIT ADDITIONS — discount ID box + Void Invoice card
+   ============================================================ */
+.bs-page .discount-id-group {
+    margin: 14px 0 4px;
+    max-width: 360px;
+}

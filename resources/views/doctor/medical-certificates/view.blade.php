@@ -205,7 +205,7 @@
             @endif
         </div>
 
-        @if($mc->isIssued())
+        @if($mc->canBePrinted())
         <!-- ============ PRINT ============ -->
         <div class="info-card">
             <div class="info-card-header">
@@ -215,21 +215,27 @@
                 </div>
             </div>
 
-            @if($mc->canBePrinted())
+            {{-- Button + notes stacked with an even gap (the warn note has margin: 0 in the CSS). --}}
+            <div style="display:flex; flex-direction:column; gap:14px;">
                 <a href="{{ route('doctor.medical-certificates.print', $mc->id) }}"
                    target="_blank" class="mc-btn mc-btn--primary">
                     <i class='bx bx-printer'></i> Print Medical Certificate
                 </a>
-                <p class="mc-note">
-                    <i class='bx bx-info-circle'></i>
-                    <span>Printing does not release the certificate. Sign the printed copy by hand, then Staff releases it.</span>
-                </p>
-            @else
-                <p class="mc-note mc-note--warn">
-                    <i class='bx bx-time-five'></i>
-                    <span>This certificate can be printed once its invoice is fully paid at the clinic counter.</span>
-                </p>
-            @endif
+
+                @if(! $mc->isPaid())
+                    <p class="mc-note mc-note--warn">
+                        <i class='bx bx-time-five'></i>
+                        <span>Unpaid: the patient has not fully paid the invoice yet. You can still print this certificate, but Staff can only release it once the invoice is paid.</span>
+                    </p>
+                @endif
+
+                @if($mc->isIssued())
+                    <p class="mc-note" style="margin:0;">
+                        <i class='bx bx-info-circle'></i>
+                        <span>Printing does not release the certificate. Sign the printed copy by hand, then Staff releases it.</span>
+                    </p>
+                @endif
+            </div>
         </div>
         @endif
 

@@ -82,7 +82,10 @@ class InvoiceItem extends Model
             return 'Consultation Waiver' . ($this->waiver_reason ? ' — ' . $this->waiverReasonLabel() : '');
         }
 
-        return config('billing.discount_types.' . $this->discount_type . '.label', $this->discount_type);
+        return config(
+            'billing.discount_types.' . $this->discount_type . '.label',
+            \Illuminate\Support\Str::headline($this->discount_type)   // old rows that used a type that was later removed
+        );
     }
 
     public function invoice()

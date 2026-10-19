@@ -165,8 +165,8 @@
         @endif
     </div>
 
-    {{-- ================= LOWER SECTION: DOCTOR REVIEW + FOLLOW-UP ================= --}}
-    <div class="lr-grid lr-grid--lower{{ $laboratoryRequest->follow_up_recommended ? '' : ' lr-grid--solo' }}">
+    {{-- ================= LOWER SECTION: DOCTOR REVIEW ================= --}}
+    <div class="lr-grid lr-grid--lower lr-grid--solo">
 
         {{-- DOCTOR REVIEW --}}
         <div class="lr-card">
@@ -191,19 +191,6 @@
                             <dd class="lr-pre">{{ $laboratoryRequest->review_notes }}</dd>
                         </div>
                     @endif
-                    <div class="lr-fields__wide">
-                        <dt>Follow-up Consultation</dt>
-                        <dd>
-                            @if($laboratoryRequest->follow_up_recommended)
-                                <span class="lr-pill lr-pill--blue">Recommended</span>
-                                @if($laboratoryRequest->follow_up_instructions)
-                                    <div class="lr-followup-text lr-pre">{{ $laboratoryRequest->follow_up_instructions }}</div>
-                                @endif
-                            @else
-                                Not required
-                            @endif
-                        </dd>
-                    </div>
                 </dl>
 
                 <div class="lr-note lr-note--success">
@@ -225,7 +212,7 @@
                     <div class="lr-correction-panel">
                         <div class="lr-correction-panel__title">
                             <i class='bx bx-error-circle'></i>
-                            {{ $openCorrections->count() > 1 ? 'Corrections Requested' : 'Correction Requested' }}
+                            {{ $openCorrections->count() > 1 ? 'Re-uploads Requested' : 'Re-upload Requested' }}
                         </div>
 
                         @foreach($openCorrections as $testName => $pending)
@@ -236,7 +223,7 @@
                         @endforeach
 
                         <p class="lr-correction-panel__note">
-                            Waiting for the corrected result(s) above. The original uploads have been kept — nothing was deleted.
+                            Waiting for the new image(s) of the test(s) above. The original uploads have been kept — nothing was deleted.
                         </p>
                     </div>
                 @endif
@@ -251,21 +238,6 @@
                         @error('review_notes')<span class="lr-field-error">{{ $message }}</span>@enderror
                     </div>
 
-                    <label class="lr-check">
-                        <input type="checkbox" name="follow_up_recommended" value="1" id="followUpCheckbox"
-                               @checked(old('follow_up_recommended'))>
-                        <span>Follow-up consultation recommended</span>
-                    </label>
-
-                    <div class="lr-form-group" id="followUpInstructionsGroup" style="{{ old('follow_up_recommended') ? '' : 'display:none;' }}">
-                        <label class="lr-label" for="follow_up_instructions">
-                            Follow-up Instructions <span class="lr-required">*</span>
-                        </label>
-                        <textarea name="follow_up_instructions" id="follow_up_instructions" class="lr-textarea"
-                            placeholder="e.g. Please schedule a follow-up consultation to discuss your laboratory results.">{{ old('follow_up_instructions') }}</textarea>
-                    </div>
-                    @error('follow_up_instructions')<span class="lr-field-error">{{ $message }}</span>@enderror
-
                     <div class="lr-actions">
                         @if($laboratoryRequest->isResultReceived())
                             <button type="submit" class="lr-btn lr-btn--primary"
@@ -275,7 +247,7 @@
                         @endif
                         @if($correctableTests->isNotEmpty())
                             <button type="button" class="lr-btn lr-btn--danger" onclick="openCorrectionModal()">
-                                <i class='bx bx-error'></i> Request Correction
+                                <i class='bx bx-error'></i> Request Re-upload
                             </button>
                         @endif
                     </div>
@@ -288,33 +260,6 @@
                 </div>
             @endif
         </div>
-
-        {{-- FOLLOW-UP APPOINTMENTS --}}
-        @if($laboratoryRequest->follow_up_recommended)
-        <div class="lr-card">
-            <div class="lr-card__head">
-                <div class="lr-card__icon lr-card__icon--blue"><i class='bx bx-calendar-check'></i></div>
-                <h2>Follow-up Appointments</h2>
-            </div>
-
-            @forelse($laboratoryRequest->followUpAppointments->sortByDesc('created_at') as $fuAppointment)
-                <div class="lr-followup">
-                    <div class="lr-followup__ref">{{ $fuAppointment->reference_no }}</div>
-                    <div class="lr-followup__details">
-                        <span class="lr-followup__date">
-                            {{ $fuAppointment->appointment_date?->format('M d, Y') }} · {{ $fuAppointment->formatted_time }}
-                        </span>
-                        <span class="lr-pill lr-pill--purple">{{ $fuAppointment->status }}</span>
-                    </div>
-                </div>
-            @empty
-                <div class="lr-empty lr-empty--sm">
-                    <i class='bx bx-calendar-x'></i>
-                    <p>No follow-up appointment has been booked yet.</p>
-                </div>
-            @endforelse
-        </div>
-        @endif
     </div>
 
     {{-- ================= CORRECTION HISTORY ================= --}}
@@ -322,7 +267,7 @@
     <div class="lr-card lr-card--spaced">
         <div class="lr-card__head">
             <div class="lr-card__icon lr-card__icon--red"><i class='bx bx-history'></i></div>
-            <h2>Correction History</h2>
+            <h2>Re-upload History</h2>
         </div>
 
         @foreach($laboratoryRequest->corrections->sortByDesc('created_at') as $correction)
@@ -360,14 +305,14 @@
     <div class="lr-modal__box">
         <div class="lr-card__head">
             <div class="lr-card__icon lr-card__icon--red"><i class='bx bx-error-circle'></i></div>
-            <h2>Request Laboratory Result Correction</h2>
+            <h2>Request Re-upload of Laboratory Result</h2>
         </div>
 
         <form action="{{ route('doctor.laboratory-requests.request-correction', $laboratoryRequest->id) }}" method="POST">
             @csrf
 
             <div class="lr-form-group">
-                <label class="lr-label">Which test needs correction? <span class="lr-required">*</span></label>
+                <label class="lr-label">Which test needs a new image? <span class="lr-required">*</span></label>
                 <select name="test_name" required class="lr-select">
                     <option value="" disabled selected>— Select a test —</option>
                     @foreach($laboratoryRequest->tests as $test)
@@ -384,14 +329,14 @@
                     <span class="lr-label__hint">(internal — not shown to the patient)</span>
                 </label>
                 <textarea name="reason" rows="4" required class="lr-textarea"
-                    placeholder="e.g. Mali po yung CBC result.">{{ old('reason') }}</textarea>
+                    placeholder="e.g. The CBC result image is blurry or incorrect. Please upload a clearer image.">{{ old('reason') }}</textarea>
                 @error('reason')<span class="lr-field-error">{{ $message }}</span>@enderror
             </div>
 
             <div class="lr-modal__actions">
                 <button type="button" class="lr-btn lr-btn--cancel" onclick="closeCorrectionModal()">Cancel</button>
                 <button type="submit" class="lr-btn lr-btn--danger">
-                    <i class='bx bx-error'></i> Request Correction
+                    <i class='bx bx-error'></i> Request Re-upload
                 </button>
             </div>
         </form>
@@ -399,15 +344,6 @@
 </div>
 
 <script>
-(function () {
-    const cb = document.getElementById('followUpCheckbox');
-    const group = document.getElementById('followUpInstructionsGroup');
-    if (!cb || !group) return;
-    cb.addEventListener('change', function () {
-        group.style.display = cb.checked ? '' : 'none';
-    });
-})();
-
 function openCorrectionModal()  { document.getElementById('correctionModal').classList.add('show'); }
 function closeCorrectionModal() { document.getElementById('correctionModal').classList.remove('show'); }
 

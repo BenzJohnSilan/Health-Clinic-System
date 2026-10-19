@@ -37,6 +37,119 @@
     .cs-file-link { color: var(--primary); font-weight: 700; text-decoration: none; }
     .cs-file-link:hover { text-decoration: underline; }
     .cs-file-name { font-size: 12px; color: var(--text-xlight); margin-left: 6px; }
+
+    /* ---- Appointment details: label / value list ---- */
+    .cs-detail-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px 24px; }
+    .cs-detail { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .cs-detail-label { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-light); }
+    .cs-detail-label i { font-size: 14px; color: var(--primary); }
+    .cs-detail-value { font-size: 14.5px; font-weight: 600; color: var(--text-dark); overflow-wrap: anywhere; }
+
+    /* ================= PHONES =================
+       Tables become stacked cards (no sideways scrolling), vitals sit in
+       two tidy columns, and the spacing matches the other patient pages. */
+    @media (max-width: 640px) {
+        .cs-page .info-card { margin-bottom: 14px; }
+        .cs-grid { gap: 14px; margin-bottom: 14px; }
+
+        /* Appointment details: one "LABEL   value" row per line */
+        .cs-detail-list { grid-template-columns: 1fr; gap: 0; }
+        .cs-detail {
+            display: grid;
+            grid-template-columns: 112px minmax(0, 1fr);
+            align-items: start;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .cs-detail:first-child { padding-top: 0; }
+        .cs-detail:last-child { border-bottom: none; padding-bottom: 0; }
+        .cs-detail-label { padding-top: 2px; font-size: 10.5px; }
+        .cs-detail-value { font-size: 14px; line-height: 1.45; }
+
+        .cs-text { font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+
+        /* Vital signs: always 2 columns */
+        .cs-vitals { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        .cs-vital { padding: 10px 12px; }
+        .cs-vital-label { font-size: 10px; letter-spacing: 0.4px; }
+        .cs-vital-value { font-size: 15px; overflow-wrap: anywhere; }
+
+        /* Prescription + lab tables -> one card per row */
+        .cs-table-wrap { overflow: visible; }
+        .cs-table, .cs-table tbody, .cs-table tr, .cs-table td { display: block; width: 100%; }
+        .cs-table thead { display: none; }
+
+        .cs-table tbody tr {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 4px 14px;
+            margin-bottom: 10px;
+        }
+        .cs-table tbody tr:last-child { margin-bottom: 0; }
+
+        .cs-table tbody td {
+            display: grid;
+            grid-template-columns: 104px minmax(0, 1fr);
+            align-items: start;
+            gap: 10px;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--border);
+            overflow-wrap: anywhere;
+        }
+        .cs-table tbody tr td:last-child { border-bottom: none; }
+
+        .cs-table tbody td::before {
+            content: attr(data-label);
+            font-size: 10.5px;
+            font-weight: 800;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            color: var(--text-light);
+            padding-top: 2px;
+            overflow-wrap: normal;
+            word-break: normal;
+        }
+
+        /* The medicine / test name is the card's title, so it has no label */
+        .cs-table tbody td[data-label="Medicine"],
+        .cs-table tbody td[data-label="Requested Test"] {
+            display: block;
+            padding: 12px 0 10px;
+            font-size: 14.5px;
+        }
+        .cs-table tbody td[data-label="Medicine"]::before,
+        .cs-table tbody td[data-label="Requested Test"]::before { display: none; }
+
+        .cs-file-name { display: block; margin: 2px 0 0; }
+
+        /* Card header that has a button (Prescription): icon + title and the
+           "View Prescription" button stay on the SAME row. The button is
+           compact (not full width) so the title is never covered. */
+        .cs-page .info-card-header--with-btn { flex-wrap: nowrap; align-items: center; gap: 10px; }
+        .cs-page .info-card-header--with-btn .info-card-title { flex: 1 1 auto; min-width: 0; }
+        .cs-page .info-card-header--with-btn .card-view-btn {
+            flex: 0 0 auto;
+            width: auto;
+            margin: 0;
+            padding: 8px 12px;
+            font-size: 12.5px;
+            white-space: nowrap;
+        }
+
+        /* Laboratory request blocks */
+        .cs-lab { padding: 14px; margin-bottom: 12px; }
+        .cs-lab-head { flex-direction: column; align-items: flex-start; gap: 8px; }
+        .cs-lab-date { display: block; margin: 2px 0 0; }
+    }
+
+    /* Very small phones (320px class): not enough room for title + button on
+       one row, so the button goes under the title at full width. */
+    @media (max-width: 359px) {
+        .cs-page .info-card-header--with-btn { flex-wrap: wrap; }
+        .cs-page .info-card-header--with-btn .card-view-btn { flex: 1 1 100%; width: 100%; }
+    }
 </style>
 @endsection
 
@@ -84,11 +197,23 @@
             <span class="status-pill status-pill--green"><i class='bx bx-check-circle'></i> {{ $appointment->status }}</span>
         </div>
         <div class="info-card-body">
-            <div class="info-row">
-                <span class="info-row-item"><i class='bx bx-id-card'></i> {{ $appointment->reference_no ?? '—' }}</span>
-                <span class="info-row-item"><i class='bx bx-calendar'></i> {{ $visitDate }}</span>
-                <span class="info-row-item"><i class='bx bx-time-five'></i> {{ $appointment->timeLabel('h:i A') }}</span>
-                <span class="info-row-item"><i class='bx bx-user'></i> Dr. {{ $doctor->first_name ?? '' }} {{ $doctor->last_name ?? '' }}</span>
+            <div class="cs-detail-list">
+                <div class="cs-detail">
+                    <span class="cs-detail-label"><i class='bx bx-id-card'></i> Reference No.</span>
+                    <span class="cs-detail-value">{{ $appointment->reference_no ?? '—' }}</span>
+                </div>
+                <div class="cs-detail">
+                    <span class="cs-detail-label"><i class='bx bx-calendar'></i> Date</span>
+                    <span class="cs-detail-value">{{ $visitDate }}</span>
+                </div>
+                <div class="cs-detail">
+                    <span class="cs-detail-label"><i class='bx bx-time-five'></i> Time</span>
+                    <span class="cs-detail-value">{{ $appointment->timeLabel('h:i A') }}</span>
+                </div>
+                <div class="cs-detail">
+                    <span class="cs-detail-label"><i class='bx bx-user'></i> Doctor</span>
+                    <span class="cs-detail-value">Dr. {{ $doctor->first_name ?? '' }} {{ $doctor->last_name ?? '' }}</span>
+                </div>
             </div>
         </div>
     </div>
@@ -188,7 +313,7 @@
     @if($appointment->prescriptions->isNotEmpty())
     @php $hasRxInstructions = $appointment->prescriptions->contains(fn ($rx) => filled($rx->instructions)); @endphp
     <div class="info-card">
-        <div class="info-card-header">
+        <div class="info-card-header info-card-header--with-btn">
             <div class="info-card-title">
                 <span class="info-card-icon info-card-icon--purple"><i class='bx bx-receipt'></i></span>
                 <h3>Prescription</h3>
@@ -217,18 +342,18 @@
                     <tbody>
                         @foreach($appointment->prescriptions as $prescription)
                         <tr>
-                            <td>
+                            <td data-label="Medicine">
                                 <strong>
                                     {{ $prescription->medicine?->medicine_name
                                         ?? $prescription->manual_medicine_name
                                         ?? 'N/A' }}
                                 </strong>
                             </td>
-                            <td>{{ $prescription->dosage ?? '—' }}</td>
-                            <td>{{ $prescription->frequency ?? '—' }}</td>
-                            <td>{{ $prescription->duration ?? '—' }}</td>
-                            <td>{{ $prescription->quantity_prescribed ?? '—' }}</td>
-                            @if($hasRxInstructions)<td>{{ $prescription->instructions ?: '—' }}</td>@endif
+                            <td data-label="Dosage">{{ $prescription->dosage ?? '—' }}</td>
+                            <td data-label="Frequency">{{ $prescription->frequency ?? '—' }}</td>
+                            <td data-label="Duration">{{ $prescription->duration ?? '—' }}</td>
+                            <td data-label="Quantity">{{ $prescription->quantity_prescribed ?? '—' }}</td>
+                            @if($hasRxInstructions)<td data-label="Instructions">{{ $prescription->instructions ?: '—' }}</td>@endif
                         </tr>
                         @endforeach
                     </tbody>
@@ -283,8 +408,8 @@
                             <tbody>
                                 @foreach($lab['tests'] as $test)
                                 <tr>
-                                    <td><strong>{{ $test['name'] }}</strong></td>
-                                    <td>
+                                    <td data-label="Requested Test"><strong>{{ $test['name'] }}</strong></td>
+                                    <td data-label="Result">
                                         @if($test['file'])
                                             <a href="{{ $test['file']->url }}" target="_blank" rel="noopener noreferrer" class="cs-file-link">View result</a>
                                             <span class="cs-file-name">{{ $test['file']->original_filename }}</span>
@@ -302,11 +427,6 @@
                     @if($lab['review_notes'])
                         <div class="cs-sublabel">Physician's Review</div>
                         <p class="cs-text">{{ $lab['review_notes'] }}</p>
-                    @endif
-
-                    @if($lab['follow_up'])
-                        <div class="cs-sublabel">Follow-up Instructions</div>
-                        <p class="cs-text">{{ $lab['follow_up'] }}</p>
                     @endif
 
                     @if($labRequest->isReviewed() && $labRequest->reviewed_at)

@@ -30,12 +30,14 @@ class DoctorAvailabilityService
 {
     /**
      * Determine whether a doctor can be booked at the given date/time.
-     * $time accepts "H:i" or "H:i:s". Appointment slots are assumed 30 mins.
+     * $time accepts "H:i" or "H:i:s". Slot length defaults to the clinic setting (30 mins unless changed in System Settings).
      *
      * @return array{0: bool, 1: ?string} [isAvailable, reasonIfNot]
      */
-    public static function isAvailable(int $doctorId, string $date, string $time, int $slotMinutes = 30): array
+    public static function isAvailable(int $doctorId, string $date, string $time, ?int $slotMinutes = null): array
     {
+        $slotMinutes ??= ClinicSchedule::slotMinutes();
+
         try {
             $date = Carbon::parse($date)->startOfDay();
             $time = Carbon::createFromFormat('H:i', substr($time, 0, 5));

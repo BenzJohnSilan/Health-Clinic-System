@@ -8,11 +8,11 @@
 @section('content')
 <div class="container">
 
-    <div class="page-header">
+    <div class="page-header page-header--list">
         <h1 class="page-title">Billing &amp; Payments</h1>
     </div>
 
-    <p class="pb-subtitle">View your consultation invoices and payment history.</p>
+    <p class="pb-subtitle pb-subtitle--list">View your consultation invoices and payment history.</p>
 
     <!-- ================= SUMMARY CARDS ================= -->
     <div class="billing-summary-grid">
@@ -40,9 +40,6 @@
     </div>
 
     <!-- ================= BILLING HISTORY ================= -->
-    <div class="billing-history-head">
-        <h2 class="billing-history-title">Billing History</h2>
-    </div>
 
     <form method="GET" action="{{ route('patient.billing.index') }}" class="billing-filters">
         <div class="billing-filter-field">
@@ -50,14 +47,14 @@
             <input type="text" name="search" placeholder="Search invoice no." value="{{ request('search') }}">
         </div>
 
-        <select name="status" class="billing-filter-select" onchange="this.form.submit()">
+        <select name="status" class="billing-filter-select" aria-label="Filter by status">
             <option value="">All Statuses</option>
             @foreach(['Unpaid', 'Partially Paid', 'Paid', 'Cancelled'] as $s)
                 <option value="{{ $s }}" {{ request('status') === $s ? 'selected' : '' }}>{{ $s }}</option>
             @endforeach
         </select>
 
-        <button type="submit" class="btn-filter-apply">Search</button>
+        <button type="submit" class="btn-filter-apply"><i class="fa-solid fa-filter"></i> Filter</button>
 
         @if(request('search') || request('status'))
             <a href="{{ route('patient.billing.index') }}" class="btn-filter-clear">Clear</a>
@@ -159,7 +156,7 @@
                 </div>
 
                 <a href="{{ route('patient.billing.show', $invoice->id) }}" class="pb-view-btn">
-                    View Details <i class="fa-solid fa-chevron-right"></i>
+                    View Details
                 </a>
             </div>
         @empty

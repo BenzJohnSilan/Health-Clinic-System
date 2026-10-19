@@ -13,14 +13,15 @@
         <h2>Appointment History</h2>
     </div>
 
-    {{-- ================= SEARCH + FILTER ================= --}}
+    {{-- ================= SEARCH + FILTER =================
+         Picking a status does NOT submit by itself — the Filter button does. --}}
     <form method="GET" action="{{ route('patient.appointment.history') }}" class="lab-toolbar">
         <div class="lab-search-box">
             <i class='bx bx-search'></i>
             <input type="text" name="search" placeholder="Search by reference no. or doctor name..." value="{{ $search }}">
         </div>
 
-        <select name="status" class="lab-select" onchange="this.form.submit()">
+        <select name="status" class="lab-select" aria-label="Filter by status">
             <option value="All" {{ $statusFilter === 'All' ? 'selected' : '' }}>All Statuses</option>
             <option value="Completed" {{ $statusFilter === 'Completed' ? 'selected' : '' }}>Completed</option>
             <option value="Cancelled" {{ $statusFilter === 'Cancelled' ? 'selected' : '' }}>Cancelled</option>
@@ -124,6 +125,57 @@
 
         </table>
 
+    </div>
+
+    <!-- ================= CARDS (Mobile) =================
+         Phones (<= 640px) show these cards instead of the table.
+         Same card design as the Appointments page. -->
+    <div class="history-cards">
+        @forelse($appointments as $appointment)
+            <div class="history-card">
+                <div class="history-card-top">
+                    <span class="ref-no">{{ $appointment->reference_no ?? '—' }}</span>
+                    <span class="status {{ str_replace(' ', '-', strtolower($appointment->status)) }}">
+                        {{ $appointment->status }}
+                    </span>
+                </div>
+
+                <div class="history-card-row">
+                    <span class="history-card-label">Doctor</span>
+                    <span class="history-card-value">
+                        Dr. {{ $appointment->doctor->first_name ?? '' }}
+                        {{ $appointment->doctor->last_name ?? '' }}
+                    </span>
+                </div>
+
+                <div class="history-card-row">
+                    <span class="history-card-label">Schedule</span>
+                    <span class="history-card-value">
+                        {{ \Carbon\Carbon::parse($appointment->appointment_date)->format('M d, Y') }}
+                        &bull;
+                        {{ $appointment->timeLabel('h:i A') }}
+                    </span>
+                </div>
+
+                <div class="history-card-actions">
+                    @if($appointment->status === 'Completed')
+                        <a href="{{ route('patient.appointment.show', $appointment->id) }}" class="btn-view">
+                            View
+                        </a>
+                    @else
+                        <span class="btn-status-label unavailable">Not Available</span>
+                    @endif
+                </div>
+            </div>
+        @empty
+            <div class="history-empty">
+                @if($search !== '' || $statusFilter !== 'All')
+                    No appointment records match your search or filter.
+                @else
+                    No medical records found.
+                @endif
+            </div>
+        @endforelse
     </div>
 
     <!-- ================= PAGINATION ================= -->

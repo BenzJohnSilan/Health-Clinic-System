@@ -146,12 +146,13 @@ class MedicalCertificate extends Model
     }
 
     /**
-     * Printing is only allowed for an ISSUED certificate whose fee is
-     * paid. Printing never changes the status.
+     * The doctor may print an ISSUED or RELEASED certificate at any time,
+     * whether or not the invoice is paid yet (the payment state is only
+     * shown to the doctor). Printing never changes the status.
      */
     public function canBePrinted(): bool
     {
-        return $this->isIssued() && $this->isPaid();
+        return $this->isIssued() || $this->isReleased();
     }
 
     /**

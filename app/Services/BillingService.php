@@ -10,6 +10,8 @@ use App\Models\Payment;
 use App\Models\Prescription;
 use App\Models\Service;
 use App\Models\User;
+use App\Support\Money;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -172,6 +174,12 @@ class BillingService
         }
 
         return DB::transaction(function () use ($appointment, $serviceLines, $doctor, $waiver) {
+
+            // Lock the APPOINTMENT row first. Locking only the invoice is not
+            // enough when it does not exist yet: two simultaneous requests
+            // would both see "no invoice" and both create one. (The database
+            // also has a UNIQUE key on invoices.appointment_id as a backstop.)
+            Appointment::whereKey($appointment->id)->lockForUpdate()->first();
 
             $invoice = $appointment->invoice()->lockForUpdate()->first();
 
@@ -503,48 +511,46 @@ class BillingService
         return DB::transaction(function () use ($invoice, $keepLegacyInvoiceDiscount) {
             $items = $invoice->items()->get();
 
-            $subtotal     = 0.0;
-            $itemDiscount = 0.0;
+            $subtotalC     = 0;
+            $itemDiscountC = 0;
 
             foreach ($items as $item) {
-                $gross = round(max((int) $item->quantity, 0) * (float) $item->unit_price, 2);
-                $rate  = $item->discount_type ? (float) $item->discount_rate : 0.0;
-                $disc  = $rate > 0 ? min(round($gross * $rate / 100, 2), $gross) : 0.0;
+                $grossC = Money::cents(max((int) $item->quantity, 0) * (float) $item->unit_price);
+                $discC  = $item->discount_type
+                    ? Money::percentOf($grossC, $item->discount_rate)
+                    : 0;
 
-                $item->amount          = $gross;
-                $item->discount_amount = $disc;
+                $item->amount          = Money::pesos($grossC);
+                $item->discount_amount = Money::pesos($discC);
                 if ($item->isDirty()) {
                     $item->save();
                 }
 
-                $subtotal     += $gross;
-                $itemDiscount += $disc;
+                $subtotalC     += $grossC;
+                $itemDiscountC += $discC;
             }
 
-            $discount = $itemDiscount;
+            $discountC = $itemDiscountC;
             if ($keepLegacyInvoiceDiscount
-                && $itemDiscount < 0.005
-                && (float) $invoice->discount > 0.004
+                && $itemDiscountC === 0
+                && Money::cents($invoice->discount) > 0
                 && $items->every(fn ($i) => !$i->discount_type)) {
-                $discount = min((float) $invoice->discount, $subtotal);
+                $discountC = min(Money::cents($invoice->discount), $subtotalC);
             }
 
-            $total   = max($subtotal - $discount, 0);
-            $paid    = (float) $invoice->amount_paid;
-            $balance = max($total - $paid, 0);
+            $totalC   = max($subtotalC - $discountC, 0);
+            $paidC    = Money::cents($invoice->amount_paid);
+            $balanceC = max($totalC - $paidC, 0);
 
-            $invoice->subtotal     = round($subtotal, 2);
-            $invoice->discount     = round($discount, 2);
-            $invoice->total_amount = round($total, 2);
-            $invoice->balance      = round($balance, 2);
+            $invoice->subtotal     = Money::pesos($subtotalC);
+            $invoice->discount     = Money::pesos($discountC);
+            $invoice->total_amount = Money::pesos($totalC);
+            $invoice->balance      = Money::pesos($balanceC);
+            // Status comes from the one shared rule (Invoice::deriveStatus).
             // A zero-total invoice with no payment (e.g. a fully waived
-            // consultation and nothing else) has nothing to collect, so it
-            // is settled — otherwise it would sit as "Unpaid" with a ₱0
-            // balance that can never be paid. Adding a billable line later
-            // (a dispensed medicine) recalculates it back to Unpaid.
-            $invoice->status       = $paid > 0
-                ? ($balance <= 0.004 ? 'Paid' : 'Partially Paid')
-                : (($total <= 0.004 && $items->isNotEmpty()) ? 'Paid' : 'Unpaid');
+            // consultation) is settled; adding a billable line later (a
+            // dispensed medicine) recalculates it back to Unpaid.
+            $invoice->status       = Invoice::deriveStatus($totalC, $paidC, $items->isNotEmpty());
             $invoice->save();
 
             return $invoice;
@@ -554,24 +560,32 @@ class BillingService
     /**
      * Apply per-item discounts chosen by Staff, then recalculate the
      * invoice. $inputs is keyed by invoice item id:
-     *   [itemId => ['discount_type' => 'senior_citizen'|...|'' , 'discount_rate' => '12.5']]
+     *   [itemId => ['discount_type' => 'senior_citizen'|'pwd'|'' , 'discount_rate' => '12.5']]
      *
      * Rules (enforced here, never trusted from the browser):
      *  - only while the invoice has no payment and is not Cancelled
      *  - discount_type must come from config('billing.discount_types');
      *    one type per item, so discounts never stack on an item
-     *  - fixed-rate types (Senior Citizen / PWD) always use the configured
-     *    rate; the submitted rate is ignored
-     *  - authorized-percentage types need a rate between 0 and 100
+     *  - ONE beneficiary per invoice: Senior Citizen and PWD cannot be mixed
+     *    on the same invoice (a person uses one ID per transaction)
+     *  - fixed-rate types always use the configured rate; the submitted
+     *    rate is ignored
+     *  - a type with `requires_id` needs the patient's ID number ($idNumber),
+     *    which is saved on the invoice together with who verified it and when
+     *  - a type with `min_age` (Senior Citizen) is refused when the patient's
+     *    birthdate on file says they are younger
      *  - items not listed in $inputs are left unchanged
+     *  - applying the same discount again changes nothing (it is always
+     *    computed from the item's gross amount, never from a prior result)
      *
      * @throws ValidationException
      */
-    public function applyItemDiscounts(Invoice $invoice, array $inputs): Invoice
+    public function applyItemDiscounts(Invoice $invoice, array $inputs, ?string $idNumber = null, ?User $verifier = null): Invoice
     {
-        $types = config('billing.discount_types', []);
+        $types    = config('billing.discount_types', []);
+        $idNumber = trim((string) $idNumber);
 
-        return DB::transaction(function () use ($invoice, $inputs, $types) {
+        return DB::transaction(function () use ($invoice, $inputs, $types, $idNumber, $verifier) {
 
             $locked = Invoice::whereKey($invoice->id)->lockForUpdate()->firstOrFail();
 
@@ -645,6 +659,39 @@ class BillingService
                 $item->discount_rate = $rate > 0 ? $rate : null;
             }
 
+            // ---- proof of eligibility (looks at the FINAL state of all lines) ----
+            $usedTypes = $items
+                ->filter(fn (InvoiceItem $i) => $i->discount_type && !$i->isWaiver())
+                ->pluck('discount_type')
+                ->unique()
+                ->values();
+
+            if ($usedTypes->count() > 1) {
+                $errors['discount'] = 'Only one kind of discount (Senior Citizen or PWD) can be used on one invoice.';
+            }
+
+            $needsId = $usedTypes->contains(fn ($t) => !empty($types[$t]['requires_id']));
+
+            if ($needsId && empty($errors['discount'])) {
+                $type  = $usedTypes->first();
+                $label = $types[$type]['id_label'] ?? 'ID number';
+
+                if ($idNumber === '') {
+                    $errors['discount_id_number'] = "Enter the patient's {$label} before applying this discount.";
+                } elseif (!preg_match(config('billing.id_number_pattern'), $idNumber)) {
+                    $errors['discount_id_number'] = "The {$label} may only contain letters, numbers, spaces, dashes or slashes (4–60 characters).";
+                }
+
+                $minAge = $types[$type]['min_age'] ?? null;
+                if ($minAge) {
+                    $birth = $locked->patient?->birthdate ?? $locked->walkinPatient?->birthdate;
+                    if ($birth && \Carbon\Carbon::parse($birth)->age < (int) $minAge) {
+                        $errors['discount'] = "The patient is below {$minAge} years old according to the record, so the "
+                            . ($types[$type]['label'] ?? 'discount') . ' discount cannot be applied.';
+                    }
+                }
+            }
+
             if ($errors) {
                 throw ValidationException::withMessages($errors);
             }
@@ -655,8 +702,38 @@ class BillingService
                 }
             }
 
+            // Proof of eligibility is saved with the invoice (or cleared when
+            // no ID-based discount is left on it).
+            if ($needsId) {
+                $locked->discount_id_number      = $idNumber;
+                $locked->discount_id_verified_by = $verifier?->id;
+                $locked->discount_id_verified_at = now();
+            } else {
+                $locked->discount_id_number      = null;
+                $locked->discount_id_verified_by = null;
+                $locked->discount_id_verified_at = null;
+            }
+            $locked->save();
+
             return $this->recalculateInvoiceTotals($locked, false);
         });
+    }
+
+    /**
+     * One line per discounted item, e.g.
+     *   "Consultation: Senior Citizen 20% (-₱200.00)"
+     * Used for the audit log (before / after an Apply Discounts click).
+     */
+    public function describeDiscounts(Invoice $invoice): string
+    {
+        $lines = $invoice->items()->get()
+            ->filter(fn (InvoiceItem $i) => $i->discount_type && !$i->isWaiver())
+            ->map(fn (InvoiceItem $i) => $i->description . ': ' . $i->discountLabel()
+                . ' ' . rtrim(rtrim(number_format((float) $i->discount_rate, 2), '0'), '.') . '%'
+                . ' (-₱' . number_format((float) $i->discount_amount, 2) . ')')
+            ->values();
+
+        return $lines->isEmpty() ? 'none' : $lines->implode('; ');
     }
 
     /**
@@ -826,8 +903,10 @@ class BillingService
                 return;
             }
 
-            $invoice->status  = 'Cancelled';
-            $invoice->balance = 0;
+            $invoice->status      = 'Cancelled';
+            $invoice->balance     = 0;
+            $invoice->void_reason = 'Medical certificate request was rejected.';
+            $invoice->voided_at   = now();
             $invoice->save();
         });
     }
@@ -836,20 +915,29 @@ class BillingService
      * Record a verified payment against an invoice.
      *
      * Rules enforced here (never trust the client for these):
-     *  - amount must be > 0
-     *  - amount cannot exceed the current remaining balance (no overpayment)
-     *  - GCash requires a reference number, Cash does not
+     *  - amount must be > 0 and cannot exceed the remaining balance
+     *  - GCash requires a reference number (4–30 letters/numbers/dashes) that
+     *    was never used before; Cash does not use one
      *  - a Cancelled or already fully Paid invoice cannot take a new payment
+     *  - the same form submitted twice (double click / refresh / retry) is
+     *    recorded ONCE: `submission_token` is remembered, and a repeat just
+     *    returns the payment that already exists
+     *
+     * Safety: the invoice row is locked, the payment and the invoice totals
+     * change in ONE transaction, and the database itself refuses a repeated
+     * GCash reference or form token (UNIQUE keys) even if two requests
+     * arrive at exactly the same moment.
      *
      * @throws ValidationException
      */
     public function recordPayment(Invoice $invoice, array $data, User $staff): Payment
     {
-        $amount = round((float) ($data['amount'] ?? 0), 2);
-        $method = $data['payment_method'] ?? null;
-        $ref    = trim((string) ($data['reference_number'] ?? ''));
+        $amountC = Money::cents($data['amount'] ?? 0);
+        $method  = $data['payment_method'] ?? null;
+        $ref     = trim((string) ($data['reference_number'] ?? ''));
+        $token   = trim((string) ($data['submission_token'] ?? '')) ?: null;
 
-        if ($amount <= 0) {
+        if (!is_numeric($data['amount'] ?? null) || $amountC <= 0) {
             throw ValidationException::withMessages([
                 'amount' => 'Payment amount must be greater than zero.',
             ]);
@@ -861,18 +949,44 @@ class BillingService
             ]);
         }
 
-        if ($method === 'GCash' && $ref === '') {
-            throw ValidationException::withMessages([
-                'reference_number' => 'GCash reference number is required before confirming a GCash payment.',
-            ]);
+        if ($method === 'GCash') {
+            if ($ref === '') {
+                throw ValidationException::withMessages([
+                    'reference_number' => 'GCash reference number is required before confirming a GCash payment.',
+                ]);
+            }
+
+            if (!preg_match('/^[A-Za-z0-9\-]{4,30}$/', $ref)) {
+                throw ValidationException::withMessages([
+                    'reference_number' => 'GCash reference number must be 4–30 letters, numbers or dashes (no spaces).',
+                ]);
+            }
         }
 
-        return DB::transaction(function () use ($invoice, $amount, $method, $ref, $data, $staff) {
+        $duplicateRef = ValidationException::withMessages([
+            'reference_number' => 'This GCash reference number has already been used for another payment. Please check the number and try again.',
+        ]);
+
+        return DB::transaction(function () use ($invoice, $amountC, $method, $ref, $token, $data, $staff, $duplicateRef) {
 
             // Lock the invoice row while processing this payment.
             $lockedInvoice = Invoice::whereKey($invoice->id)
                 ->lockForUpdate()
                 ->firstOrFail();
+
+            // Same form submitted again (double click, refresh, retry):
+            // hand back the payment that was already recorded. This must be
+            // checked BEFORE the "already paid" rule, because the first
+            // submit may have been the one that completed the invoice.
+            if ($token && ($again = Payment::where('submission_token', $token)->first())) {
+                if ($again->invoice_id === $lockedInvoice->id) {
+                    return $again;
+                }
+
+                throw ValidationException::withMessages([
+                    'amount' => 'This form was already used. Please reload the page and try again.',
+                ]);
+            }
 
             // Pay-after-service: nothing can be collected before the
             // consultation is Completed.
@@ -895,6 +1009,22 @@ class BillingService
                 ]);
             }
 
+            // A GCash reference number identifies ONE real transaction. Reusing
+            // it (same or another invoice) means a double-counted or mistyped
+            // payment, so reject it. This is the friendly early check; the
+            // UNIQUE key on payments.reference_key is the real guarantee when
+            // two requests race (caught below). Compared case-insensitively
+            // and ignoring surrounding spaces.
+            if ($method === 'GCash') {
+                $alreadyUsed = Payment::where('payment_method', 'GCash')
+                    ->whereRaw('LOWER(TRIM(reference_number)) = ?', [Payment::normalizeReference($ref)])
+                    ->exists();
+
+                if ($alreadyUsed) {
+                    throw $duplicateRef;
+                }
+            }
+
             // Never take a first payment against stale totals: re-derive the
             // invoice from its items (including discounts) under the lock.
             // Once a payment exists the invoice is finalized and untouched.
@@ -902,25 +1032,44 @@ class BillingService
                 $this->recalculateInvoiceTotals($lockedInvoice);
             }
 
-            // Get the latest balance after locking the invoice.
-            $currentBalance = round((float) $lockedInvoice->balance, 2);
+            // Balance as of this moment, in whole centavos.
+            $balanceC = max(
+                Money::cents($lockedInvoice->total_amount)
+                    - Money::cents($lockedInvoice->payments()->sum('amount')),
+                0
+            );
 
-            if ($amount > $currentBalance + 0.004) {
+            if ($amountC > $balanceC) {
                 throw ValidationException::withMessages([
                     'amount' => 'Payment amount cannot exceed the remaining balance of ₱'
-                        . number_format($currentBalance, 2) . '.',
+                        . number_format(Money::pesos($balanceC), 2) . '.',
                 ]);
             }
 
-            $payment = Payment::create([
-                'invoice_id'       => $lockedInvoice->id,
-                'amount'           => $amount,
-                'payment_method'   => $method,
-                'reference_number' => $method === 'GCash' ? $ref : null,
-                'received_by'      => $staff->id,
-                'paid_at'          => now(),
-                'notes'             => $data['notes'] ?? null,
-            ]);
+            try {
+                // Nested transaction = savepoint, so a rejected duplicate
+                // never leaves the outer transaction in a broken state.
+                $payment = DB::transaction(fn () => Payment::create([
+                    'invoice_id'       => $lockedInvoice->id,
+                    'amount'           => Money::pesos($amountC),
+                    'payment_method'   => $method,
+                    'reference_number' => $method === 'GCash' ? $ref : null,
+                    'submission_token' => $token,
+                    'received_by'      => $staff->id,
+                    'paid_at'          => now(),
+                    'notes'            => $data['notes'] ?? null,
+                ]));
+            } catch (UniqueConstraintViolationException $e) {
+                if (str_contains($e->getMessage(), 'submission_token')) {
+                    $again = Payment::where('submission_token', $token)->first();
+                    if ($again && $again->invoice_id === $lockedInvoice->id) {
+                        return $again;
+                    }
+                }
+
+                // Two requests used the same GCash reference at the same time.
+                throw $duplicateRef;
+            }
 
             // Recalculate the invoice after recording the payment.
             $lockedInvoice->recalculate();

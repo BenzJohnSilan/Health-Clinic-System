@@ -41,7 +41,11 @@
 
     <div class="sidebar-brand">
         <div class="brand-icon">
-            <i class='bx bx-plus-medical'></i>
+            @if($__clinicLogo = \App\Services\SystemSettings::logoUrl())
+                <img src="{{ $__clinicLogo }}" alt="{{ \App\Services\SystemSettings::clinicName() }} logo">
+            @else
+                <i class='bx bx-plus-medical'></i>
+            @endif
         </div>
         <div class="brand-text">
             <h2>Clinic Record</h2>

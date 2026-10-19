@@ -11,6 +11,7 @@ use App\Models\MedicalRecord;
 use App\Models\Review;
 use App\Models\UserLog;
 use App\Models\LaboratoryRequest;
+use App\Models\MedicalCertificate;
 use App\Services\PatientNotificationService;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
@@ -93,13 +94,15 @@ class PatientController extends Controller
         }
 
         // =========================================================
-        // FOLLOW-UP RECOMMENDATION — reuses LaboratoryRequest's own
-        // scopeAwaitingFollowUpBooking() (the exact same check the
-        // Laboratory Results page and the appointment booking form use).
+        // LATEST MEDICAL CERTIFICATE — the logged-in patient's most
+        // recently RELEASED certificate only (same patient_id/status
+        // filter the Medical Certificates page uses, so nothing that is
+        // still draft/issued/unpaid is exposed). One query, no extras.
         // =========================================================
-        $followUpLabRequest = LaboratoryRequest::awaitingFollowUpBooking()
-            ->where('patient_id', $patient->id)
-            ->orderByDesc('reviewed_at')
+        $latestCertificate = MedicalCertificate::where('patient_id', $patient->id)
+            ->where('status', 'released')
+            ->latest('released_at')
+            ->latest('id')
             ->first();
 
         // =========================================================
@@ -121,7 +124,7 @@ class PatientController extends Controller
             'latestLabRequest',
             'latestLabStatusLabel',
             'latestLabDate',
-            'followUpLabRequest',
+            'latestCertificate',
             'recentNotifications'
         ));
     }
@@ -406,9 +409,6 @@ class PatientController extends Controller
                 'review_notes' => ($reviewed && filled($labRequest->review_notes))
                     ? $labRequest->review_notes
                     : null,
-                'follow_up'    => ($reviewed && $labRequest->follow_up_recommended && filled($labRequest->follow_up_instructions))
-                    ? $labRequest->follow_up_instructions
-                    : null,
             ];
         });
 
@@ -418,6 +418,13 @@ class PatientController extends Controller
             ? Carbon::parse($review->next_review_date)->format('F j, Y')
             : null;
         $followUpMessage = filled($review?->message) ? $review->message : null;
+
+        // When the Follow-up Schedule created a Follow-up appointment, show its time too.
+        $followUpAppt = $review?->followUpAppointment;
+        if ($followUpDate && $followUpAppt && $followUpAppt->appointment_time
+            && !in_array($followUpAppt->status, ['Cancelled', 'Rejected', 'No Show'], true)) {
+            $followUpDate .= ' at ' . $followUpAppt->timeLabel('g:i A');
+        }
 
         $this->logActivity(
             'Viewed Consultation Summary',

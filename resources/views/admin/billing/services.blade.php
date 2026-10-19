@@ -18,6 +18,9 @@
     @if(session('success'))
         <div class="alert-success">{{ session('success') }}</div>
     @endif
+    @if(session('error'))
+        <div class="alert-error">{{ session('error') }}</div>
+    @endif
     @if($errors->any())
         <div class="alert-error">
             <ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
@@ -52,10 +55,10 @@
                             Edit
                         </button>
                         <form action="{{ route('admin.services.destroy', $service->id) }}" method="POST" style="display:inline;"
-                              onsubmit="return confirm('Delete this service?');">
+                              onsubmit="return confirm('Archive this service? It will be deactivated and moved to the Archive. Past invoices keep their service. You can restore it any time.');">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn-delete">Delete</button>
+                            <button type="submit" class="btn-delete">Archive</button>
                         </form>
                     </td>
                 </tr>

@@ -8,6 +8,7 @@ use App\Models\UserLog;
 use App\Services\BackupFileService;
 use App\Services\BackupService;
 use App\Services\BackupSettings;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -32,7 +33,7 @@ class BackupController extends Controller
 
     private const MODULE = 'Backup & Recovery';
 
-    public function index(BackupFileService $files)
+    public function index(Request $request, BackupFileService $files)
     {
         // "Restore" rows are records of an operation, not archives: leave them out.
         $latest = BackupLog::backups()->where('status', BackupLog::STATUS_SUCCESS)
@@ -47,10 +48,29 @@ class BackupController extends Controller
             'storage_used' => $files->formatBytes($files->storageUsed()),
         ];
 
-        $backups = BackupLog::with('creator')
+        // Search & filter (all optional, combined with AND).
+        $search = trim((string) $request->query('search'));
+        $type   = $request->query('type');
+        $status = $request->query('status');
+
+        // Only known values are accepted — anything else is ignored.
+        if (!in_array($type, ['manual', 'automatic', 'pre-restore', 'restore'], true)) {
+            $type = '';
+        }
+        if (!in_array($status, [BackupLog::STATUS_SUCCESS, BackupLog::STATUS_FAILED, BackupLog::STATUS_RUNNING], true)) {
+            $status = '';
+        }
+
+        $backups = BackupLog::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where('filename', 'like', '%' . $search . '%');
+            })
+            ->when($type !== '', fn ($query) => $query->where('type', $type))
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->orderByDesc('started_at')
             ->orderByDesc('id')
-            ->paginate(self::PER_PAGE);
+            ->paginate(self::PER_PAGE)
+            ->withQueryString();
 
         // Per-row facts for this page only: is the file still on disk, and
         // what does it contain (from its manifest).
@@ -79,7 +99,12 @@ class BackupController extends Controller
             'backups'  => $backups,
             'stats'    => $stats,
             'details'  => $details,
-            'hasAny'   => $backups->total() > 0,
+            // Whether ANY backup exists at all (ignores the filters), so a
+            // search with no match shows "no results", not the first-backup screen.
+            'hasAny'   => BackupLog::exists(),
+            'search'   => $search,
+            'type'     => $type,
+            'status'   => $status,
             'schedule' => $schedule,
         ]);
     }

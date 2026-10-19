@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\UserLog;
+use App\Services\BillingReportService;
 use Illuminate\Http\Request;
 
 
@@ -15,6 +17,10 @@ use Illuminate\Http\Request;
  */
 class AdminBillingController extends Controller
 {
+    public function __construct(protected BillingReportService $reports)
+    {
+    }
+
     public function index(Request $request)
     {
         $query = Invoice::with(['patient', 'walkinPatient', 'appointment']);
@@ -39,33 +45,47 @@ class AdminBillingController extends Controller
 
         $invoices = $query->latest()->paginate(10)->withQueryString();
 
-        $totalCollected = Payment::sum('amount');
-        $totalOutstanding = Invoice::whereIn('status', ['Unpaid', 'Partially Paid'])->sum('balance');
-        $cashCollected  = Payment::where('payment_method', 'Cash')->sum('amount');
-        $gcashCollected = Payment::where('payment_method', 'GCash')->sum('amount');
-
-        $counts = [
-            'Unpaid'          => Invoice::where('status', 'Unpaid')->count(),
-            'Partially Paid'  => Invoice::where('status', 'Partially Paid')->count(),
-            'Paid'            => Invoice::where('status', 'Paid')->count(),
-            'Cancelled'       => Invoice::where('status', 'Cancelled')->count(),
-        ];
-
-        return view('admin.billing.index', compact(
-            'invoices',
-            'totalCollected',
-            'totalOutstanding',
-            'cashCollected',
-            'gcashCollected',
-            'counts'
-        ));
+        return view('admin.billing.index', compact('invoices'));
     }
 
     public function show(Invoice $invoice)
     {
-        $invoice->load(['items', 'payments.receivedBy', 'patient', 'walkinPatient', 'appointment', 'createdBy']);
+        $invoice->load(['items.waivedBy', 'payments.receivedBy', 'patient', 'walkinPatient', 'appointment', 'createdBy', 'discountIdVerifiedBy', 'voidedBy']);
 
         return view('admin.billing.show', compact('invoice'));
+    }
+
+    /** Revenue Report — income per Consultation / Medical Certificate / Medicine. */
+    public function report(Request $request)
+    {
+        [$from, $to, $range, $label] = $this->reports->resolveRange($request);
+
+        return view('admin.billing.report', [
+            'reportTotals' => $this->reports->summary($from, $to),
+            'report'      => $this->reports->build($from, $to),
+            'reportRange' => ['range' => $range, 'from' => $from->toDateString(), 'to' => $to->toDateString(), 'label' => $label],
+            'labels'      => BillingReportService::LABELS,
+        ]);
+    }
+
+    public function printReport(Request $request)
+    {
+        [$from, $to, $range, $label] = $this->reports->resolveRange($request);
+
+        UserLog::create([
+            'user_id' => auth()->id(),
+            'action'  => 'Printed Revenue Report',
+            'module'  => 'Billing & Payments',
+            'details' => 'Printed the revenue report for ' . $label . '.',
+        ]);
+
+        return view('billing.report-print', [
+            'report'      => $this->reports->build($from, $to),
+            'reportRange' => ['range' => $range, 'from' => $from->toDateString(), 'to' => $to->toDateString(), 'label' => $label],
+            'labels'      => BillingReportService::LABELS,
+            'backRoute'   => route('admin.billing.report', ['range' => $range, 'from' => $from->toDateString(), 'to' => $to->toDateString()]),
+            'preparedBy'  => trim(auth()->user()->first_name . ' ' . auth()->user()->last_name),
+        ]);
     }
 
     public function receipt(Invoice $invoice, Payment $payment)
@@ -74,6 +94,7 @@ class AdminBillingController extends Controller
 
         $invoice->load(['items', 'patient', 'walkinPatient', 'appointment']);
         $payment->load('receivedBy');
+        $payment->setRelation('invoice', $invoice);
 
         return view('billing.receipt', [
             'invoice'   => $invoice,

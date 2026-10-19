@@ -83,28 +83,10 @@
                                 <span class="status {{ $statusClassMap[$labRequest->status] ?? 'awaiting' }}">
                                     {{ $labRequest->status }}
                                 </span>
-                                @if($labRequest->isReviewed() && $labRequest->follow_up_recommended)
-                                    @php $fuAppt = $labRequest->currentFollowUpAppointment(); @endphp
-                                    <span class="lab-followup-tag">
-                                        <i class='bx bx-calendar-plus'></i>
-                                        Follow-up: {{ $fuAppt->status ?? 'Pending' }}
-                                    </span>
-                                @endif
                             </div>
                         </td>
                         <td>
                             <div class="action-buttons">
-                                @if($canScheduleFollowUp && $labRequest->needsFollowUpBooking())
-                                    @php $fuPatient = $labRequest->resolvedPatient(); @endphp
-                                    <a class="btn-upload" style="text-decoration:none;"
-                                       href="{{ route('staff.patients.index', [
-                                            'search'    => trim(($fuPatient->first_name ?? '') . ' ' . ($fuPatient->last_name ?? '')),
-                                            'type'      => $labRequest->walkin_patient_id ? 'walkin' : 'registered',
-                                            'follow_up' => $labRequest->id,
-                                       ]) }}">
-                                        Schedule Follow-up
-                                    </a>
-                                @endif
                                 @if($filesCount > 0)
                                     <button type="button" class="btn-files-count @if($hasAnyCorrection) btn-files-count--alert @endif"
                                             onclick="openFilesModal({{ $labRequest->id }})">
@@ -151,9 +133,13 @@
     @if($currentByTest->isNotEmpty())
     <div class="modal-overlay" id="filesModal{{ $labRequest->id }}">
         <div class="modal-box">
-            <button type="button" class="modal-close-btn" onclick="closeModal('filesModal{{ $labRequest->id }}')">&times;</button>
-            <div class="modal-title">Uploaded Laboratory Results</div>
-            <div class="modal-subtitle">{{ $labRequest->reference_no }} — {{ $labRequest->patientName() }}</div>
+            <div class="modal-header">
+                <div>
+                    <div class="modal-title">Uploaded Laboratory Results</div>
+                    <span class="modal-ref-badge">{{ $labRequest->reference_no }} — {{ $labRequest->patientName() }}</span>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('filesModal{{ $labRequest->id }}')">&times;</button>
+            </div>
 
             @foreach($currentByTest as $testName => $file)
                 @php
@@ -214,12 +200,21 @@
 {{-- ================= UPLOAD / REPLACE RESULT MODAL ================= --}}
 <div class="modal-overlay" id="uploadResultModal">
     <div class="modal-box">
-        <button type="button" class="modal-close-btn" onclick="closeUploadModal()">&times;</button>
-        <div class="modal-title" id="uploadModalTitle">Upload Laboratory Result</div>
-        <div class="modal-subtitle" id="uploadRefDisplay"></div>
+        <div class="modal-header">
+            <div>
+                <div class="modal-title" id="uploadModalTitle">Upload Laboratory Result</div>
+                <span class="modal-ref-badge" id="uploadPatientBadge"></span>
+            </div>
+            <button type="button" class="modal-close-btn" onclick="closeUploadModal()">&times;</button>
+        </div>
 
         <form id="uploadResultForm" method="POST" enctype="multipart/form-data">
             @csrf
+
+            <div class="form-group">
+                <label>Request Reference</label>
+                <input type="text" id="uploadRefDisplay" value="" disabled>
+            </div>
 
             <div class="form-group" id="uploadTestGroup">
                 <label>Which test is this result for? <span style="color:#dc2626;">*</span></label>
@@ -231,7 +226,7 @@
             <div class="form-group">
                 <label>Result File <span style="color:#dc2626;">*</span></label>
                 <input type="file" name="result_file" accept=".pdf,.jpg,.jpeg,.png" required>
-                <p class="form-hint">Accepted formats: PDF, JPG, PNG. Max 5 MB. This only records the file — it is not reviewed here.</p>
+                <p class="form-hint">Accepted formats: PDF, JPG, PNG. Max 5 MB.</p>
             </div>
 
             <div class="form-group" style="margin-bottom:0;">
@@ -248,8 +243,6 @@
 </div>
 
 <script>
-const LAB_GENERAL_TEST_OPTION = @json(\App\Models\LaboratoryRequest::GENERAL_TEST_OPTION);
-
 function closeModal(id) {
     document.getElementById(id).classList.remove('show');
 }
@@ -267,9 +260,7 @@ document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
 
 /**
  * Fresh upload — "Which test is this result for?" dropdown is limited
- * to exactly this laboratory request's own requested tests, plus the
- * "covers everything" General option. Same behavior as the Patient's
- * own upload modal.
+ * to exactly this laboratory request's own requested tests.
  */
 function openUploadModal(requestId, referenceNo, patientName, requestedTests) {
     const form   = document.getElementById('uploadResultForm');
@@ -281,7 +272,8 @@ function openUploadModal(requestId, referenceNo, patientName, requestedTests) {
     document.getElementById('uploadTestGroup').style.display = '';
 
     form.action = '/staff/laboratory-requests/' + requestId + '/upload';
-    refEl.textContent = referenceNo + ' — ' + patientName;
+    refEl.value = referenceNo;
+    document.getElementById('uploadPatientBadge').textContent = patientName;
 
     select.innerHTML = '<option value="" disabled selected>— Select a test —</option>';
     select.required = true;
@@ -291,12 +283,6 @@ function openUploadModal(requestId, referenceNo, patientName, requestedTests) {
         opt.textContent = testName;
         select.appendChild(opt);
     });
-    if (requestedTests.length > 1) {
-        const generalOpt = document.createElement('option');
-        generalOpt.value = LAB_GENERAL_TEST_OPTION;
-        generalOpt.textContent = 'This file covers all requested tests';
-        select.appendChild(generalOpt);
-    }
     if (requestedTests.length === 1) {
         select.value = requestedTests[0];
     }
@@ -317,7 +303,8 @@ function openReplaceModal(requestId, resultId, testName, patientName) {
     document.getElementById('uploadTestGroup').style.display = 'none';
 
     form.action = '/staff/laboratory-requests/' + requestId + '/results/' + resultId + '/replace';
-    refEl.textContent = testName + ' — ' + patientName;
+    refEl.value = testName;
+    document.getElementById('uploadPatientBadge').textContent = patientName;
 
     const select = document.getElementById('uploadTestSelect');
     select.required = false;

@@ -286,13 +286,6 @@
                     </div>
                 @endif
 
-                @if($labRequest->follow_up_recommended && filled($labRequest->follow_up_instructions))
-                    <div class="pr-subblock">
-                        <div class="pr-sublabel">Follow-up Instructions</div>
-                        <div class="pr-text">{{ $labRequest->follow_up_instructions }}</div>
-                    </div>
-                @endif
-
                 @if($labRequest->reviewed_at)
                     <div class="pr-lab-reviewed">
                         Reviewed {{ $labRequest->reviewed_at->format('M d, Y') }}

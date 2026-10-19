@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Archivable;
+use App\Models\Scopes\ExcludeArchivedScope;
 use App\Services\LandingPageContent;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
@@ -12,6 +14,14 @@ use Illuminate\Support\Facades\Storage;
  */
 class LandingItem extends Model
 {
+    use Archivable;
+
+    /** Key used in archive_entries for this model. */
+    public static function archiveType(): string
+    {
+        return 'landing_item';
+    }
+
     protected $fillable = [
         'section', 'category', 'title', 'body', 'icon',
         'image_path', 'sort_order', 'is_active',
@@ -24,6 +34,10 @@ class LandingItem extends Model
 
     protected static function booted(): void
     {
+        // Archived items vanish from the admin list AND the public landing page;
+        // their row and image file stay untouched.
+        static::addGlobalScope(new ExcludeArchivedScope());
+
         static::saved(fn () => LandingPageContent::forget());
         static::deleted(function (LandingItem $item) {
             LandingPageContent::forget();

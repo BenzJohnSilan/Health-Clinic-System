@@ -8,8 +8,11 @@
 <script>document.documentElement.classList.add('js');</script>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+{{-- DATE PICKER (flatpickr) --}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous">
 <link rel="stylesheet" href="{{ asset('css/register.css') }}">
 <link rel="stylesheet" href="{{ asset('css/auth-extras.css') }}">
+<link rel="stylesheet" href="{{ asset('css/register-datepicker.css') }}">
 
 </head>
 
@@ -156,9 +159,9 @@
                         <label class="input-label" for="birthdate">Birthdate *</label>
                         <div class="input-wrap">
                             <i class='bx bxs-calendar input-icon'></i>
-                            {{-- max = yesterday (server rule is "before:today") --}}
+                            {{-- max = the date that makes the person exactly 18 today (server rule: 18 years old or above) --}}
                             <input type="date" id="birthdate" name="birthdate" value="{{ old('birthdate') }}"
-                                   min="1900-01-02" max="{{ now()->subDay()->toDateString() }}" autocomplete="bday"
+                                   min="1900-01-02" max="{{ now()->subYearsNoOverflow(18)->toDateString() }}" autocomplete="bday"
                                    @class(['is-invalid' => $errors->has('birthdate')])
                                    @error('birthdate') aria-invalid="true" aria-describedby="birthdate-error" @enderror
                                    required>
@@ -411,7 +414,7 @@
                     <div class="field-hint" id="matchHint" aria-live="polite"></div>
                 </div>
 
-                <!-- ===== PRIVACY CONSENT ===== -->
+                <!-- ===== TERMS + PRIVACY CONSENT ===== -->
                 <div class="consent-group">
                     <label class="consent-label">
                         <input type="checkbox" id="consent" name="consent" value="1"
@@ -419,9 +422,10 @@
                                @error('consent') aria-invalid="true" aria-describedby="consent-error" @enderror
                                required>
                         <span>
-                            I have read and understood the
-                            <button type="button" class="link-btn" id="openPrivacy">Privacy Notice</button>
-                            and consent to the collection and processing of my personal information and valid ID for the purposes stated in the Privacy Notice.
+                            I accept the
+                            <a href="{{ route('terms') }}" class="link-btn" target="_blank" rel="noopener">Terms and Conditions</a>
+                            and
+                            <a href="{{ route('privacy') }}" class="link-btn" target="_blank" rel="noopener">Privacy Policy</a>.
                         </span>
                     </label>
                     <x-auth.field-error name="consent" />
@@ -451,89 +455,11 @@
     </div>
 </div>
 
-{{-- ===== PRIVACY NOTICE DIALOG =====
-     Every statement below was checked against the code:
-       - fields listed       = the fields of this registration form (RegisterController@store)
-       - password hashed     = Hash::make() in RegisterController
-       - valid ID storage    = "private" disk (storage/app/private, no public URL)
-       - valid ID access     = Admin only (ValidIdController, role:Admin)
-       - admin approval      = Admin "Pending Accounts" screen + EnsureRegistrationComplete
-       - email verification  = one-time code sent by EmailOtpService
-     If the form or the code changes, update this text too.
-     Have the clinic / your adviser review it before real patients use the system. --}}
-<dialog id="privacyDialog" class="privacy-dialog" aria-labelledby="privacyTitle">
-    <div class="privacy-dialog-inner">
-        <div class="privacy-header">
-            <h3 id="privacyTitle">Privacy Notice</h3>
-            <button type="button" class="privacy-close" data-close-privacy aria-label="Close">
-                <i class='bx bx-x'></i>
-            </button>
-        </div>
-
-        <div class="privacy-body">
-            <div class="privacy-legal">
-                <h4>Legal Basis</h4>
-                <p>This Privacy Notice is provided in accordance with Republic Act No. 10173, or the Data Privacy Act of 2012, and its implementing rules and regulations. The clinic processes personal information according to the principles of transparency, legitimate purpose, and proportionality.</p>
-            </div>
-
-            <h4>What We Collect</h4>
-            <p>During registration, we collect your name, birthdate, gender, civil status, address, contact number, email address, username, password, the type of ID you choose, and a photo of your valid ID.</p>
-
-            <h4>Why We Collect It</h4>
-            <ul>
-                <li>To review and approve your patient account registration.</li>
-                <li>To check the information you submitted against the valid ID you uploaded.</li>
-                <li>To help prevent duplicate registrations.</li>
-                <li>To verify your email address with a one-time code.</li>
-                <li>To create and manage your patient account and records.</li>
-                <li>To schedule appointments and contact you when necessary.</li>
-            </ul>
-
-            <h4>Who Can Access It</h4>
-            <p>Your information may only be accessed by authorized clinic personnel who need it to perform their assigned responsibilities, such as administrators, doctors, and staff. Your uploaded valid ID can be viewed only by clinic administrators.</p>
-
-            <h4>How It Is Protected</h4>
-            <ul>
-                <li>Your password is stored in hashed form, not as plain text.</li>
-                <li>Your valid ID is kept in private storage that has no public link.</li>
-                <li>Access to the system is limited by user role, and you must sign in with your account.</li>
-            </ul>
-
-            <h4>How Long We Keep It</h4>
-            <p>Your personal information will be retained for as long as necessary to provide clinic services, maintain your patient records, comply with applicable requirements, and fulfill legitimate clinic purposes.</p>
-
-            <h4>Your Rights</h4>
-            <p>Under the Data Privacy Act, you may ask the clinic to:</p>
-            <ul>
-                <li>give you access to the personal information it holds about you;</li>
-                <li>correct information that is inaccurate; and</li>
-                <li>answer your questions about how your information is processed.</li>
-            </ul>
-            <p>You may also exercise other rights that apply to you under the law. Please contact the clinic's front desk.</p>
-        </div>
-
-        <div class="privacy-footer">
-            <button type="button" class="privacy-ok" data-close-privacy>I understand</button>
-        </div>
-    </div>
-</dialog>
 
 <script src="{{ asset('js/prevent-double-submit.js') }}"></script>
+{{-- DATE PICKER (flatpickr): pinned version + integrity hash; if it cannot load, the native date input is used --}}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js" integrity="sha384-5JqMv4L/Xa0hfvtF06qboNdhvuYXUku9ZrhZh3bSk8VXF0A/RuSLHpLsSV9Zqhl6" crossorigin="anonymous"></script>
 <script>
-// ===== PRIVACY NOTICE DIALOG =====
-const privacyDialog = document.getElementById('privacyDialog');
-
-document.getElementById('openPrivacy').addEventListener('click', () => {
-    if (typeof privacyDialog.showModal === 'function') privacyDialog.showModal();
-});
-document.querySelectorAll('[data-close-privacy]').forEach(btn =>
-    btn.addEventListener('click', () => privacyDialog.close())
-);
-// click on the dark backdrop closes it
-privacyDialog.addEventListener('click', e => {
-    if (e.target === privacyDialog) privacyDialog.close();
-});
-
 // ===== FILE PREVIEW + INSTANT ID CHECK =====
 const MAX_ID_BYTES      = 2 * 1024 * 1024;             // same as the server: max 2 MB
 const ALLOWED_ID_TYPES  = ['image/jpeg', 'image/png']; // same as the server: JPG / PNG
@@ -601,6 +527,124 @@ function calculateAge(val) {
 
 calculateAge(birthdateInput.value);
 birthdateInput.addEventListener('change', function () { calculateAge(this.value); });
+
+// ===== BIRTHDATE DATE PICKER (flatpickr, themed in css/register-datepicker.css) =====
+// The real field keeps its name and the Y-m-d value the server expects; the visible
+// field only shows it nicely ("October 15, 2000"). If flatpickr cannot load, the
+// browser's own date input keeps working.
+if (window.flatpickr) {
+    const bdMin = birthdateInput.min;
+    const bdMax = birthdateInput.max;
+
+    const syncYear = fp => {
+        if (!fp._yearBtn) return;
+        fp._yearBtn.firstChild.textContent = String(fp.currentYear);
+        fp._yearList.querySelectorAll('li').forEach(li => {
+            const on = li.dataset.year === String(fp.currentYear);
+            li.classList.toggle('is-active', on);
+            li.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+    };
+
+    flatpickr(birthdateInput, {
+        altInput: true,
+        altInputClass: 'birthdate-display',
+        altFormat: 'F j, Y',
+        dateFormat: 'Y-m-d',
+        minDate: bdMin,
+        maxDate: bdMax,
+        disableMobile: true,
+        allowInput: true,        // keeps the field "required" for the step check (read-only fields skip it)
+        monthSelectorType: 'dropdown',
+        position: 'auto left',    // under the field, or above it when there is no room (so the page never grows/scrolls)
+        onReady(selected, dateStr, fp) {
+            const alt = fp.altInput;
+            alt.placeholder = 'Select date';
+            alt.autocomplete = 'bday';
+            // Pick from the calendar: no typing (Backspace/Delete clears the date)
+            alt.addEventListener('keydown', e => {
+                if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); fp.clear(); return; }
+                if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) e.preventDefault();
+            });
+            if (birthdateInput.classList.contains('is-invalid')) alt.classList.add('is-invalid');
+            if (birthdateInput.getAttribute('aria-invalid')) alt.setAttribute('aria-invalid', 'true');
+            if (birthdateInput.getAttribute('aria-describedby')) alt.setAttribute('aria-describedby', birthdateInput.getAttribute('aria-describedby'));
+            alt.id = 'birthdate_display';
+            document.querySelector('label[for="birthdate"]')?.setAttribute('for', 'birthdate_display');
+
+            // Year dropdown instead of the small number box
+            const monthBox = fp.calendarContainer.querySelector('.flatpickr-current-month');
+            monthBox.querySelector('.numInputWrapper').style.display = 'none';
+            // Custom year list (opens inside the calendar, never off-screen like the native list)
+            const yearWrap = document.createElement('div');
+            yearWrap.className = 'fp-year';
+            const yearBtn = document.createElement('button');
+            yearBtn.type = 'button';
+            yearBtn.className = 'fp-year-btn';
+            yearBtn.setAttribute('aria-label', 'Year');
+            yearBtn.setAttribute('aria-haspopup', 'listbox');
+            yearBtn.setAttribute('aria-expanded', 'false');
+            yearBtn.appendChild(document.createTextNode(''));
+            const yearList = document.createElement('ul');
+            yearList.className = 'fp-year-list';
+            yearList.setAttribute('role', 'listbox');
+            yearList.hidden = true;
+            for (let y = fp.config.maxDate.getFullYear(); y >= fp.config.minDate.getFullYear(); y--) {
+                const li = document.createElement('li');
+                li.textContent = String(y);
+                li.dataset.year = String(y);
+                li.setAttribute('role', 'option');
+                yearList.appendChild(li);
+            }
+            const setYearList = open => {
+                yearList.hidden = !open;
+                yearBtn.setAttribute('aria-expanded', String(open));
+                if (open) {
+                    // scroll only the list itself (scrollIntoView could also scroll the page)
+                    const on = yearList.querySelector('.is-active');
+                    if (on) yearList.scrollTop = on.offsetTop - (yearList.clientHeight - on.offsetHeight) / 2;
+                }
+            };
+            yearBtn.addEventListener('click', e => { e.stopPropagation(); setYearList(yearList.hidden); });
+            yearList.addEventListener('click', e => {
+                const li = e.target.closest('li');
+                if (!li) return;
+                fp.changeYear(parseInt(li.dataset.year, 10));
+                setYearList(false);
+            });
+            fp.calendarContainer.addEventListener('click', e => { if (!yearWrap.contains(e.target)) setYearList(false); });
+            yearWrap.append(yearBtn, yearList);
+            monthBox.appendChild(yearWrap);
+            fp._yearBtn = yearBtn;
+            fp._yearList = yearList;
+            fp._closeYearList = () => setYearList(false);
+            syncYear(fp);
+
+            // Footer: Clear
+            const footer = document.createElement('div');
+            footer.className = 'fp-footer';
+            const clearBtn = document.createElement('button');
+            clearBtn.type = 'button';
+            clearBtn.textContent = 'Clear';
+            clearBtn.addEventListener('click', () => { fp.clear(); agePreview.value = ''; fp.close(); });
+            footer.appendChild(clearBtn);
+            fp.calendarContainer.appendChild(footer);
+        },
+        onOpen(selected, dateStr, fp) {
+            syncYear(fp);
+            fp._closeYearList?.();
+        },
+        onMonthChange(selected, dateStr, fp) { syncYear(fp); },
+        onYearChange(selected, dateStr, fp) { syncYear(fp); },
+        onChange(selected, dateStr, fp) {
+            if (dateStr) calculateAge(dateStr); else agePreview.value = '';
+            // typing/choosing clears the red state and server message, like other fields
+            [birthdateInput, fp.altInput].forEach(el => { el.classList.remove('is-invalid'); el.removeAttribute('aria-invalid'); });
+            document.getElementById('birthdate-error')?.remove();
+            if (typeof refreshStepErrors === 'function') refreshStepErrors();
+        },
+    });
+}
 
 // ===== NUMBERS ONLY ON CONTACT =====
 document.getElementById('contact_number').addEventListener('input', function () {

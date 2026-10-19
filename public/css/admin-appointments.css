@@ -192,18 +192,36 @@
 }
 
 /* ================= STATUS TABS ================= */
+/* One neat row: tabs share the available width evenly and stay centered.
+   On narrow screens the row scrolls sideways instead of wrapping into
+   a messy second line. */
 .status-tabs {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 8px;
     margin-bottom: 16px;
+    padding-bottom: 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #d8b4fe transparent;
+}
+
+.status-tabs::-webkit-scrollbar {
+    height: 6px;
+}
+.status-tabs::-webkit-scrollbar-thumb {
+    background: #d8b4fe;
+    border-radius: 999px;
 }
 
 .status-tab {
+    flex: 1 1 auto;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
-    padding: 8px 14px;
+    padding: 8px 12px;
     border-radius: 999px;
     background: #fff;
     border: 1.5px solid #e9d5ff;
@@ -231,6 +249,8 @@
     border-radius: 999px;
     padding: 1px 8px;
     font-size: 12px;
+    min-width: 22px;
+    text-align: center;
 }
 
 .status-tab.active .tab-count {

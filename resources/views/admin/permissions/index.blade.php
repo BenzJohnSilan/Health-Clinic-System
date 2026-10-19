@@ -78,7 +78,8 @@
                             <span class="role-badge {{ strtolower($user->role) }}">{{ $user->role }}</span>
                         </td>
                         <td data-label="Permissions">
-                            <span class="perm-count">{{ $user->permissions_count }} permission{{ $user->permissions_count === 1 ? '' : 's' }}</span>
+                            @php $permCount = $assignedSlugs->count(); @endphp
+                            <span class="perm-count">{{ $permCount }} permission{{ $permCount === 1 ? '' : 's' }}</span>
                         </td>
                         <td data-label="Action">
                             <button
@@ -214,7 +215,7 @@
                         <div class="perm-module-title">{{ $module }}</div>
                         <div class="perm-module-body">
                             @foreach($permissions as $permission)
-                                <label class="perm-checkbox">
+                                <label class="perm-checkbox" data-roles="{{ implode(',', \App\Models\Permission::rolesForSlug($permission->slug)) }}">
                                     <input
                                         type="checkbox"
                                         name="permissions[]"
@@ -247,8 +248,23 @@ function openManageModal(userId, userName, userRole, assignedSlugs) {
     document.getElementById('permModalUserRole').textContent = userRole;
 
     const assigned = new Set(assignedSlugs);
-    document.querySelectorAll('#permModalForm input[type="checkbox"]').forEach(cb => {
-        cb.checked = assigned.has(cb.dataset.slug);
+    document.querySelectorAll('#permModalForm .perm-checkbox').forEach(label => {
+        const cb = label.querySelector('input[type="checkbox"]');
+        const roles = (label.dataset.roles || '').split(',');
+        const applicable = roles.includes(userRole);
+
+        // Show only the permissions that apply to this role; hidden ones
+        // are disabled so they are never submitted.
+        label.style.display = applicable ? '' : 'none';
+        cb.disabled = !applicable;
+        cb.checked = applicable && assigned.has(cb.dataset.slug);
+    });
+
+    // Hide a whole module card when none of its permissions apply.
+    document.querySelectorAll('#permModalForm .perm-module').forEach(mod => {
+        const hasVisible = Array.from(mod.querySelectorAll('.perm-checkbox'))
+            .some(l => l.style.display !== 'none');
+        mod.style.display = hasVisible ? '' : 'none';
     });
 
     // Quick presets only make sense for Staff accounts.

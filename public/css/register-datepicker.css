@@ -1,0 +1,170 @@
+/* Birthdate date picker on the registration form (flatpickr, themed to ClinicRMS).
+   Loaded after flatpickr's own stylesheet so these rules win. */
+
+.flatpickr-calendar {
+    width: 320px;
+    padding: 6px 6px 0;
+    border: 1px solid #e8e3f3;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 18px 44px rgba(106, 17, 203, .18), 0 2px 6px rgba(26, 26, 46, .06);
+    font-family: 'DM Sans', 'Segoe UI', sans-serif;
+}
+.flatpickr-calendar:before,
+.flatpickr-calendar:after { display: none; }          /* remove the little arrow */
+.flatpickr-calendar.arrowTop.open { margin-top: 6px; }
+.flatpickr-innerContainer { padding: 0 6px; }
+.flatpickr-rContainer, .flatpickr-days, .dayContainer { width: 100%; min-width: 0; max-width: none; }
+.dayContainer { padding: 0; }
+
+/* ----- header: arrows + month / year dropdowns ----- */
+.flatpickr-months { position: relative; z-index: 5; align-items: center; padding: 6px 4px 8px; }
+.flatpickr-months .flatpickr-month { height: 40px; overflow: visible; }
+.flatpickr-current-month {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 70%;
+    left: 15%;
+    height: 40px;
+    padding: 0;
+    font-size: 14px;
+}
+.flatpickr-months .flatpickr-prev-month,
+.flatpickr-months .flatpickr-next-month {
+    top: 6px;
+    height: 36px;
+    width: 36px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    color: #6a11cb;
+    fill: #6a11cb;
+    transition: background .2s;
+}
+.flatpickr-months .flatpickr-prev-month:hover,
+.flatpickr-months .flatpickr-next-month:hover { background: #f4f0fa; }
+.flatpickr-months .flatpickr-prev-month svg,
+.flatpickr-months .flatpickr-next-month svg { width: 13px; height: 13px; fill: #6a11cb; }
+.flatpickr-months .flatpickr-prev-month:hover svg,
+.flatpickr-months .flatpickr-next-month:hover svg { fill: #6a11cb; }
+.flatpickr-months .flatpickr-prev-month.flatpickr-disabled,
+.flatpickr-months .flatpickr-next-month.flatpickr-disabled { opacity: .3; }
+
+.flatpickr-current-month .flatpickr-monthDropdown-months,
+.fp-year-btn {
+    height: 36px;
+    margin: 0;
+    padding: 0 28px 0 12px;
+    border: 1.5px solid #e8e3f3;
+    border-radius: 10px;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6' fill='none' stroke='%236a11cb' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center;
+    color: #1a1a2e;
+    font: 600 14px 'DM Sans', 'Segoe UI', sans-serif;
+    text-align: left;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+}
+.flatpickr-current-month .flatpickr-monthDropdown-months:hover,
+.fp-year-btn:hover { border-color: #a044ff; }
+.flatpickr-current-month .flatpickr-monthDropdown-months:focus,
+.fp-year-btn:focus { border-color: #6a11cb; box-shadow: 0 0 0 4px rgba(106, 17, 203, .1); }
+.flatpickr-current-month .flatpickr-monthDropdown-months .flatpickr-monthDropdown-month { background: #fff; color: #1a1a2e; }
+
+/* custom year list: opens inside the calendar */
+.fp-year { position: relative; }
+.fp-year-btn { min-width: 84px; }
+.fp-year-list {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 20;
+    width: 100px;
+    max-height: 210px;
+    margin: 0;
+    padding: 6px;
+    list-style: none;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #e8e3f3;
+    border-radius: 12px;
+    box-shadow: 0 14px 30px rgba(106, 17, 203, .18);
+}
+.fp-year-list[hidden] { display: none; }
+.fp-year-list li {
+    padding: 8px 10px;
+    border-radius: 8px;
+    font: 500 14px 'DM Sans', 'Segoe UI', sans-serif;
+    color: #1a1a2e;
+    text-align: center;
+    cursor: pointer;
+}
+.fp-year-list li:hover { background: #f3eafd; color: #6a11cb; }
+.fp-year-list li.is-active { background: linear-gradient(135deg, #6a11cb, #a044ff); color: #fff; font-weight: 700; }
+
+/* ----- weekday row ----- */
+.flatpickr-weekdays { height: 34px; border-top: 1px solid #f0ecf8; border-bottom: 1px solid #f0ecf8; margin-bottom: 6px; }
+span.flatpickr-weekday { color: #8a8aa0; font-size: 12px; font-weight: 500; }
+
+/* ----- days ----- */
+.flatpickr-day {
+    max-width: none;
+    width: 14.2857%;
+    height: 34px;
+    line-height: 34px;
+    margin: 1px 0;
+    border: 0;
+    border-radius: 12px;
+    color: #1a1a2e;
+    font-size: 14px;
+    font-weight: 500;
+}
+.flatpickr-day:hover,
+.flatpickr-day:focus { background: #f3eafd; color: #6a11cb; border: 0; }
+.flatpickr-day.today { background: transparent; color: #6a11cb; font-weight: 700; box-shadow: inset 0 0 0 1.5px #a044ff; border: 0; }
+.flatpickr-day.today:hover { background: #f3eafd; color: #6a11cb; }
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover,
+.flatpickr-day.selected:focus {
+    background: linear-gradient(135deg, #6a11cb, #a044ff);
+    color: #fff;
+    border: 0;
+    box-shadow: 0 6px 14px rgba(106, 17, 203, .3);
+}
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay { color: #c4c0d2; }
+.flatpickr-day.flatpickr-disabled,
+.flatpickr-day.flatpickr-disabled:hover { color: #d4d0e0; background: transparent; cursor: not-allowed; }
+
+/* ----- footer (Clear) ----- */
+.fp-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 6px -6px 0;
+    padding: 8px 16px;
+    border-top: 1px solid #f0ecf8;
+}
+.fp-footer button {
+    border: 0;
+    background: none;
+    padding: 4px 2px;
+    font: 600 13px 'DM Sans', 'Segoe UI', sans-serif;
+    color: #6a11cb;
+    cursor: pointer;
+}
+.fp-footer button:hover { color: #a044ff; }
+.fp-footer button:focus-visible { outline: 2px solid #a044ff; outline-offset: 2px; border-radius: 6px; }
+
+/* The visible (formatted) birthdate field keeps the form's input look */
+.input-wrap input.birthdate-display { cursor: pointer; background: var(--bg); }
+
+@media (max-width: 400px) {
+    .flatpickr-calendar { width: min(320px, calc(100vw - 24px)); }
+}

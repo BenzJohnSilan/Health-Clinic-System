@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Archivable;
+use App\Services\Archive\ArchiveDependencies;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -9,7 +11,13 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, Archivable;
+
+    /** Key used in archive_entries for this model. */
+    public static function archiveType(): string
+    {
+        return 'user';
+    }
 
     protected $fillable = [
         // PROFILE
@@ -99,19 +107,29 @@ class User extends Authenticatable
     }
 
     // =========================================================
-    //  CASCADE DELETE  –  tanggalin lahat ng related records
-    //  bago matanggal ang user
+    //  DELETE GUARD  –  a user with clinical / billing history
+    //  is NEVER deleted.
+    //
+    //  This used to delete every appointment of the user (and, through
+    //  database cascades, their medical records and prescriptions).
+    //  Now the delete is REFUSED instead. To hide an account use
+    //  Admin > Archive (the account is deactivated, nothing is removed).
+    //  Rejecting a brand-new registration still works because such an
+    //  account has no appointments, records or invoices.
     // =========================================================
     protected static function boot()
     {
         parent::boot();
 
         static::deleting(function (User $user) {
-            // Appointments (bilang patient)
-            $user->appointments()->delete();
+            $blockers = ArchiveDependencies::blockers('user', (int) $user->id, includeAudit: false);
 
-            // Appointments (bilang doctor)
-            $user->doctorAppointments()->delete();
+            if ($blockers) {
+                throw new \LogicException(
+                    'This account cannot be deleted because it is linked to: ' . implode(', ', $blockers)
+                    . '. Archive the account instead (Admin > Archive).'
+                );
+            }
         });
 
         // Keep the cached `profile_completed` flag in sync automatically

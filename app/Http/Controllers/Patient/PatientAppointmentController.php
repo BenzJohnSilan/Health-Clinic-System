@@ -9,7 +9,7 @@ use App\Models\User;
 use App\Models\UserLog;
 use App\Models\DoctorWeeklySchedule;
 use App\Models\DoctorScheduleException;
-use App\Models\LaboratoryRequest;
+use App\Services\ClinicSchedule;
 use App\Services\DoctorAvailabilityService;
 use Carbon\Carbon;
 
@@ -83,36 +83,7 @@ class PatientAppointmentController extends Controller
         // server-side in store() below regardless of what the frontend shows.
         $profileComplete = $patient->computeProfileComplete();
 
-        // ✅ FOLLOW-UP CONSULTATION (Laboratory Result follow-up).
-        // Every Reviewed laboratory request of THIS patient where the
-        // Doctor recommended a follow-up that hasn't been booked yet.
-        // Used to (a) offer "Book Follow-up / Continue as Regular" when
-        // the patient clicks the normal Book Appointment button — a new
-        // appointment is NEVER assumed to be a follow-up — and (b) open
-        // the booking form directly in follow-up mode from the
-        // Laboratory Results page (?follow_up={id}).
-        $pendingFollowUps = LaboratoryRequest::with(['doctor', 'tests'])
-            ->where('patient_id', $patient->id)
-            ->awaitingFollowUpBooking()
-            ->orderByDesc('reviewed_at')
-            ->get();
-
-        // Follow-up mode is selected either from the link (?follow_up=)
-        // or replayed after a failed submit (old input), and only ever
-        // for one of this patient's own eligible requests.
-        $followUpId = $request->old('follow_up_laboratory_request_id') ?? $request->query('follow_up');
-        $followUpRequest = $followUpId ? $pendingFollowUps->firstWhere('id', (int) $followUpId) : null;
-
-        // Shown as a plain page notice (not session 'error', which would
-        // auto-open the booking modal).
-        $followUpNotice = ($request->query('follow_up') && !$followUpRequest)
-            ? 'This laboratory result has no follow-up consultation waiting to be booked (it may already be booked).'
-            : null;
-
         return view('patient.appointments', [
-            'pendingFollowUps'     => $pendingFollowUps,
-            'followUpRequest'      => $followUpRequest,
-            'followUpNotice'       => $followUpNotice,
             'doctors'              => $doctors,
             'upcomingAppointments' => $approvedAppointments,
             'appointments'         => $allAppointments,
@@ -153,32 +124,14 @@ class PatientAppointmentController extends Controller
             'appointment_time' => 'required',
             'doctor_id'        => 'required|exists:users,id',
             'reason'           => 'required|string|max:255',
-            'follow_up_laboratory_request_id' => 'nullable|integer',
         ]);
 
-        // ✅ FOLLOW-UP CONSULTATION — only when the patient explicitly
-        // chose "Book Follow-up Consultation". The laboratory request is
-        // re-checked here from the database (ownership, Reviewed,
-        // follow-up recommended, not already booked) — never trusted
-        // from the form. Without this field the appointment is Regular.
-        $followUpLabRequest = null;
-
-        if ($request->filled('follow_up_laboratory_request_id')) {
-            $followUpLabRequest = LaboratoryRequest::where('patient_id', $patient->id)
-                ->awaitingFollowUpBooking()
-                ->find((int) $request->follow_up_laboratory_request_id);
-
-            if (!$followUpLabRequest) {
-                return redirect()->route('patient.appointments.index')
-                    ->with('error', 'This laboratory result has no follow-up consultation waiting to be booked.');
-            }
-
-            // A follow-up is with the Doctor who requested/reviewed the
-            // laboratory result (the only Doctor authorized on it).
-            if ($followUpLabRequest->doctor_id && (int) $request->doctor_id !== (int) $followUpLabRequest->doctor_id) {
-                return redirect()->back()->withInput()
-                    ->with('error', 'A follow-up consultation must be booked with the doctor who reviewed your laboratory result.');
-            }
+        // The time must be the start of a slot in the clinic's configured
+        // schedule (Admin > System Settings): inside operating hours and
+        // outside the lunch break. Checked before the time is parsed.
+        if (!ClinicSchedule::isBookableTime($request->appointment_time)) {
+            return redirect()->back()->withInput()
+                ->with('error', ClinicSchedule::INVALID_TIME_MESSAGE);
         }
 
         $appointmentDateTime = Carbon::parse(
@@ -188,6 +141,11 @@ class PatientAppointmentController extends Controller
         if ($appointmentDateTime->isPast()) {
             return redirect()->back()->withInput()
                 ->with('error', 'You cannot book an appointment in the past.');
+        }
+
+        // Patient booking window (minimum notice / maximum days ahead).
+        if ($windowError = ClinicSchedule::patientBookingError($appointmentDateTime)) {
+            return redirect()->back()->withInput()->with('error', $windowError);
         }
 
         // ✅ DOCTOR AVAILABILITY CHECK — the doctor's weekly schedule and
@@ -228,11 +186,9 @@ class PatientAppointmentController extends Controller
                 'appointment_date' => $request->appointment_date,
                 'appointment_time' => $request->appointment_time,
                 'reason'           => $request->reason,
-                // Patient bookings ALWAYS start Pending (Staff approval),
-                // follow-up or not.
+                // Patient bookings ALWAYS start Pending (Staff approval).
                 'status'           => 'Pending',
-                'appointment_type' => $followUpLabRequest ? Appointment::TYPE_FOLLOW_UP : Appointment::TYPE_REGULAR,
-                'follow_up_laboratory_request_id' => $followUpLabRequest?->id,
+                'appointment_type' => Appointment::TYPE_REGULAR,
             ]);
 
             // ACTIVITY LOG
@@ -240,7 +196,7 @@ class PatientAppointmentController extends Controller
                 'user_id' => auth()->id(),
                 'action'  => 'Created Appointment',
                 'module'  => 'Appointments',
-                'details' => ($followUpLabRequest ? 'Booked a follow-up consultation (laboratory result ' . $followUpLabRequest->reference_no . ') on ' : 'Booked an appointment on ') .
+                'details' => 'Booked an appointment on ' .
                              Carbon::parse($request->appointment_date)->format('F d, Y') .
                              ' at ' . Carbon::createFromFormat('H:i', $request->appointment_time)->format('h:i A') .
                              ' (Ref. No. ' . ($appointment->reference_no ?? 'N/A') . ')',
@@ -252,9 +208,7 @@ class PatientAppointmentController extends Controller
         }
 
         return redirect()->route('patient.appointments.index')
-            ->with('success', $followUpLabRequest
-                ? 'Follow-up consultation booked! It is now waiting for clinic approval.'
-                : 'Appointment added successfully!');
+            ->with('success', 'Appointment added successfully!');
     }
 
     /**
@@ -266,7 +220,7 @@ class PatientAppointmentController extends Controller
      */
     public function show($id)
     {
-        $appointment = Appointment::with(['doctor', 'followUpLaboratoryRequest'])
+        $appointment = Appointment::with(['doctor'])
             ->where('patient_id', auth()->id())
             ->findOrFail($id);
 

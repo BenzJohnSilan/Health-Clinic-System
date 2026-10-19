@@ -91,7 +91,7 @@
                         ? \Carbon\Carbon::parse($appointment->appointment_time)
                         : $date->copy()->startOfDay(); // walk-in placeholder, never displayed
                     $isToday       = $date->isToday();
-                    $appointmentEnd = $time->copy()->addMinutes(30);
+                    $appointmentEnd = $time->copy()->addMinutes(\App\Services\ClinicSchedule::slotMinutes());
 
                     $appointmentEndDateTime = \Carbon\Carbon::parse(
                         $date->format('Y-m-d') . ' ' . $appointmentEnd->format('H:i:s')
@@ -137,16 +137,6 @@
                         @else
                             N/A
                         @endif
-                        <div style="margin-top:4px;">
-                            @if($appointment->isFollowUp())
-                                <span class="appt-type-followup"
-                                      title="Follow-up for laboratory result {{ $appointment->followUpLaboratoryRequest->reference_no ?? '' }}">
-                                    🔵 Follow-up
-                                </span>
-                            @else
-                                <span class="appt-type-regular">Regular Consultation</span>
-                            @endif
-                        </div>
                     </td>
 
                     <!-- Schedule -->
@@ -162,7 +152,9 @@
                     </td>
 
                     <!-- Reason -->
-                    <td>{{ $appointment->reason ?? '—' }}</td>
+                    <td>
+                        <span class="reason-preview" title="{{ $appointment->reason }}">{{ $appointment->reason ?? '—' }}</span>
+                    </td>
 
                     <!-- Status -->
                     <td>

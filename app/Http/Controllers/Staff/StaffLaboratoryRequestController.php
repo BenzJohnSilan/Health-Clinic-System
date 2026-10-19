@@ -33,7 +33,7 @@ class StaffLaboratoryRequestController extends Controller
             $statusFilter = 'All';
         }
 
-        $query = LaboratoryRequest::with(['patient', 'walkinPatient', 'tests', 'doctor', 'results', 'corrections', 'followUpAppointments']);
+        $query = LaboratoryRequest::with(['patient', 'walkinPatient', 'tests', 'doctor', 'results', 'corrections']);
 
         if ($statusFilter !== 'All') {
             $query->where('status', $statusFilter);
@@ -58,13 +58,7 @@ class StaffLaboratoryRequestController extends Controller
             ->paginate(10)
             ->appends($request->query());
 
-        // "Schedule Follow-up" hands off to the EXISTING Staff scheduling
-        // flow (Patients → Schedule Appointment), so it needs both of
-        // that flow's permissions.
-        $canScheduleFollowUp = $request->user()->hasPermission('view_patients')
-            && $request->user()->hasPermission('schedule_patient_appointment');
-
-        return view('staff.laboratory-requests.index', compact('laboratoryRequests', 'search', 'statusFilter', 'canScheduleFollowUp'));
+        return view('staff.laboratory-requests.index', compact('laboratoryRequests', 'search', 'statusFilter'));
     }
 
     /**

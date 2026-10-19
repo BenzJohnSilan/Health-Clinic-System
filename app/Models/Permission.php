@@ -86,6 +86,74 @@ class Permission extends Model
     }
 
     /**
+     * Permission slugs that actually do something for each manageable
+     * role. Manage Permissions only shows (and update() only saves) the
+     * slugs listed here for the account's role, so Admin never sees a
+     * checkbox that has no effect.
+     *
+     * Doctor: Medicine Inventory + the Billing actions the Doctor panel
+     * enforces (create/edit invoice, record payment, view billing/payment
+     * history). Everything else in the Doctor panel (appointments,
+     * patients, medical records, prescriptions, certificates, laboratory)
+     * is core Doctor workflow gated only by role, never by a permission.
+     *
+     * Staff: Appointments, Patients, Medicine Inventory, Billing counter
+     * actions, Dispense Prescription, Medical Certificate release and
+     * Laboratory. Create/Edit Invoice are Doctor-only (Staff has no such
+     * route).
+     *
+     * Slugs in catalog() that appear in neither list (view_medical_records,
+     * add/edit_medical_record, view/create/edit_prescription,
+     * create_medical_certificate) are not wired to any route or view yet,
+     * so they are hidden from both roles until a feature uses them.
+     */
+    private const MEDICINE_SLUGS = [
+        'view_medicine_inventory', 'add_medicine', 'edit_medicine', 'delete_medicine',
+        'stock_in', 'stock_out', 'adjust_stock', 'view_stock_history', 'view_inventory_reports',
+    ];
+
+    public static function slugsForRole(string $role): array
+    {
+        return match ($role) {
+            'Doctor' => array_merge(self::MEDICINE_SLUGS, [
+                'view_billing',
+                'create_invoice',
+                'edit_invoice',
+                'record_payment',
+                'view_payment_history',
+            ]),
+            'Staff' => array_merge([
+                // Appointments
+                'view_appointments', 'view_appointment_details', 'approve_appointment',
+                'reject_appointment', 'cancel_appointment', 'reschedule_appointment',
+                'mark_no_show_appointment', 'check_in_appointment', 'record_vital_signs',
+                // Patients
+                'view_patients', 'add_walk_in_patient', 'edit_patient',
+                'view_patient_appointments', 'schedule_patient_appointment',
+            ], self::MEDICINE_SLUGS, [
+                // Billing & Payments (counter)
+                'view_billing', 'record_payment', 'view_payment_history', 'view_billing_reports',
+                // Prescriptions
+                'dispense_prescription',
+                // Medical Certificates
+                'view_medical_certificates', 'release_medical_certificate',
+                // Laboratory
+                'view_laboratory_requests', 'upload_laboratory_result',
+            ]),
+            default => [],
+        };
+    }
+
+    /** Which manageable roles a given permission slug applies to. */
+    public static function rolesForSlug(string $slug): array
+    {
+        return array_values(array_filter(
+            ['Doctor', 'Staff'],
+            fn (string $role) => in_array($slug, self::slugsForRole($role), true)
+        ));
+    }
+
+    /**
      * Default permission slugs granted automatically to a brand-new
      * Staff account. Admin can change these afterwards from
      * Manage Permissions. Only the currently-implemented Medicine

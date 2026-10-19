@@ -373,9 +373,10 @@ class WebsiteManagementTest extends TestCase
         $this->post(route('admin.website.items.move', [LandingItem::find($firstId), 'up']))->assertRedirect();
         $this->assertSame($firstId, LandingItem::section('faqs')->value('id'));
 
-        // delete
+        // "delete" now ARCHIVES: gone from the site, row kept (Admin > Archive can restore it)
         $this->delete(route('admin.website.items.destroy', $faq))->assertRedirect();
-        $this->assertDatabaseMissing('landing_items', ['id' => $faq->id]);
+        $this->assertDatabaseHas('landing_items', ['id' => $faq->id]);
+        $this->assertDatabaseHas('archive_entries', ['archivable_type' => 'landing_item', 'archivable_id' => $faq->id]);
         $this->get('/')->assertDontSee('Do you accept HMO cards?');
     }
 
@@ -443,7 +444,12 @@ class WebsiteManagementTest extends TestCase
         Storage::disk('public')->assertExists($path);
         $this->get('/')->assertSee('service-photo', false);
 
+        // Archiving keeps the picture; only a permanent delete from Admin > Archive removes it.
         $this->delete(route('admin.website.items.destroy', $card));
+        Storage::disk('public')->assertExists($path);
+
+        $entry = \App\Models\ArchiveEntry::where('archivable_type', 'landing_item')->where('archivable_id', $card->id)->firstOrFail();
+        $this->delete(route('admin.archive.destroy', $entry), ['confirmation' => 'DELETE']);
         Storage::disk('public')->assertMissing($path);
     }
 

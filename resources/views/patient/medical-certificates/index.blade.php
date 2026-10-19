@@ -9,7 +9,7 @@
 <div class="container">
 
     <!-- ================= HEADER ================= -->
-    <div class="page-header">
+    <div class="page-header page-header--list">
         <h2>Medical Certificates</h2>
     </div>
 
@@ -58,6 +58,43 @@
                 @endforelse
             </tbody>
         </table>
+    </div>
+
+    <!-- ================= CARDS (Mobile) =================
+         Phones (<= 640px) show these cards instead of the table. -->
+    <div class="cert-cards">
+        @forelse($certificates as $certificate)
+            <div class="cert-card">
+                <div class="cert-card-top">
+                    <span class="cert-no">{{ $certificate->certificate_number }}</span>
+                </div>
+
+                <div class="cert-card-row">
+                    <span class="cert-card-label">Appointment</span>
+                    <span class="cert-card-value">
+                        {{ optional($certificate->appointment)->appointment_date
+                            ? \Carbon\Carbon::parse($certificate->appointment->appointment_date)->format('M d, Y')
+                            : '—' }}
+                    </span>
+                </div>
+
+                <div class="cert-card-row">
+                    <span class="cert-card-label">Purpose</span>
+                    <span class="cert-card-value">{{ $certificate->displayPurpose() }}</span>
+                </div>
+
+                <div class="cert-card-row">
+                    <span class="cert-card-label">Released On</span>
+                    <span class="cert-card-value">{{ $certificate->released_at?->format('M d, Y') ?? '—' }}</span>
+                </div>
+
+                <div class="cert-card-actions">
+                    <a href="{{ route('patient.medical-certificates.show', $certificate->id) }}" class="btn-view">View</a>
+                </div>
+            </div>
+        @empty
+            <div class="cert-empty">No released medical certificates yet.</div>
+        @endforelse
     </div>
 
     <!-- ================= PAGINATION ================= -->

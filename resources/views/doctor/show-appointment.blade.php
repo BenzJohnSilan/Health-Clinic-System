@@ -51,43 +51,6 @@
         </div>
     </div>
 
-    {{-- FOLLOW-UP CONSULTATION — the laboratory result that caused this
-         appointment, one click away. The normal consultation steps below
-         are unchanged. --}}
-    @if($appointment->isFollowUp())
-        @php $fuLab = $appointment->followUpLaboratoryRequest; @endphp
-        <div class="sa-followup">
-            <div class="sa-followup__title"><i class='bx bx-link-alt'></i> Follow-up Consultation</div>
-            @if($fuLab)
-                <div class="sa-followup__grid">
-                    <div>
-                        <span class="sa-followup__label">Related Laboratory Result</span>
-                        <span class="sa-followup__value">{{ $fuLab->reference_no }}</span>
-                    </div>
-                    <div>
-                        <span class="sa-followup__label">Tests</span>
-                        <span class="sa-followup__value">{{ $fuLab->testsDisplay() }}</span>
-                    </div>
-                    <div>
-                        <span class="sa-followup__label">Reviewed</span>
-                        <span class="sa-followup__value">{{ $fuLab->reviewed_at?->format('M d, Y') ?? '—' }}</span>
-                    </div>
-                </div>
-                @if($fuLab->review_notes)
-                    <p class="sa-followup__text"><strong>Interpretation / Remarks:</strong> {{ $fuLab->review_notes }}</p>
-                @endif
-                @if($fuLab->follow_up_instructions)
-                    <p class="sa-followup__text"><strong>Follow-up Instructions:</strong> {{ $fuLab->follow_up_instructions }}</p>
-                @endif
-                <a href="{{ route('doctor.laboratory-requests.show', $fuLab->id) }}" target="_blank" class="sa-btn sa-btn--outline">
-                    View Laboratory Result
-                </a>
-            @else
-                <p class="sa-followup__text">The related laboratory request is no longer available.</p>
-            @endif
-        </div>
-    @endif
-
     {{-- ALERTS --}}
     @if(session('success'))
         <div class="sa-alert sa-alert--success">
@@ -920,13 +883,17 @@
             @endif
         </div>
 
-        {{-- 5. REVIEW SCHEDULE --}}
+        {{-- 5. FOLLOW-UP SCHEDULE (creates the Follow-up appointment) --}}
+        @php
+            $fuAppt = $review?->followUpAppointment;
+            $fuTime = $fuAppt && $fuAppt->appointment_time ? substr($fuAppt->appointment_time, 0, 5) : null;
+        @endphp
         <div class="sa-card">
             <div class="sa-card__header">
                 <span class="sa-card__icon"><i class='bx bx-calendar-check'></i></span>
-                <h2 class="sa-card__title">Review Schedule</h2>
+                <h2 class="sa-card__title">Follow-up Schedule</h2>
                 @if($appointment->status === 'In Progress')
-                    <span class="sa-complete-note">Optional — does not complete the consultation</span>
+                    <span class="sa-complete-note">Optional — creates a Follow-up appointment, does not complete the consultation</span>
                 @endif
             </div>
 
@@ -936,20 +903,35 @@
                     <input type="hidden" name="appointment_id" value="{{ $appointment->id }}">
                     <div class="sa-form-row">
                         <div class="sa-form-group">
-                            <label class="sa-label">Next Review On</label>
+                            <label class="sa-label">Follow-up Date</label>
                             <input type="date" name="next_review_date" class="sa-input"
-                                value="{{ $review->next_review_date ?? '' }}">
+                                min="{{ date('Y-m-d') }}"
+                                value="{{ old('next_review_date', $review->next_review_date ?? '') }}">
                         </div>
+                        <div class="sa-form-group">
+                            <label class="sa-label">Follow-up Time</label>
+                            <select name="next_review_time" class="sa-input">
+                                <option value="">-- Select Time Slot --</option>
+                                @include('partials.time-slot-options', ['selected' => old('next_review_time', $fuTime)])
+                            </select>
+                        </div>
+                    </div>
+                    <div class="sa-form-row">
                         <div class="sa-form-group">
                             <label class="sa-label">Message / Notes</label>
                             <textarea name="message" class="sa-textarea" rows="3"
-                                placeholder="Instructions or notes for the patient...">{{ $review->message ?? '' }}</textarea>
+                                placeholder="Instructions or notes for the patient...">{{ old('message', $review->message ?? '') }}</textarea>
                         </div>
                     </div>
+                    @if($fuAppt)
+                        <p class="sa-complete-note" style="margin-bottom:12px;">
+                            Follow-up appointment: {{ $fuAppt->reference_no }} · {{ $fuAppt->status }}
+                        </p>
+                    @endif
                     <div class="sa-form-actions">
                         <button type="submit" class="sa-btn sa-btn--primary">
                             <i class='bx bx-check'></i>
-                            Save Review
+                            Save Follow-up
                         </button>
                     </div>
                 </form>
@@ -957,8 +939,16 @@
                 <dl class="sa-info-list">
                     @if($review->next_review_date)
                     <div class="sa-info-row">
-                        <dt>Next Review</dt>
-                        <dd>{{ \Carbon\Carbon::parse($review->next_review_date)->format('F d, Y') }}</dd>
+                        <dt>Follow-up On</dt>
+                        <dd>
+                            {{ \Carbon\Carbon::parse($review->next_review_date)->format('F d, Y') }}@if($fuAppt && $fuAppt->appointment_time) at {{ $fuAppt->timeLabel('h:i A') }}@endif
+                        </dd>
+                    </div>
+                    @endif
+                    @if($fuAppt)
+                    <div class="sa-info-row">
+                        <dt>Follow-up Appointment</dt>
+                        <dd>{{ $fuAppt->reference_no }} · {{ $fuAppt->status }}</dd>
                     </div>
                     @endif
                     @if($review->message)
@@ -969,7 +959,7 @@
                     @endif
                 </dl>
             @else
-                <p class="sa-empty">No review notes recorded.</p>
+                <p class="sa-empty">No follow-up scheduled.</p>
             @endif
         </div>
 

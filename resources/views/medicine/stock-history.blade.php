@@ -91,38 +91,41 @@
         </table>
     </div>
 
-    @if($movements->hasPages())
-        {{-- Hand-rolled to match the app's existing page-btn styling
-             instead of Laravel's default (Tailwind-based) pagination
-             view, since Tailwind isn't used anywhere in this project. --}}
-        <div class="pagination-wrapper">
-            <div class="pagination-info">
+    {{-- Always visible (like the Medicine Inventory page), even when there is
+         only one page. Hand-rolled to match the app's existing page-btn
+         styling instead of Laravel's default (Tailwind-based) pagination
+         view, since Tailwind isn't used anywhere in this project. --}}
+    <div class="pagination-wrapper">
+        <div class="pagination-info">
+            @if($movements->total() > 0)
                 Showing <strong>{{ $movements->firstItem() }}–{{ $movements->lastItem() }}</strong> of <strong>{{ $movements->total() }}</strong> result{{ $movements->total() !== 1 ? 's' : '' }}
-            </div>
-            <nav class="pagination-nav" aria-label="Pagination">
-                @if($movements->onFirstPage())
-                    <span class="page-btn disabled"><i class="fa-solid fa-chevron-left"></i></span>
-                @else
-                    <a href="{{ $movements->previousPageUrl() }}" class="page-btn"><i class="fa-solid fa-chevron-left"></i></a>
-                @endif
-
-                @php $lastPage = $movements->lastPage(); $current = $movements->currentPage(); @endphp
-                @for($page = 1; $page <= $lastPage; $page++)
-                    @if($page == 1 || $page == $lastPage || abs($page - $current) <= 2)
-                        <a href="{{ $movements->url($page) }}" class="page-btn {{ $page == $current ? 'active' : '' }}">{{ $page }}</a>
-                    @elseif($page == $current - 3 || $page == $current + 3)
-                        <span class="page-ellipsis">…</span>
-                    @endif
-                @endfor
-
-                @if($movements->hasMorePages())
-                    <a href="{{ $movements->nextPageUrl() }}" class="page-btn"><i class="fa-solid fa-chevron-right"></i></a>
-                @else
-                    <span class="page-btn disabled"><i class="fa-solid fa-chevron-right"></i></span>
-                @endif
-            </nav>
+            @else
+                No results
+            @endif
         </div>
-    @endif
+        <nav class="pagination-nav" aria-label="Pagination">
+            @if($movements->onFirstPage())
+                <span class="page-btn disabled"><i class="fa-solid fa-chevron-left"></i></span>
+            @else
+                <a href="{{ $movements->previousPageUrl() }}" class="page-btn"><i class="fa-solid fa-chevron-left"></i></a>
+            @endif
+
+            @php $lastPage = $movements->lastPage(); $current = $movements->currentPage(); @endphp
+            @for($page = 1; $page <= $lastPage; $page++)
+                @if($page == 1 || $page == $lastPage || abs($page - $current) <= 2)
+                    <a href="{{ $movements->url($page) }}" class="page-btn {{ $page == $current ? 'active' : '' }}">{{ $page }}</a>
+                @elseif($page == $current - 3 || $page == $current + 3)
+                    <span class="page-ellipsis">…</span>
+                @endif
+            @endfor
+
+            @if($movements->hasMorePages())
+                <a href="{{ $movements->nextPageUrl() }}" class="page-btn"><i class="fa-solid fa-chevron-right"></i></a>
+            @else
+                <span class="page-btn disabled"><i class="fa-solid fa-chevron-right"></i></span>
+            @endif
+        </nav>
+    </div>
 
 </div>
 @endsection

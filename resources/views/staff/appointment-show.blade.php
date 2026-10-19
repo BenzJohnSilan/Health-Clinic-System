@@ -160,8 +160,8 @@
 
     {{-- ================= VITAL SIGNS ================= --}}
     @php
-        $vitalsEditable = $canRecordVitals
-            && in_array($appointment->status, ['Approved', 'Rescheduled', 'Checked In'], true);
+        // Vital signs can only be entered once the patient has been Checked In.
+        $vitalsEditable = $canRecordVitals && $appointment->status === 'Checked In';
         $vitalsVisible  = $vitalsEditable
             || (!in_array($appointment->status, ['Pending', 'Cancelled', 'Rejected', 'No Show'], true));
 
@@ -183,9 +183,9 @@
                     <h2>Vital Signs</h2>
                     <p>
                         @if($vitalsEditable)
-                            Record the patient's vital signs before check-in. The Doctor will see them read-only.
-                        @elseif($appointment->status === 'Waiting')
-                            Check in this walk-in patient first, then record the vital signs here.
+                            The patient is checked in. Record the vital signs below. The Doctor will see them read-only.
+                        @elseif(in_array($appointment->status, ['Waiting', 'Approved', 'Rescheduled'], true))
+                            Vital signs can only be recorded after the patient is checked in.
                         @else
                             Vital signs recorded for this appointment.
                         @endif
@@ -298,35 +298,29 @@
                             Save Vital Signs
                         </button>
 
-                        @if($canCheckInNow)
-                            <button type="submit"
-                                    form="vitals-checkin-form"
-                                    class="vitals-btn vitals-btn--secondary"
-                                    data-vitals-saved="{{ $vitalsRecorded ? '1' : '0' }}">
-                                <i class="fa-solid fa-clipboard-check"></i>
-                                Check In Patient
-                            </button>
-                        @endif
                     </div>
                 </div>
             </form>
 
-            {{-- Separate form (forms cannot nest) — posts to the EXISTING check-in route. --}}
-            @if($canCheckInNow)
-                <form action="{{ route('staff.appointments.checkIn', $appointment->id) }}"
-                      method="POST" id="vitals-checkin-form">
-                    @csrf
-                </form>
-            @endif
         @else
-            @if($appointment->status === 'Waiting' && $canCheckInNow)
-                <form action="{{ route('staff.appointments.checkIn', $appointment->id) }}" method="POST" style="margin:0 0 14px;">
-                    @csrf
-                    <button type="submit" class="vitals-btn vitals-btn--secondary">
-                        <i class="fa-solid fa-clipboard-check"></i>
-                        Check In Patient
-                    </button>
-                </form>
+            {{-- Locked until the patient is Checked In (Approved / Rescheduled / Waiting). --}}
+            @if(in_array($appointment->status, ['Waiting', 'Approved', 'Rescheduled'], true))
+                <div class="vitals-locked" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between;margin:0 0 16px;padding:12px 16px;border-radius:12px;background:#f6f3fb;border:1px solid #e8e3f3;color:#5b5b6b;font-size:13.5px;">
+                    <span style="display:inline-flex;align-items:center;gap:8px;">
+                        <i class="fa-solid fa-lock" style="color:#6a11cb;"></i>
+                        Vital signs are locked. Check in the patient first to enable recording.
+                    </span>
+                    @if($canCheckInNow)
+                        <form action="{{ route('staff.appointments.checkIn', $appointment->id) }}" method="POST" style="margin:0;">
+                            @csrf
+                            <button type="submit" class="vitals-btn vitals-btn--secondary"
+                                    onclick="return confirm('Check in this patient? This confirms they have arrived at the clinic.');">
+                                <i class="fa-solid fa-clipboard-check"></i>
+                                Check In Patient
+                            </button>
+                        </form>
+                    @endif
+                </div>
             @endif
             @php $vitalRows = $medicalRecord ? $medicalRecord->vitalsForDisplay() : (new \App\Models\MedicalRecord())->vitalsForDisplay(); @endphp
             <div class="vitals-grid vitals-grid--readonly">
@@ -520,25 +514,6 @@
         sync(field);
     });
 
-    var dirty = false;
-    form.addEventListener('input',  function () { dirty = true; });
-    form.addEventListener('change', function () { dirty = true; });
-
-    // Encourage (never block) recording vitals before Check In.
-    var checkInBtn = document.querySelector('[data-vitals-saved]');
-    if (checkInBtn) {
-        checkInBtn.addEventListener('click', function (e) {
-            var msg;
-            if (dirty) {
-                msg = 'You have unsaved changes to the vital signs. Click Cancel and press "Save Vital Signs" first, or OK to check in without saving them.';
-            } else if (checkInBtn.getAttribute('data-vitals-saved') === '1') {
-                msg = 'Check in this patient? This confirms they have arrived at the clinic.';
-            } else {
-                msg = 'Vital signs have not been saved for this appointment yet.\n\nCheck in anyway? (You can still record them afterwards.)';
-            }
-            if (!confirm(msg)) e.preventDefault();
-        });
-    }
 })();
 </script>
 

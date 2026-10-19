@@ -3,6 +3,7 @@
 @section('head')
 <link rel="stylesheet" href="{{ asset('css/doctor-medicines.css') }}">
 <link rel="stylesheet" href="{{ asset('css/medicine-inventory-actions.css') }}">
+<link rel="stylesheet" href="{{ asset('css/medicine-filter.css') }}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 @endsection
 
@@ -60,32 +61,40 @@
     @endif
 
     <!-- ================= SEARCH & FILTER ================= -->
-    <div class="search-filter-bar">
-        <input
-            type="text"
-            id="searchInput"
-            placeholder="🔍  Search medicine name or brand..."
-            oninput="applyFilters()"
-        >
-        <div class="filter-selects">
-            <select id="filterCategory" onchange="applyFilters()">
-                <option value="">All Categories</option>
-                <option value="Antibiotic">Antibiotic</option>
-                <option value="Painkiller">Painkiller</option>
-                <option value="Vitamin">Vitamin</option>
-                <option value="Antiviral">Antiviral</option>
-                <option value="Antihistamine">Antihistamine</option>
-                <option value="Others">Others</option>
-            </select>
-            <select id="filterStatus" onchange="applyFilters()">
-                <option value="">All Status</option>
-                <option value="Available">Available</option>
-                <option value="Low Stock">Low Stock</option>
-                <option value="Out of Stock">Out of Stock</option>
-                <option value="Expired">Expired</option>
-            </select>
-            <button class="btn-clear" onclick="clearFilters()">✕ Clear</button>
+    <div class="med-filter-bar" role="search">
+        <div class="med-filter-search">
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="Search medicine name or brand..."
+                autocomplete="off"
+                aria-label="Search medicine name or brand"
+                oninput="applyFilters()"
+            >
         </div>
+
+        <select id="filterCategory" class="med-filter-select" aria-label="Filter by category" onchange="applyFilters()">
+            <option value="">All Categories</option>
+            <option value="Antibiotic">Antibiotic</option>
+            <option value="Painkiller">Painkiller</option>
+            <option value="Vitamin">Vitamin</option>
+            <option value="Antiviral">Antiviral</option>
+            <option value="Antihistamine">Antihistamine</option>
+            <option value="Others">Others</option>
+        </select>
+
+        <select id="filterStatus" class="med-filter-select" aria-label="Filter by status" onchange="applyFilters()">
+            <option value="">All Status</option>
+            <option value="Available">Available</option>
+            <option value="Low Stock">Low Stock</option>
+            <option value="Out of Stock">Out of Stock</option>
+            <option value="Expired">Expired</option>
+        </select>
+
+        <button type="button" id="clearFiltersBtn" class="med-filter-clear" onclick="clearFilters()" hidden>
+            <i class="fa-solid fa-xmark"></i> Clear
+        </button>
     </div>
 
     <!-- ================= TABLE ================= -->
@@ -109,7 +118,7 @@
             </thead>
 
             <tbody id="medicineTableBody">
-                @forelse($medicines as $index => $medicine)
+                @foreach($medicines as $index => $medicine)
                 @php
                     $statusLabel = $medicine->is_expired ? 'Expired'
                         : ($medicine->status === 'Available' ? 'Available'
@@ -187,16 +196,25 @@
                         @endif
                     </td>
                 </tr>
-                @empty
-                <tr>
-                    <td colspan="12" class="no-data">No medicines in inventory yet.</td>
-                </tr>
-                @endforelse
+                @endforeach
             </tbody>
         </table>
 
-        <div id="noResults" style="display:none; text-align:center; padding:24px; color:#9ca3af; font-style:italic; background:#fff;">
-            No medicines matched your search.
+        {{-- Only ONE of these is ever visible:
+             - #emptyInventory : there are no medicines at all (server-rendered)
+             - #noResults      : medicines exist, but none match the search/filters (toggled by JS) --}}
+        @if($medicines->isEmpty())
+            <div id="emptyInventory" class="med-empty">
+                <div class="med-empty-icon"><i class="fa-solid fa-pills"></i></div>
+                <h4>No medicines in inventory yet</h4>
+                <p>@if($canAdd)Click “+ Add Medicine” to add the first one.@else Medicines added to the inventory will show up here.@endif</p>
+            </div>
+        @endif
+
+        <div id="noResults" class="med-empty" hidden>
+            <div class="med-empty-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+            <h4>No medicines matched your search</h4>
+            <p>Try a different name, brand, category or status.</p>
         </div>
     </div>
 
@@ -474,14 +492,6 @@
                 <label>Reason</label>
                 <input type="text" name="reason" placeholder="e.g. New delivery" required>
             </div>
-            <div class="form-group">
-                <label>Reference Number (optional)</label>
-                <input type="text" name="reference_no">
-            </div>
-            <div class="form-group">
-                <label>Notes (optional)</label>
-                <textarea name="notes" rows="2"></textarea>
-            </div>
             <div class="modal-actions">
                 <button type="button" onclick="closeStockModal('stockIn')" class="btn-cancel">Cancel</button>
                 <button type="submit" class="btn-save">Confirm Stock In</button>
@@ -516,14 +526,6 @@
             <div class="form-group">
                 <label>Reason</label>
                 <input type="text" name="reason" placeholder="e.g. Medicine release" required>
-            </div>
-            <div class="form-group">
-                <label>Reference Number (optional)</label>
-                <input type="text" name="reference_no">
-            </div>
-            <div class="form-group">
-                <label>Notes (optional)</label>
-                <textarea name="notes" rows="2"></textarea>
             </div>
             <div class="modal-actions">
                 <button type="button" onclick="closeStockModal('stockOut')" class="btn-cancel">Cancel</button>
@@ -567,14 +569,6 @@
                 <label>Reason</label>
                 <input type="text" name="reason" placeholder="e.g. Physical inventory count" required>
             </div>
-            <div class="form-group">
-                <label>Reference Number (optional)</label>
-                <input type="text" name="reference_no">
-            </div>
-            <div class="form-group">
-                <label>Notes (optional)</label>
-                <textarea name="notes" rows="2"></textarea>
-            </div>
             <div class="modal-actions">
                 <button type="button" onclick="closeStockModal('adjustStock')" class="btn-cancel">Cancel</button>
                 <button type="submit" class="btn-save">Confirm Adjustment</button>
@@ -609,16 +603,20 @@ function getAllRows() {
 }
 
 function applyFilters() {
-    const search   = document.getElementById('searchInput').value.toLowerCase();
+    const search   = document.getElementById('searchInput').value.trim().toLowerCase();
     const category = document.getElementById('filterCategory').value;
     const status   = document.getElementById('filterStatus').value;
 
     filteredRows = getAllRows().filter(row => {
-        const matchSearch   = row.dataset.name.includes(search) || row.dataset.brand.includes(search);
+        const matchSearch   = !search || row.dataset.name.includes(search) || row.dataset.brand.includes(search);
         const matchCategory = !category || row.dataset.category === category;
         const matchStatus   = !status   || row.dataset.status === status;
         return matchSearch && matchCategory && matchStatus;
     });
+
+    // "Clear" only shows while something is actually filtered.
+    const clearBtn = document.getElementById('clearFiltersBtn');
+    if (clearBtn) clearBtn.hidden = !(search || category || status);
 
     currentPage = 1;
     renderPage();
@@ -636,8 +634,11 @@ function renderPage() {
         if (numCell) numCell.textContent = start + i + 1;
     });
 
+    // "No matches" only when medicines exist but the filters hide all of them.
+    // (When the inventory itself is empty, the server-rendered #emptyInventory
+    // is the only message shown.)
     const noResults = document.getElementById('noResults');
-    noResults.style.display = filteredRows.length === 0 ? 'block' : 'none';
+    noResults.hidden = !(getAllRows().length > 0 && filteredRows.length === 0);
 
     renderPaginationInfo(start, pageRows.length);
     renderPaginationNav();
@@ -647,8 +648,9 @@ function renderPaginationInfo(start, count) {
     const info  = document.getElementById('paginationInfo');
     const total = filteredRows.length;
 
+    // The pagination bar is always visible, even with no rows yet.
     if (total === 0) {
-        info.innerHTML = 'No results found';
+        info.innerHTML = 'Showing <strong>0</strong> of <strong>0</strong> results';
         return;
     }
 
@@ -659,10 +661,9 @@ function renderPaginationInfo(start, count) {
 
 function renderPaginationNav() {
     const nav        = document.getElementById('paginationNav');
-    const totalPages = Math.ceil(filteredRows.length / ROWS_PER_PAGE);
+    // Always at least 1 page, so "‹ 1 ›" is shown even when the table is empty.
+    const totalPages = Math.max(1, Math.ceil(filteredRows.length / ROWS_PER_PAGE));
     nav.innerHTML    = '';
-
-    if (totalPages <= 1) return;
 
     /* ---- Previous ---- */
     const isPrevDisabled = currentPage === 1;
@@ -721,6 +722,7 @@ function clearFilters() {
     document.getElementById('filterCategory').value = '';
     document.getElementById('filterStatus').value   = '';
     applyFilters();
+    document.getElementById('searchInput').focus();
 }
 
 window.addEventListener('DOMContentLoaded', () => {

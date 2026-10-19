@@ -8,7 +8,7 @@
 
 <div class="container">
 
-    <div class="page-header">
+    <div class="page-header page-header--list">
         <h2>Laboratory Results</h2>
     </div>
 
@@ -33,7 +33,7 @@
             <input type="text" name="search" placeholder="Search by reference no. or test name..." value="{{ $search }}">
         </div>
 
-        <select name="status" class="lab-select" onchange="this.form.submit()">
+        <select name="status" class="lab-select" aria-label="Filter by status">
             <option value="All" {{ $statusFilter === 'All' ? 'selected' : '' }}>All Statuses</option>
             <option value="Awaiting Result" {{ $statusFilter === 'Awaiting Result' ? 'selected' : '' }}>Awaiting Result</option>
             <option value="Result Received" {{ $statusFilter === 'Result Received' ? 'selected' : '' }}>Result Received</option>
@@ -90,9 +90,6 @@
                                 <span class="status {{ $statusClassMap[$labRequest->status] ?? 'awaiting' }}">
                                     {{ $patientStatusLabel }}
                                 </span>
-                                @if($labRequest->isReviewed() && $labRequest->follow_up_recommended)
-                                    <span class="lab-followup-tag"><i class='bx bx-calendar-plus'></i> Follow-up recommended</span>
-                                @endif
                             </div>
                         </td>
                         <td>
@@ -135,6 +132,80 @@
                 @endforelse
             </tbody>
         </table>
+    </div>
+
+    {{-- ================= CARDS (Mobile) =================
+         Phones (<= 640px) show these cards instead of the table. --}}
+    <div class="lab-cards">
+        @forelse($laboratoryRequests as $labRequest)
+            @php
+                $statusClassMap = [
+                    'Awaiting Result'     => 'awaiting',
+                    'Result Received'     => 'received',
+                    'Correction Required' => 'correction',
+                    'Reviewed'            => 'reviewed',
+                ];
+                $patientStatusLabel = $labRequest->status === 'Correction Required'
+                    ? 'Correction Needed'
+                    : $labRequest->status;
+
+                $pendingByTest      = $labRequest->pendingCorrectionsByTest();
+                $hasAnyCorrection   = $pendingByTest->filter()->isNotEmpty();
+                $requestedTestNames = $labRequest->tests->pluck('test_name')->all();
+                $filesCount         = $labRequest->results->count();
+            @endphp
+            <div class="lab-card">
+                <div class="lab-card-top">
+                    <span class="ref-no">{{ $labRequest->reference_no }}</span>
+                    <span class="status {{ $statusClassMap[$labRequest->status] ?? 'awaiting' }}">
+                        {{ $patientStatusLabel }}
+                    </span>
+                </div>
+
+                <div class="lab-card-row">
+                    <span class="lab-card-label">Tests</span>
+                    <span class="lab-card-value">{{ $labRequest->testsDisplay() }}</span>
+                </div>
+
+                <div class="lab-card-row">
+                    <span class="lab-card-label">Requested</span>
+                    <span class="lab-card-value">{{ $labRequest->requested_at?->format('M d, Y') ?? '—' }}</span>
+                </div>
+
+                <div class="lab-card-actions">
+                    @if($labRequest->isReviewed())
+                        <button type="button" class="btn-view-review"
+                                onclick="openReviewModal({{ $labRequest->id }})">
+                            View Review
+                        </button>
+                    @elseif($filesCount > 0)
+                        <button type="button" class="btn-files-count @if($hasAnyCorrection) btn-files-count--alert @endif"
+                                onclick="openFilesModal({{ $labRequest->id }})">
+                            @if($hasAnyCorrection)
+                                <i class='bx bx-error-circle'></i> Correction Needed
+                            @else
+                                {{ $filesCount }} {{ Str::plural('file', $filesCount) }} uploaded
+                            @endif
+                        </button>
+                    @elseif($labRequest->canAcceptUploads())
+                        <button type="button" class="btn-upload"
+                                onclick='openUploadModal({{ $labRequest->id }}, @json($labRequest->reference_no), @json($requestedTestNames))'>
+                            Upload Result
+                        </button>
+                    @else
+                        <span class="lab-no-action">No action needed</span>
+                    @endif
+                </div>
+            </div>
+        @empty
+            <div class="lab-empty">
+                @if($search !== '' || $statusFilter !== 'All')
+                    No laboratory requests match your search or filter.
+                @else
+                    No laboratory requests yet. Your doctor will create one during a consultation.
+                @endif
+            </div>
+        @endforelse
     </div>
 
     {{-- ================= PAGINATION ================= --}}
@@ -286,8 +357,7 @@
 @foreach($laboratoryRequests as $labRequest)
     @continue(!$labRequest->isReviewed())
     @php
-        $currentByTest       = $labRequest->currentResultsByTest();
-        $followUpAppointment = $labRequest->currentFollowUpAppointment();
+        $currentByTest = $labRequest->currentResultsByTest();
     @endphp
     <div class="modal-overlay" id="reviewModal{{ $labRequest->id }}">
         <div class="modal-box modal-box--wide">
@@ -339,30 +409,6 @@
                 </div>
             </div>
 
-            @if($labRequest->follow_up_recommended)
-                <div class="lab-followup-box">
-                    <div class="lab-followup-box__title">
-                        <span class="lab-followup-box__icon"><i class='bx bx-calendar-plus'></i></span>
-                        Follow-up Consultation Recommended
-                    </div>
-                    @if($labRequest->follow_up_instructions)
-                        <p class="lab-followup-box__text">{{ $labRequest->follow_up_instructions }}</p>
-                    @endif
-
-                    @if($followUpAppointment)
-                        <p class="lab-followup-box__status">
-                            Follow-up Consultation ({{ $followUpAppointment->reference_no }}) —
-                            {{ $followUpAppointment->appointment_date?->format('M d, Y') }} {{ $followUpAppointment->formatted_time }}
-                            · Status: <strong>{{ $followUpAppointment->status }}</strong>
-                        </p>
-                        <a href="{{ route('patient.appointments.show', $followUpAppointment->id) }}" class="btn-file-view">View Appointment</a>
-                    @else
-                        <a href="{{ route('patient.appointments.index', ['follow_up' => $labRequest->id]) }}" class="btn-upload">
-                            Book Follow-up Consultation
-                        </a>
-                    @endif
-                </div>
-            @endif
         </div>
     </div>
 @endforeach
@@ -411,8 +457,6 @@
 </div>
 
 <script>
-const LAB_GENERAL_TEST_OPTION = @json(\App\Models\LaboratoryRequest::GENERAL_TEST_OPTION);
-
 function closeModal(id) {
     document.getElementById(id).classList.remove('show');
 }
@@ -435,8 +479,7 @@ document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
 
 /**
  * Fresh upload — "Which test is this result for?" dropdown is limited
- * to exactly this laboratory request's own requested tests, plus the
- * "covers everything" General option.
+ * to exactly this laboratory request's own requested tests.
  */
 function openUploadModal(requestId, referenceNo, requestedTests) {
     const form   = document.getElementById('uploadResultForm');
@@ -459,12 +502,6 @@ function openUploadModal(requestId, referenceNo, requestedTests) {
         opt.textContent = testName;
         select.appendChild(opt);
     });
-    if (requestedTests.length > 1) {
-        const generalOpt = document.createElement('option');
-        generalOpt.value = LAB_GENERAL_TEST_OPTION;
-        generalOpt.textContent = 'This file covers all requested tests';
-        select.appendChild(generalOpt);
-    }
     // A single requested test needs no choice at all.
     if (requestedTests.length === 1) {
         select.value = requestedTests[0];

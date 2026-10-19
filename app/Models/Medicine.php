@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Archive\ArchiveService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
@@ -21,6 +22,32 @@ class Medicine extends Model
         'expiration_date',
         'status',
     ];
+
+    /**
+     * Existing SoftDeletes behaviour is unchanged. These two events only keep
+     * the Admin Archive page in sync: a soft-deleted medicine is listed there,
+     * and a restored one leaves it. A failure here must never block Inventory.
+     */
+    protected static function booted(): void
+    {
+        static::deleted(function (Medicine $medicine) {
+            if (! $medicine->isForceDeleting()) {
+                try {
+                    app(ArchiveService::class)->recordSoftDeletedMedicine($medicine);
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+            }
+        });
+
+        static::restored(function (Medicine $medicine) {
+            try {
+                app(ArchiveService::class)->forgetMedicine((int) $medicine->id);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        });
+    }
 
     // Auto-cast expiration_date as Carbon instance
     protected $casts = [

@@ -25,7 +25,21 @@ Artisan::command('inspire', function () {
 | keep a crashed run's mutex alive into the next day and skip tomorrow's backup.
 | (BackupService's own file lock still prevents two backups running at once.)
 */
-Schedule::command('clinic:backup', ['--type=automatic'])
+
+// Schedule::call (not Schedule::command): the scheduler starts `command()` tasks
+// as a separate OS process (proc_open), which shared hosts such as Hostinger
+// disable. A closure runs inside the same PHP process, so it works everywhere.
+Schedule::call(function () {
+    $exit = Artisan::call('clinic:backup', ['--type' => 'automatic']);
+
+    if ($exit !== 0) {
+        \Illuminate\Support\Facades\Log::error('Automatic backup finished with errors.', [
+            'exit_code' => $exit,
+            'output'    => trim(Artisan::output()),
+        ]);
+    }
+})
+    ->name('clinic-automatic-backup')
     ->dailyAt(BackupSettings::automaticTime())
     ->when(fn () => BackupSettings::automaticEnabled())
     ->withoutOverlapping(60)

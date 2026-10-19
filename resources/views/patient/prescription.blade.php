@@ -1,21 +1,38 @@
-@extends('layouts.patient')
-
-@section('head')
-<link rel="stylesheet" href="{{ asset('css/patient-prescription.css') }}">
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<style>
-    /* Opened in its own tab: show only the prescription on SCREEN — no Patient sidebar/header.
-       Screen-only on purpose: the printed prescription is left exactly as it always was. */
-    @media screen {
-        .sidebar,
-        .sidebar-backdrop,
-        .admin-header { display: none !important; }
-        .main-content { margin-left: 0 !important; }
-    }
-</style>
-@endsection
-
-@section('content')
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prescription</title>
+    <link rel="stylesheet" href="{{ asset('css/patient-prescription.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* Standalone page (no sidebar / top bar), same look as the Laboratory Request print page. */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', Arial, Helvetica, sans-serif;
+            background: #f4f0fa;
+            padding: 40px 20px;
+            color: #000;
+        }
+        .rx-action-bar { margin-top: 0; }
+        .rx-page { margin-bottom: 0; }
+        @media print {
+            /* Print at the SAME size, look and spacing as the on-screen card */
+            @page { size: 154mm 180mm; margin: 8mm; }
+            body { padding: 0 !important; background: #fff !important; }
+            #rx-printable {
+                position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important;
+                width: 100% !important; max-width: 520px !important; margin: 0 auto !important;
+                padding: 32px 38px 28px !important; box-shadow: none !important;
+            }
+            .rx-body { min-height: 180px !important; padding: 10px 0 170px !important; }
+            .rx-divider-thin { margin: 14px 0 !important; }
+            .rx-footer-row { break-inside: avoid; page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
 
 {{-- ── Action bar (hidden on print) ── --}}
 <div class="rx-action-bar no-print">
@@ -38,17 +55,12 @@
     </button>
 </div>
 
-{{-- ══════════════════════════════════════════
-     PRESCRIPTION SLIP  (this is what prints)
-══════════════════════════════════════════ --}}
 <div class="rx-page" id="rx-printable">
 
-    {{-- ── CLINIC HEADER ── --}}
     <div class="rx-clinic-header">
         <div class="rx-clinic-name">Medical Clinic</div>
         <div class="rx-clinic-specialty">General Practice</div>
         <div class="rx-clinic-address">
-            {{-- Put your clinic address here --}}
             Brgy. Dayap Calauan, Laguna
         </div>
 
@@ -60,15 +72,19 @@
 
     <div class="rx-divider-thick"></div>
 
-    {{-- ── PATIENT INFO ROW ── --}}
+    {{-- Patient information supports both registered and walk-in patients. --}}
+    @php
+        $patient = $appointment->patient ?? $appointment->walkinPatient;
+    @endphp
+
     <div class="rx-patient-row">
         <div class="rx-patient-field">
             <span class="rx-field-label">Patient Name:</span>
             <span class="rx-field-value rx-field-underline">
-                {{ $appointment->patient->first_name }}
-                {{ $appointment->patient->middle_name ? $appointment->patient->middle_name . ' ' : '' }}
-                {{ $appointment->patient->last_name }}
-                {{ $appointment->patient->suffix ? ', ' . $appointment->patient->suffix : '' }}
+                {{ $patient->first_name ?? '' }}
+                {{ !empty($patient->middle_name) ? $patient->middle_name . ' ' : '' }}
+                {{ $patient->last_name ?? '' }}
+                {{ !empty($patient->suffix) ? ', ' . $patient->suffix : '' }}
             </span>
         </div>
         <div class="rx-patient-field rx-field-short">
@@ -83,34 +99,30 @@
         <div class="rx-patient-field">
             <span class="rx-field-label">Address:</span>
             <span class="rx-field-value rx-field-underline">
-                {{ $appointment->patient->address ?? '' }}
+                {{ $patient->address ?? '' }}
             </span>
         </div>
         <div class="rx-patient-field rx-field-tiny">
             <span class="rx-field-label">Age:</span>
             <span class="rx-field-value rx-field-underline">
-                {{ $appointment->patient->birthdate
-                    ? \Carbon\Carbon::parse($appointment->patient->birthdate)->age
+                {{ !empty($patient->birthdate)
+                    ? \Carbon\Carbon::parse($patient->birthdate)->age
                     : '' }}
             </span>
         </div>
         <div class="rx-patient-field rx-field-tiny">
             <span class="rx-field-label">Sex:</span>
             <span class="rx-field-value rx-field-underline">
-                {{ $appointment->patient->gender ?? '' }}
+                {{ $patient->gender ?? '' }}
             </span>
         </div>
     </div>
 
     <div class="rx-divider-thin"></div>
 
-    {{-- ── Rx BODY ── --}}
     <div class="rx-body">
-
-        {{-- Big Rx symbol --}}
         <div class="rx-symbol">&#8478;</div>
 
-        {{-- Prescriptions list --}}
         <div class="rx-drugs">
             @forelse($prescriptions as $prescription)
                 <div class="rx-drug-item">
@@ -137,14 +149,11 @@
                 <div class="rx-no-drugs">No prescriptions recorded.</div>
             @endforelse
         </div>
-
-    </div>{{-- /.rx-body --}}
+    </div>
 
     <div class="rx-divider-thin"></div>
 
-    {{-- ── FOOTER: signature + follow-up ── --}}
     <div class="rx-footer-row">
-
         <div class="rx-followup-block">
             <span class="rx-field-label">Follow-up on:</span>
             <span class="rx-field-underline rx-followup-date">
@@ -170,10 +179,9 @@
                 PTR No. {{ $appointment->doctor->ptr_number ?? '___________' }}
             </div>
         </div>
+    </div>
 
-    </div>{{-- /.rx-footer-row --}}
-
-</div>{{-- /#rx-printable --}}
+</div>
 
 <script>
     // This page opens in its own tab (from the Consultation Summary).
@@ -199,4 +207,5 @@
 </script>
 @endif
 
-@endsection
+</body>
+</html>

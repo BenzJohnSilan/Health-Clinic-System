@@ -304,3 +304,29 @@ textarea:focus {
         text-align: left;
     }
 }
+
+/* ================= BATCH LIST MODAL — wide enough to show every column without scrolling ================= */
+#batchViewModal .modal-box {
+    max-width: 760px;
+}
+
+#batchViewModal .table-container {
+    overflow-x: auto; /* only a fallback on very small phones */
+}
+
+#batchViewModal .medicine-table th,
+#batchViewModal .medicine-table td {
+    white-space: nowrap; /* keep "BATCH-2026-001" and the status badge on one line */
+}
+
+@media screen and (max-width: 600px) {
+    #batchViewModal .modal-box {
+        padding: 16px;
+    }
+
+    #batchViewModal .medicine-table th,
+    #batchViewModal .medicine-table td {
+        padding: 9px 8px;
+        font-size: 12px;
+    }
+}

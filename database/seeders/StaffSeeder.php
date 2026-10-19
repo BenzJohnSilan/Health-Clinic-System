@@ -32,7 +32,7 @@ class StaffSeeder extends Seeder
 
                 // ✅ ADD THESE
                 'employee_id'       => 'EMP-0001',
-                'position'          => 'Receptionist',
+                'position'          => 'Nurse',
 
                 'status'            => 'Active',
                 'approval_status'   => 'Approved',

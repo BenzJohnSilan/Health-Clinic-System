@@ -6,6 +6,7 @@ use App\Services\AdminNotificationService;
 use App\Services\DoctorNotificationService;
 use App\Services\PatientNotificationService;
 use App\Services\StaffNotificationService;
+use App\Services\SystemSettings;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -22,6 +23,13 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // ===================== SESSION TIMEOUT (System Settings) =====================
+        // Applies the Admin-configured idle timeout to session.lifetime
+        // before the session driver is resolved by StartSession, so the
+        // server-side session expiry and the cookie both honor it. With no
+        // saved value the server's SESSION_LIFETIME is left untouched.
+        SystemSettings::applySessionLifetime();
+
         // ===================== REGISTRATION RATE LIMIT =====================
         // Per IP: 5 attempts a minute and 20 an hour (failed validations count
         // too). Plenty for a patient fixing typos; far too slow for bots
@@ -34,6 +42,21 @@ class AppServiceProvider extends ServiceProvider
             return [
                 Limit::perMinute(5)->by('register:minute:' . $request->ip())->response($tooMany),
                 Limit::perHour(20)->by('register:hour:' . $request->ip())->response($tooMany),
+            ];
+        });
+
+        // ===================== CONTACT FORM RATE LIMIT =====================
+        // Public Contact Us form, per IP: 3 a minute and 10 an hour (failed
+        // validations count too). Enough for a real visitor fixing a typo,
+        // far too slow for a bot flooding the clinic's inbox.
+        RateLimiter::for('contact', function (Request $request) {
+            $tooMany = fn () => redirect('/#contact')
+                ->withInput()
+                ->with('contact_error', 'You are sending messages too quickly. Please wait a few minutes and try again.');
+
+            return [
+                Limit::perMinute(3)->by('contact:minute:' . $request->ip())->response($tooMany),
+                Limit::perHour(10)->by('contact:hour:' . $request->ip())->response($tooMany),
             ];
         });
 
@@ -65,16 +88,25 @@ class AppServiceProvider extends ServiceProvider
             $admin = auth()->user();
 
             if (!$admin) {
-                $view->with(['adminNotifications' => collect(), 'adminUnreadCount' => 0]);
+                $view->with(['adminNotifications' => collect(), 'adminUnreadCount' => 0, 'contactUnreadCount' => 0]);
                 return;
             }
 
             $service = app(AdminNotificationService::class);
             $notifications = $service->build($admin);
 
+            // Unread Contact Us inquiries for the sidebar badge. Wrapped so an
+            // un-run migration can never break every Admin page.
+            try {
+                $contactUnread = \App\Models\ContactMessage::unread()->count();
+            } catch (\Throwable $e) {
+                $contactUnread = 0;
+            }
+
             $view->with([
-                'adminNotifications' => $notifications,
-                'adminUnreadCount'   => $notifications->where('unread', true)->count(),
+                'adminNotifications'   => $notifications,
+                'adminUnreadCount'     => $notifications->where('unread', true)->count(),
+                'contactUnreadCount'   => $contactUnread,
             ]);
         });
 

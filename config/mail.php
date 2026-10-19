@@ -115,4 +115,17 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Contact Us Notification Recipient
+    |--------------------------------------------------------------------------
+    |
+    | The clinic inbox that receives an email whenever someone submits the
+    | Contact Us form on the landing page. If empty, the Official email saved
+    | in Admin > System Settings is used instead.
+    |
+    */
+
+    'contact_notification_email' => env('CONTACT_NOTIFICATION_EMAIL'),
+
 ];

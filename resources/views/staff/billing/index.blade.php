@@ -51,22 +51,46 @@
         background-color: #fff !important;
     }
 
-    /* View button — solid purple like the Patient List */
+    /* Action buttons — same size for every row: solid = needs action,
+       outlined = just view. */
     .patients-table .btn-view {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        box-sizing: border-box;
+        width: 148px;
+        height: 36px;
+        padding: 0 14px;
+        border: 1.5px solid #6a0dad;
+        border-radius: 8px;
         background-color: #6a0dad;
         color: #fff;
-        padding: 7px 14px;
-        border-radius: 8px;
         font-size: 13px;
-        font-weight: 500;
+        font-weight: 600;
+        line-height: 1;
         white-space: nowrap;
-        transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+        text-decoration: none;
+        transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
     }
 
     .patients-table .btn-view:hover {
         background-color: #560aaf;
+        border-color: #560aaf;
         transform: translateY(-1px);
         box-shadow: 0 4px 10px rgba(106, 13, 173, 0.3);
+    }
+
+    .patients-table .btn-view--ghost {
+        background-color: #fff;
+        color: #6a0dad;
+    }
+
+    .patients-table .btn-view--ghost:hover {
+        background-color: #f3e8ff;
+        border-color: #6a0dad;
+        color: #560aaf;
+        box-shadow: none;
     }
 
     /* ===== Pagination — attached to the table, like the Patient List ===== */
@@ -153,82 +177,14 @@
 @section('content')
 <div class="container">
 
-    <div class="page-header">
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
         <h1 class="page-title">Billing &amp; Payments</h1>
+        @if(auth()->user()->hasPermission('view_billing_reports'))
+            <a href="{{ route('staff.billing.report') }}" class="btn-filter-apply" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+                <i class="fa-solid fa-chart-column"></i> Revenue Report
+            </a>
+        @endif
     </div>
-
-    @if($reportTotals)
-    <!-- ================= REPORT CARDS (view_billing_reports) ================= -->
-    <form method="GET" action="{{ route('staff.billing.index') }}" class="billing-filters report-range-form" id="rangeForm">
-        @if(request('search'))<input type="hidden" name="search" value="{{ request('search') }}">@endif
-        @if(request('status'))<input type="hidden" name="status" value="{{ request('status') }}">@endif
-
-        <div class="report-range-tabs">
-            @foreach(['today' => 'Today', 'week' => 'This Week', 'month' => 'This Month', 'custom' => 'Custom'] as $key => $label)
-                <label class="report-range-tab {{ $reportRange['range'] === $key ? 'active' : '' }}">
-                    <input type="radio" name="range" value="{{ $key }}" {{ $reportRange['range'] === $key ? 'checked' : '' }}
-                           onchange="{{ $key === 'custom' ? "document.getElementById('customRange').style.display='flex'" : 'this.form.submit()' }}">
-                    {{ $label }}
-                </label>
-            @endforeach
-        </div>
-
-        <div class="report-range-custom" id="customRange" style="display: {{ $reportRange['range'] === 'custom' ? 'flex' : 'none' }};">
-            <input type="date" name="from" class="billing-filter-select" value="{{ $reportRange['from'] }}">
-            <span>to</span>
-            <input type="date" name="to" class="billing-filter-select" value="{{ $reportRange['to'] }}">
-            <button type="submit" class="btn-filter-apply">Apply</button>
-        </div>
-
-        <span class="report-range-label">Showing: <strong>{{ $reportRange['label'] }}</strong></span>
-    </form>
-
-    <div class="ab-stats-grid ab-stats-grid--six">
-        <div class="ab-stat-card ab-stat-card--purple">
-            <div class="ab-stat-icon"><i class="fa-solid fa-sack-dollar"></i></div>
-            <div>
-                <p>Gross Sales</p>
-                <h3>₱{{ number_format($reportTotals['grossSales'], 2) }}</h3>
-            </div>
-        </div>
-        <div class="ab-stat-card ab-stat-card--red">
-            <div class="ab-stat-icon"><i class="fa-solid fa-tags"></i></div>
-            <div>
-                <p>Total Discount</p>
-                <h3>₱{{ number_format($reportTotals['totalDiscount'], 2) }}</h3>
-            </div>
-        </div>
-        <div class="ab-stat-card ab-stat-card--purple">
-            <div class="ab-stat-icon"><i class="fa-solid fa-chart-line"></i></div>
-            <div>
-                <p>Net Sales</p>
-                <h3>₱{{ number_format($reportTotals['netSales'], 2) }}</h3>
-            </div>
-        </div>
-        <div class="ab-stat-card ab-stat-card--green">
-            <div class="ab-stat-icon"><i class="fa-solid fa-money-bill-wave"></i></div>
-            <div>
-                <p>Cash Payments</p>
-                <h3>₱{{ number_format($reportTotals['cashPayments'], 2) }}</h3>
-            </div>
-        </div>
-        <div class="ab-stat-card ab-stat-card--blue">
-            <div class="ab-stat-icon"><i class="fa-solid fa-mobile-screen-button"></i></div>
-            <div>
-                <p>Non-Cash Payments</p>
-                <h3>₱{{ number_format($reportTotals['nonCashPayments'], 2) }}</h3>
-            </div>
-        </div>
-        {{-- Not date-filtered: what is still owed right now (unpaid & partially paid) --}}
-        <div class="ab-stat-card ab-stat-card--red">
-            <div class="ab-stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
-            <div>
-                <p>Outstanding Balance <small>(unpaid &amp; partially paid, all dates)</small></p>
-                <h3>₱{{ number_format($reportTotals['totalOutstanding'], 2) }}</h3>
-            </div>
-        </div>
-    </div>
-    @endif
 
     @if(session('success'))
         <div class="alert-success">{{ session('success') }}</div>
@@ -239,13 +195,6 @@
 
     <!-- ================= FILTERS ================= -->
     <form method="GET" action="{{ route('staff.billing.index') }}" class="billing-filters">
-        @if($reportTotals)
-            <input type="hidden" name="range" value="{{ $reportRange['range'] }}">
-            @if($reportRange['range'] === 'custom')
-                <input type="hidden" name="from" value="{{ $reportRange['from'] }}">
-                <input type="hidden" name="to" value="{{ $reportRange['to'] }}">
-            @endif
-        @endif
         <div class="billing-filter-field">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input type="text" name="search" placeholder="Search patient or invoice no."
@@ -302,7 +251,7 @@
                         @if(in_array($invoice->status, ['Unpaid', 'Partially Paid'], true) && auth()->user()->hasPermission('record_payment'))
                             <a href="{{ route('staff.billing.show', $invoice->id) }}#paymentForm" class="btn-view">Collect Payment</a>
                         @else
-                            <a href="{{ route('staff.billing.show', $invoice->id) }}" class="btn-view">View</a>
+                            <a href="{{ route('staff.billing.show', $invoice->id) }}" class="btn-view btn-view--ghost">View</a>
                         @endif
                     </td>
                 </tr>

@@ -1013,28 +1013,168 @@ body {
 }
 
 @media screen and (max-width: 640px) {
-    .tab-content { padding: 24px 20px 22px; }
-    .panel-header { margin-bottom: 24px; }
-    .form-grid { grid-template-columns: 1fr; }
-    .form-group.full-width { grid-column: auto; }
+    .settings-wrapper { padding: 0 0 24px; }
 
+    /* The top bar already shows "Account Settings", so the big page
+       header is hidden on phones (same as the other patient pages). */
+    .settings-header--page { display: none; }
+
+    .alert { padding: 12px 14px; margin-bottom: 12px; font-size: 13px; }
+
+    .profile-status-card { padding: 11px 14px; margin-bottom: 12px; font-size: 13px; border-radius: 14px; }
+
+    .settings-container { gap: 12px; }
+
+    .settings-sidebar,
+    .settings-panel { border-radius: 16px; }
+
+    /* ---- Profile card: avatar on the left, name / email / role beside it,
+          Save (and Remove) buttons on one row underneath. ---- */
     .profile-card {
-        flex-direction: column;
-        text-align: center;
+        display: block;
+        text-align: left;
+        padding: 12px 14px;
     }
 
     #avatarForm {
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: 56px minmax(0, 1fr);
+        grid-template-areas:
+            "avatar info"
+            "actions actions"
+            "error error";
+        align-items: center;
+        gap: 0 12px;
         width: 100%;
+    }
+
+    .avatar-wrapper { grid-area: avatar; width: 56px; height: 56px; }
+    .avatar-wrapper img { width: 56px; height: 56px; border-width: 2px; }
+    .avatar-wrapper::before { display: none; }
+
+    .profile-card-info { grid-area: info; text-align: left; min-width: 0; }
+    .profile-card-info strong { font-size: 14.5px; margin-bottom: 1px; overflow-wrap: anywhere; }
+    .profile-card-info span { font-size: 12px; overflow-wrap: anywhere; }
+    .profile-card-info .role-badge {
+        display: inline-flex;
+        width: auto;
+        margin-top: 5px;
+        padding: 2px 10px;
     }
 
     .avatar-actions-sidebar {
+        grid-area: actions;
         flex-basis: auto;
         width: 100%;
-        justify-content: center;
+        margin-top: 10px;
+        justify-content: stretch;
+        gap: 10px;
     }
+    .btn-avatar-save,
+    .btn-avatar-remove {
+        flex: 1 1 0;
+        min-width: 0;
+        min-height: 38px;
+        font-size: 12.5px;
+        border-radius: 12px;
+    }
+    /* Save only shows after a photo is picked; hide the whole row when
+       nothing is usable so the card stays short. */
+    .btn-avatar-save:disabled { display: none; }
+    .avatar-actions-sidebar:not(:has(button:not(:disabled))) { display: none; }
 
-    .profile-card-info { text-align: center; }
-    .btn-save { width: 100%; justify-content: center; }
-    .form-actions { padding-top: 20px; }
+    .avatar-field-error { grid-area: error; justify-content: center; margin-top: 8px; }
+
+    /* ---- Tabs: two equal buttons side by side ---- */
+    .tab-nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+        padding: 8px;
+    }
+    .tab-btn {
+        flex: none;
+        min-width: 0;
+        min-height: 44px;
+        padding: 8px 6px;
+        gap: 6px;
+        font-size: 12.5px;
+        line-height: 1.2;
+        text-align: center;
+        justify-content: center;
+        border-radius: 12px;
+    }
+    .tab-btn span { flex: 0 1 auto; }
+    .tab-btn i:first-child { font-size: 16px; flex-shrink: 0; }
+
+    /* ---- Panel ---- */
+    .settings-panel { min-height: 0; }
+    .tab-content { padding: 18px 14px 16px; }
+
+    .panel-header { margin-bottom: 16px; padding-bottom: 14px; }
+    .panel-header h2 { font-size: 16px; margin-bottom: 4px; }
+    .panel-header h2 i { font-size: 18px; }
+    .panel-header p { font-size: 12.5px; }
+
+    .form-section { margin-bottom: 20px; }
+    .section-label { margin-bottom: 12px; padding-bottom: 8px; }
+
+    /* ---- Two columns, so the form is much shorter to scroll ---- */
+    .form-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 10px;
+    }
+    .form-grid.single-col { grid-template-columns: 1fr; max-width: none; }
+    .form-group { min-width: 0; }
+    .form-group.full-width,
+    .form-group.mobile-full { grid-column: 1 / -1; }
+
+    .form-group label { font-size: 12px; }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        min-width: 0;
+        min-height: 46px;
+        padding: 10px 12px;
+        font-size: 13.5px;
+        border-radius: 12px;
+    }
+    .form-group select { padding-right: 32px; background-position: right 11px center; }
+    .form-group textarea { min-height: 64px; }
+
+    .field-hint { font-size: 11.5px; }
+
+    /* Allergy choices: side by side, short text only */
+    .allergy-toggle-group { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .allergy-toggle { padding: 11px 10px; gap: 8px; border-radius: 12px; }
+    .allergy-toggle-text small { display: none; }
+    .allergy-toggle-text strong { font-size: 12.5px; line-height: 1.25; }
+    .allergy-toggle-check { width: 20px; height: 20px; }
+
+    /* Password tab */
+    .password-tips { max-width: none; padding: 14px; margin-bottom: 18px; }
+    .password-tips ul { gap: 6px; }
+    .password-tips li { font-size: 12.5px; }
+
+    .form-actions { padding-top: 16px; margin-top: 4px; }
+    .btn-save {
+        width: 100%;
+        justify-content: center;
+        min-height: 48px;
+        border-radius: 14px;
+    }
+}
+
+/* Very small phones: not enough width for two columns of inputs. */
+@media screen and (max-width: 340px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .allergy-toggle-group { grid-template-columns: 1fr; }
+}
+
+/* Touch devices: no sticky hover lift after a tap. */
+@media (hover: none) {
+    .btn-save:hover,
+    .btn-avatar-save:hover:not(:disabled),
+    .btn-avatar-remove:hover { transform: none; }
 }

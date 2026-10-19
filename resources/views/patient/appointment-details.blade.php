@@ -83,14 +83,6 @@
                     <span class="ad-tile-label">Consultation Type</span>
                     <span class="ad-tile-value">{{ $appointment->isFollowUp() ? 'Follow-up Consultation' : 'Regular Consultation' }}</span>
                 </div>
-                @if($appointment->isFollowUp() && $appointment->followUpLaboratoryRequest)
-                <div class="ad-tile">
-                    <span class="ad-tile-label">Related Laboratory Result</span>
-                    <span class="ad-tile-value">
-                        <a href="{{ route('patient.laboratory-results.index') }}">{{ $appointment->followUpLaboratoryRequest->reference_no }}</a>
-                    </span>
-                </div>
-                @endif
             </div>
         </div>
     </div>

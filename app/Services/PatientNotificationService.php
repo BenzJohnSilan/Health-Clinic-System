@@ -7,7 +7,9 @@ use App\Models\AppointmentStatusEvent;
 use App\Models\LaboratoryRequest;
 use App\Models\LaboratoryResultCorrection;
 use App\Models\MedicalCertificate;
+use App\Models\Invoice;
 use App\Models\MedicalCertificateCorrection;
+use App\Models\Payment;
 use App\Models\PatientNotificationRead;
 use App\Models\User;
 use Illuminate\Support\Collection;
@@ -114,6 +116,7 @@ class PatientNotificationService
             ->concat($this->medicalCertificateCorrectionNotifications($patient))
             ->concat($this->laboratoryResultCorrectionNotifications($patient))
             ->concat($this->laboratoryReviewedNotifications($patient))
+            ->concat($this->billingNotifications($patient))
             ->concat($this->accountNotifications($patient));
 
         return $items
@@ -367,8 +370,7 @@ class PatientNotificationService
     }
 
     /**
-     * "Your laboratory result has been reviewed." — and, when the Doctor
-     * recommended it, "Your doctor recommends a follow-up consultation…".
+     * "Your laboratory result has been reviewed."
      * One item per review (keyed on reviewed_at), same derived-feed
      * approach as every other source here. Never includes internal
      * correction reasons.
@@ -382,23 +384,83 @@ class PatientNotificationService
             ->take(self::PER_SOURCE_LIMIT)
             ->get()
             ->map(function (LaboratoryRequest $lab) {
-                $followUp = (bool) $lab->follow_up_recommended;
-
                 return [
                     'key'        => "lab_reviewed_{$lab->id}_{$lab->reviewed_at->timestamp}",
                     'category'   => 'laboratory',
-                    'icon'       => $followUp ? 'bx-calendar-plus' : 'bx-check-circle',
-                    'icon_class' => $followUp ? '' : 'notif-item-icon--approved',
-                    'label'      => $followUp ? 'Follow-up' : 'Reviewed',
-                    'label_class'=> $followUp ? 'notif-label--upcoming' : 'notif-label--approved',
-                    'title'      => $followUp ? 'Follow-up Consultation Recommended' : 'Laboratory Result Reviewed',
-                    'message'    => $followUp
-                        ? "Your laboratory result ({$lab->reference_no}) has been reviewed. Your doctor recommends a follow-up consultation regarding your laboratory results."
-                        : "Your laboratory result ({$lab->reference_no}) has been reviewed.",
+                    'icon'       => 'bx-check-circle',
+                    'icon_class' => 'notif-item-icon--approved',
+                    'label'      => 'Reviewed',
+                    'label_class'=> 'notif-label--approved',
+                    'title'      => 'Laboratory Result Reviewed',
+                    'message'    => "Your laboratory result ({$lab->reference_no}) has been reviewed.",
                     'url'        => route('patient.laboratory-results.index'),
                     'timestamp'  => $lab->reviewed_at,
                 ];
             });
+    }
+
+    /**
+     * Billing: "your bill is ready" (a collectible invoice with a balance)
+     * and "payment received" (one item per recorded payment). Only shown
+     * to a patient who may view billing. Derived on the fly from invoices
+     * and payments like every other source here — nothing new is stored.
+     *
+     * Keys are stable per invoice / per payment, so a notification the
+     * patient has read never comes back unread.
+     */
+    protected function billingNotifications(User $patient): Collection
+    {
+        if (!$patient->hasPermission('view_billing')) {
+            return collect();
+        }
+
+        $items = collect();
+
+        Invoice::collectible()
+            ->where('patient_id', $patient->id)
+            ->whereIn('status', ['Unpaid', 'Partially Paid'])
+            ->where('balance', '>', 0)
+            ->latest('updated_at')
+            ->take(self::PER_SOURCE_LIMIT)
+            ->get()
+            ->each(function (Invoice $invoice) use ($items) {
+                $items->push([
+                    'key'        => "bill_ready_{$invoice->id}",
+                    'category'   => 'billing',
+                    'icon'       => 'bx-receipt',
+                    'icon_class' => 'notif-item-icon--upcoming',
+                    'label'      => 'Billing',
+                    'label_class'=> 'notif-label--upcoming',
+                    'title'      => 'Your Bill Is Ready',
+                    'message'    => "Invoice {$invoice->invoice_no} has a balance of ₱" . number_format((float) $invoice->balance, 2) . '. Please settle it at the clinic counter.',
+                    'url'        => route('patient.billing.show', $invoice->id),
+                    'timestamp'  => $invoice->updated_at,
+                ]);
+            });
+
+        if ($patient->hasPermission('view_payment_history')) {
+            Payment::whereHas('invoice', fn ($q) => $q->where('patient_id', $patient->id))
+                ->with('invoice')
+                ->latest('paid_at')
+                ->take(self::PER_SOURCE_LIMIT)
+                ->get()
+                ->each(function (Payment $payment) use ($items) {
+                    $items->push([
+                        'key'        => "payment_{$payment->id}",
+                        'category'   => 'billing',
+                        'icon'       => 'bx-check-circle',
+                        'icon_class' => 'notif-item-icon--approved',
+                        'label'      => 'Payment',
+                        'label_class'=> 'notif-label--approved',
+                        'title'      => 'Payment Received',
+                        'message'    => 'We received your ' . $payment->payment_method . ' payment of ₱' . number_format((float) $payment->amount, 2) . " for invoice {$payment->invoice->invoice_no}.",
+                        'url'        => route('patient.billing.show', $payment->invoice_id),
+                        'timestamp'  => $payment->paid_at,
+                    ]);
+                });
+        }
+
+        return $items;
     }
 
     /**

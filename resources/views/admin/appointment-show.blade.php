@@ -1,17 +1,12 @@
 @extends('layouts.admin')
 
 @section('head')
-<link rel="stylesheet" href="{{ asset('css/staff-appointment-show.css') }}">
+<link rel="stylesheet" href="{{ asset('css/staff-appointment-details.css') }}">
 @endsection
 
 @section('content')
 
 <div class="appointment-details-page">
-
-    <a href="{{ route('admin.appointments.index') }}" class="back-btn">
-        <i class="fa-solid fa-arrow-left"></i>
-        <span>Back to Appointments</span>
-    </a>
 
     @php
         $patient = $appointment->walkinPatient ?? $appointment->patient;
@@ -24,14 +19,22 @@
         $statusSlug = str_replace(' ', '-', strtolower($appointment->status));
     @endphp
 
-    <div class="page-heading">
-        <div class="page-heading-icon">
-            <i class="fa-solid fa-calendar-check"></i>
+    {{-- ================= HERO (same banner style as the Dashboard / Staff page) ================= --}}
+    <div class="page-hero">
+        <div class="page-hero-group">
+            <div class="hero-icon-badge">
+                <i class="fa-solid fa-calendar-check"></i>
+            </div>
+            <div>
+                <h1>Appointment Details</h1>
+                <p>View the patient's appointment and basic information.</p>
+            </div>
         </div>
-        <div>
-            <h1>Appointment Details</h1>
-            <p>View the patient's appointment and basic information.</p>
-        </div>
+
+        <a href="{{ route('admin.appointments.index') }}" class="back-btn">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Back to Appointments</span>
+        </a>
     </div>
 
     <div class="details-columns">
@@ -115,14 +118,26 @@
                 </div>
 
                 <div class="detail-row">
-                    <span class="label"><i class="fa-regular fa-calendar"></i> Appointment Date</span>
+                    <span class="label"><i class="fa-regular fa-calendar"></i> {{ $appointment->isWalkIn() ? 'Visit Date' : 'Appointment Date' }}</span>
                     <span class="value">{{ \Carbon\Carbon::parse($appointment->appointment_date)->format('F d, Y') }}</span>
                 </div>
 
+                @if($appointment->isWalkIn())
+                <div class="detail-row">
+                    <span class="label"><i class="fa-solid fa-person-walking"></i> Visit Type</span>
+                    <span class="value">Walk-in &middot; Queue {{ $appointment->queue_number }} &middot; no reserved appointment time</span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="label"><i class="fa-solid fa-clock"></i> Arrival</span>
+                    <span class="value">{{ $appointment->arrived_at?->format('h:i A') ?? '-' }}</span>
+                </div>
+                @else
                 <div class="detail-row">
                     <span class="label"><i class="fa-solid fa-clock"></i> Appointment Time</span>
                     <span class="value">{{ $appointment->timeLabel('h:i A') }}</span>
                 </div>
+                @endif
 
                 <div class="detail-row">
                     <span class="label"><i class="fa-solid fa-user-doctor"></i> Doctor</span>

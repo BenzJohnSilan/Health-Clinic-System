@@ -34,6 +34,17 @@
     // are always available here, but default them defensively just in case.
     $patientNotifications = $patientNotifications ?? collect();
     $patientUnreadCount    = $patientUnreadCount ?? 0;
+
+    // Mobile "More" sheet: highlight the More tab when the current page is
+    // one that lives in the sheet instead of in the bottom tab bar.
+    $canViewBilling = $patient->hasPermission('view_billing');
+    $moreTabActive  = request()->routeIs(
+            'patient.appointment.history',
+            'patient.appointment.show',
+            'patient.activity.logs',
+            'patient.settings'
+        )
+        || ($canViewBilling && request()->routeIs('patient.medical-certificates.*'));
 @endphp
 
 <!-- ================= SIDEBAR ================= -->
@@ -42,7 +53,11 @@
     <!-- Brand -->
     <div class="sidebar-brand">
         <div class="brand-icon">
-            <i class='bx bx-plus-medical'></i>
+            @if($__clinicLogo = \App\Services\SystemSettings::logoUrl())
+                <img src="{{ $__clinicLogo }}" alt="{{ \App\Services\SystemSettings::clinicName() }} logo">
+            @else
+                <i class='bx bx-plus-medical'></i>
+            @endif
         </div>
         <div class="brand-text">
             <h2>Clinic Record</h2>
@@ -129,6 +144,131 @@
 
 <!-- Backdrop shown behind the sidebar on mobile/tablet when the drawer is open -->
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+<!-- ================= MOBILE BOTTOM TAB BAR =================
+     App-style primary navigation, shown on phones only (<= 640px, see
+     patient-layout.css). On phones the sidebar is removed entirely; "More"
+     opens a bottom sheet (#moreSheet below) with every page. -->
+<nav class="mobile-tabbar" id="mobileTabbar" aria-label="Primary">
+    <a href="{{ route('patient.dashboard') }}"
+       class="tab {{ request()->routeIs('patient.dashboard') ? 'active' : '' }}"
+       @if(request()->routeIs('patient.dashboard')) aria-current="page" @endif>
+        <i class='bx bx-home-alt'></i><span>Home</span>
+    </a>
+    <a href="{{ route('patient.appointments.index') }}"
+       class="tab {{ request()->routeIs('patient.appointments.*') ? 'active' : '' }}"
+       @if(request()->routeIs('patient.appointments.*')) aria-current="page" @endif>
+        <i class='bx bx-calendar'></i><span>Visits</span>
+    </a>
+    <a href="{{ route('patient.laboratory-results.index') }}"
+       class="tab {{ request()->routeIs('patient.laboratory-results.*') ? 'active' : '' }}"
+       @if(request()->routeIs('patient.laboratory-results.*')) aria-current="page" @endif>
+        <i class='bx bxs-flask'></i><span>Lab Results</span>
+    </a>
+    @if($patient->hasPermission('view_billing'))
+    <a href="{{ route('patient.billing.index') }}"
+       class="tab {{ request()->routeIs('patient.billing.*') ? 'active' : '' }}"
+       @if(request()->routeIs('patient.billing.*')) aria-current="page" @endif>
+        <i class='bx bx-receipt'></i><span>Billing</span>
+    </a>
+    @else
+    <a href="{{ route('patient.medical-certificates.index') }}"
+       class="tab {{ request()->routeIs('patient.medical-certificates.*') ? 'active' : '' }}"
+       @if(request()->routeIs('patient.medical-certificates.*')) aria-current="page" @endif>
+        <i class='bx bx-file-blank'></i><span>Certificates</span>
+    </a>
+    @endif
+    <button type="button" class="tab {{ $moreTabActive ? 'active' : '' }}" id="tabbarMore"
+            aria-label="More pages" aria-haspopup="dialog" aria-controls="moreSheet" aria-expanded="false">
+        <i class='bx bx-menu'></i><span>More</span>
+    </button>
+</nav>
+
+<!-- ================= MOBILE "MORE" BOTTOM SHEET =================
+     Phones only (<= 640px). Replaces the sidebar drawer: lists every
+     patient page, grouped like the old sidebar, plus Logout. -->
+<div class="more-backdrop" id="moreBackdrop"></div>
+<div class="more-sheet" id="moreSheet" role="dialog" aria-modal="true"
+     aria-labelledby="moreSheetName" aria-hidden="true">
+
+    <div class="more-handle" aria-hidden="true"></div>
+
+    <div class="more-head">
+        @if($patient->avatar)
+            <img class="more-avatar more-avatar--img"
+                 src="{{ asset('storage/'.$patient->avatar) }}" alt="Avatar">
+        @else
+            <div class="more-avatar">{{ $initials }}</div>
+        @endif
+        <div class="more-who">
+            <div class="more-name" id="moreSheetName">{{ $patient->first_name }} {{ $patient->last_name }}</div>
+            <div class="more-role">{{ $patient->role }}</div>
+        </div>
+        <button type="button" class="more-close" id="moreClose" aria-label="Close menu">
+            <i class='bx bx-x'></i>
+        </button>
+    </div>
+
+    <div class="more-body">
+
+        <span class="more-label">Main</span>
+        <a href="{{ route('patient.dashboard') }}"
+           class="more-item {{ request()->routeIs('patient.dashboard') ? 'active' : '' }}">
+            <span class="more-ico"><i class='bx bx-home-alt'></i></span>
+            <span class="more-text">Dashboard</span>
+        </a>
+
+        <span class="more-label">Appointments</span>
+        <a href="{{ route('patient.appointments.index') }}"
+           class="more-item {{ request()->routeIs('patient.appointments.*') ? 'active' : '' }}">
+            <span class="more-ico"><i class='bx bx-calendar'></i></span>
+            <span class="more-text">Appointments</span>
+        </a>
+        <a href="{{ route('patient.appointment.history') }}"
+           class="more-item {{ request()->routeIs('patient.appointment.history', 'patient.appointment.show') ? 'active' : '' }}">
+            <span class="more-ico"><i class='bx bx-history'></i></span>
+            <span class="more-text">Appointment History</span>
+        </a>
+
+        <span class="more-label">Records</span>
+        <a href="{{ route('patient.medical-certificates.index') }}"
+           class="more-item {{ request()->routeIs('patient.medical-certificates.*') ? 'active' : '' }}">
+            <span class="more-ico"><i class='bx bx-file-blank'></i></span>
+            <span class="more-text">Medical Certificates</span>
+        </a>
+        <a href="{{ route('patient.laboratory-results.index') }}"
+           class="more-item {{ request()->routeIs('patient.laboratory-results.*') ? 'active' : '' }}">
+            <span class="more-ico"><i class='bx bxs-flask'></i></span>
+            <span class="more-text">Laboratory Results</span>
+        </a>
+
+        @if($canViewBilling)
+        <span class="more-label">Billing</span>
+        <a href="{{ route('patient.billing.index') }}"
+           class="more-item {{ request()->routeIs('patient.billing.*') ? 'active' : '' }}">
+            <span class="more-ico"><i class='bx bx-receipt'></i></span>
+            <span class="more-text">Billing &amp; Payments</span>
+        </a>
+        @endif
+
+        <span class="more-label">Account</span>
+        <a href="{{ route('patient.activity.logs') }}"
+           class="more-item {{ request()->routeIs('patient.activity.logs') ? 'active' : '' }}">
+            <span class="more-ico"><i class='bx bx-time-five'></i></span>
+            <span class="more-text">Activity Logs</span>
+        </a>
+        <a href="{{ route('patient.settings') }}"
+           class="more-item {{ request()->routeIs('patient.settings') ? 'active' : '' }}">
+            <span class="more-ico"><i class='bx bx-cog'></i></span>
+            <span class="more-text">Account Settings</span>
+        </a>
+
+        <button type="button" class="more-item more-item--logout" id="moreLogout">
+            <span class="more-ico"><i class='bx bx-log-out'></i></span>
+            <span class="more-text">Logout</span>
+        </button>
+    </div>
+</div>
 
 
 <!-- ================= MAIN CONTENT ================= -->
@@ -226,6 +366,7 @@
                         <button type="button" class="notif-tab" data-filter="unread">Unread</button>
                         <button type="button" class="notif-tab" data-filter="appointments">Appointments</button>
                         <button type="button" class="notif-tab" data-filter="medical-certificate">Medical Cert.</button>
+                        <button type="button" class="notif-tab" data-filter="billing">Billing</button>
                         <button type="button" class="notif-tab" data-filter="account">Account</button>
                     </div>
 
@@ -373,6 +514,85 @@
 
 <!-- ================= SCRIPTS ================= -->
 <script src="{{ asset('js/sidebar-collapse.js') }}"></script>
+<script>
+// Phones: "More" tab opens the bottom sheet (no sidebar on phones).
+(function () {
+    var PHONE_MAX = 640;
+    var tab      = document.getElementById('tabbarMore');
+    var sheet    = document.getElementById('moreSheet');
+    var backdrop = document.getElementById('moreBackdrop');
+    var closeBtn = document.getElementById('moreClose');
+    var logout   = document.getElementById('moreLogout');
+    if (!tab || !sheet || !backdrop) return;
+
+    function isOpen() { return sheet.classList.contains('open'); }
+
+    function openSheet() {
+        sheet.classList.add('open');
+        backdrop.classList.add('show');
+        sheet.setAttribute('aria-hidden', 'false');
+        tab.setAttribute('aria-expanded', 'true');
+        document.body.classList.add('no-scroll');
+        sheet.style.transform = '';
+        var body = sheet.querySelector('.more-body');
+        if (body) body.scrollTop = 0;
+    }
+
+    function closeSheet(returnFocus) {
+        sheet.classList.remove('open');
+        backdrop.classList.remove('show');
+        sheet.setAttribute('aria-hidden', 'true');
+        tab.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('no-scroll');
+        sheet.style.transform = '';
+        if (returnFocus) tab.focus();
+    }
+
+    tab.addEventListener('click', function () { isOpen() ? closeSheet(true) : openSheet(); });
+    backdrop.addEventListener('click', function () { closeSheet(false); });
+    if (closeBtn) closeBtn.addEventListener('click', function () { closeSheet(true); });
+
+    // Logout reuses the existing confirm modal.
+    if (logout) logout.addEventListener('click', function () {
+        closeSheet(false);
+        if (window.openLogoutModal) window.openLogoutModal();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && isOpen()) closeSheet(true);
+    });
+
+    // Rotating / resizing past the phone width: the tab bar disappears, so
+    // the sheet must not stay open.
+    window.addEventListener('resize', function () {
+        if (window.innerWidth > PHONE_MAX && isOpen()) closeSheet(false);
+    });
+
+    // Swipe down on the header/handle to dismiss.
+    var startY = null, dy = 0;
+    var grab = sheet.querySelector('.more-handle');
+    var head = sheet.querySelector('.more-head');
+    [grab, head].forEach(function (el) {
+        if (!el) return;
+        el.addEventListener('touchstart', function (e) {
+            startY = e.touches[0].clientY; dy = 0;
+            sheet.style.transition = 'none';
+        }, { passive: true });
+        el.addEventListener('touchmove', function (e) {
+            if (startY === null) return;
+            dy = Math.max(0, e.touches[0].clientY - startY);
+            sheet.style.transform = 'translateY(' + dy + 'px)';
+        }, { passive: true });
+        el.addEventListener('touchend', function () {
+            if (startY === null) return;
+            sheet.style.transition = '';
+            var shouldClose = dy > 90;
+            startY = null;
+            if (shouldClose) closeSheet(false); else sheet.style.transform = '';
+        });
+    });
+})();
+</script>
 <script>
 /* ---- Avatar dropdown ---- */
 const avatarGroup = document.getElementById('avatarGroup');
@@ -553,6 +773,7 @@ setInterval(updateDateTime, 1000);
         'appointment-history': 'Appointment History',
         'medical-certificates':'Medical Certificates',
         'laboratory-results':  'Laboratory Results',
+        'billing':             'Billing & Payments',
         'activity':            'Activity Logs',
         'settings':            'Account Settings',
     };

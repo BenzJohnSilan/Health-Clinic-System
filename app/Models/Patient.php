@@ -2,15 +2,22 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Archivable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Carbon\Carbon;
 
 class Patient extends Model
 {
-    use HasFactory;
+    use HasFactory, Archivable;
 
     protected $table = 'patients';
+
+    /** Key used in archive_entries (only walk-in patients can be archived). */
+    public static function archiveType(): string
+    {
+        return 'walkin_patient';
+    }
 
     protected $fillable = [
         'user_id',

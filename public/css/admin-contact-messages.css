@@ -1,0 +1,472 @@
+/* =====================================================================
+   Admin > Contact Messages.
+   LIST page: uses the shared Manage Users / Appointments look from
+   admin-users.css (.filter-bar, .users-table, .badge, pagination) — this
+   file only adds the few things specific to inquiries.
+   DETAIL page: .cm-* classes below.
+   ===================================================================== */
+
+/* ---------- list page ---------- */
+.badge--unread {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+.badge--read {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+.badge--sent {
+    background: #d1fae5;
+    color: #065f46;
+}
+.badge--notsent {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.users-table .cm-sender {
+    display: block;
+    font-weight: 600;
+    color: #1f2937;
+}
+.users-table .cm-date {
+    white-space: nowrap;
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* unread rows stand out */
+.users-table tbody tr.cm-row-unread td {
+    font-weight: 600;
+    color: #111827;
+}
+.users-table tbody tr.cm-row-unread td:first-child {
+    box-shadow: inset 4px 0 0 #6a0dad;
+}
+
+/* "View" link looks like the table's purple Edit button */
+.users-table .cm-view-link {
+    display: inline-block;
+    background-color: #6a0dad;
+    color: #fff;
+    text-decoration: none;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+.users-table .cm-view-link:hover {
+    background-color: #560aaf;
+}
+.cm-inline {
+    display: inline;
+    margin: 0;
+}
+
+/* Buttons sit in a flex wrapper INSIDE a normal <td>. (Making the <td> itself
+   display:flex pulls it out of the table row and breaks the row's height.) */
+.users-table .cm-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+/* Empty state. Scoped as `.users-table td.cm-empty` because admin-users.css
+   forces `.users-table td { text-align: left }`, which beats a plain
+   .cm-empty rule and left the message stuck on the left side. */
+.users-table td.cm-empty {
+    text-align: center;
+    font-style: italic;
+    color: #9ca3af;
+    padding: 30px !important;
+}
+
+/* ---------- detail page (Admin Dashboard design system) ---------- */
+.adm-dash .cm-alert {
+    border-radius: 12px;
+    padding: 12px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    border: 1px solid;
+}
+.cm-alert-success {
+    background: #ecfdf5;
+    color: #047857;
+    border-color: #bbf0d9;
+}
+.cm-alert-error {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+
+.adm-pill--gray {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+.adm-pill--red {
+    background: var(--accent-red-bg);
+    color: #b91c1c;
+}
+
+/* back link inside the hero reuses the hero's pill look */
+.cm-hero-link {
+    text-decoration: none;
+    transition: background 0.18s ease;
+}
+.cm-hero-link:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+/* message text */
+.cm-message-box {
+    background: var(--bg-page);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--primary);
+    border-radius: 12px;
+    padding: 18px 20px;
+    font-size: 14.5px;
+    line-height: 1.75;
+    color: var(--text-dark);
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 110px;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+/* action buttons: same outlined button the dashboard uses; .cm-solid = filled */
+.cm-footer {
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.cm-inline {
+    display: inline;
+    margin: 0;
+}
+.adm-view-btn {
+    cursor: pointer;
+    font-family: inherit;
+    line-height: 1.2;
+}
+.adm-view-btn i {
+    font-size: 16px;
+}
+.adm-view-btn.cm-solid {
+    background: var(--primary);
+    color: #fff;
+}
+.adm-view-btn.cm-solid:hover {
+    background: #560aaf;
+    border-color: #560aaf;
+}
+
+/* right column */
+.cm-side {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+}
+
+.cm-info-list {
+    display: flex;
+    flex-direction: column;
+}
+.cm-info-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border);
+}
+.cm-info-row:first-child {
+    padding-top: 0;
+}
+.cm-info-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+.cm-info-icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+}
+.cm-info-text {
+    min-width: 0;
+}
+.cm-info-text small {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+.cm-info-text strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-dark);
+    word-break: break-word;
+    margin-top: 1px;
+}
+.cm-info-text a {
+    color: var(--primary);
+    text-decoration: none;
+}
+.cm-info-text a:hover {
+    text-decoration: underline;
+}
+
+.cm-note {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--text-mid);
+}
+
+/* ---------- reply form + history ---------- */
+.badge--replied {
+    background: #ede9fe;
+    color: #5b21b6;
+    margin-left: 4px;
+}
+
+.cm-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.cm-form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+.cm-form-row > label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+.cm-req {
+    color: #dc2626;
+}
+.cm-to {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-page);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dark);
+    word-break: break-word;
+}
+.cm-to i {
+    color: var(--primary);
+    font-size: 17px;
+}
+.cm-input {
+    width: 100%;
+    box-sizing: border-box;
+    font: inherit;
+    font-size: 14.5px;
+    color: var(--text-dark);
+    background: #fff;
+    border: 1.5px solid #e4d9f2;
+    border-radius: 10px;
+    padding: 10px 14px;
+    transition:
+        border-color 0.15s,
+        box-shadow 0.15s;
+}
+.cm-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(106, 13, 173, 0.14);
+}
+.cm-textarea {
+    resize: vertical;
+    min-height: 150px;
+    line-height: 1.65;
+}
+.cm-input.cm-invalid {
+    border-color: #dc2626;
+}
+.cm-field-error {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #b91c1c;
+}
+.cm-hint {
+    font-size: 12px;
+    color: var(--text-light);
+}
+.adm-view-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.cm-history {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.cm-reply {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--primary);
+    border-radius: 12px;
+    padding: 14px 18px;
+    background: #fff;
+}
+.cm-reply-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+.cm-reply-head strong {
+    font-size: 14px;
+    color: var(--text-dark);
+}
+.cm-reply-head span {
+    font-size: 12.5px;
+    color: var(--text-light);
+}
+.cm-reply-body {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-mid);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Delete button on the detail page */
+.cm-push-right {
+    margin-left: auto;
+}
+.adm-view-btn.cm-danger {
+    background: #fff;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+.adm-view-btn.cm-danger:hover {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: #fff;
+}
+
+/* ================= THREE-DOT ACTION MENU (index table) =================
+   Scoped under .users-table because admin-users.css styles EVERY button in
+   that table red; these rules (higher specificity) win over it. */
+.users-table .action-menu {
+    position: relative;
+    display: inline-block;
+}
+
+.users-table .action-menu-toggle {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    color: #6a0dad;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0;
+    transition:
+        background-color 0.15s,
+        border-color 0.15s;
+}
+
+.users-table .action-menu-toggle:hover,
+.users-table .action-menu-toggle[aria-expanded="true"] {
+    background: #f3e8ff;
+    border-color: #c084fc;
+}
+
+.users-table .action-menu-dropdown {
+    display: none;
+    min-width: 170px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+    padding: 6px;
+    z-index: 2000;
+    white-space: nowrap;
+}
+
+.users-table .action-menu-dropdown form {
+    display: block;
+    margin: 0;
+}
+
+.users-table .action-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    background: none;
+    border: none;
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: "Poppins", Arial, sans-serif;
+    color: #374151;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.users-table .action-menu-item i {
+    width: 14px;
+    text-align: center;
+    font-size: 12px;
+}
+
+.users-table .action-menu-item:hover {
+    background: #f3f4f6;
+}
+
+.users-table .action-menu-divider {
+    height: 1px;
+    background: #f0e6ff;
+    margin: 6px 4px;
+}
+
+.users-table .action-menu-delete {
+    color: #dc2626;
+}
+
+.users-table .action-menu-delete:hover {
+    background: #fef2f2;
+}
+
+@media (max-width: 768px) {
+    .users-table .action-menu-toggle {
+        width: 34px;
+        height: 34px;
+    }
+}

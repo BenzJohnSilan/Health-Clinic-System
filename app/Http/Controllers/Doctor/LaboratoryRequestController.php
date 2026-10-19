@@ -9,6 +9,7 @@ use App\Models\LaboratoryRequestTest;
 use App\Models\LaboratoryResultCorrection;
 use App\Models\UserLog;
 use App\Services\IProgSmsService;
+use App\Services\SystemSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -332,17 +333,8 @@ class LaboratoryRequestController extends Controller
             'reviewedBy',
             'corrections.requestedBy',
             'corrections.resolvingResult',
-            'followUpAppointments',
         ])
-            // The requesting Doctor, OR the Doctor assigned to a follow-up
-            // appointment booked for this request (read access so the
-            // follow-up consultation can always open its related result).
-            // Review / correction actions stay owner-only (see review()
-            // and requestCorrection(), still scoped to doctor_id).
-            ->where(function ($q) {
-                $q->where('doctor_id', auth()->id())
-                  ->orWhereHas('followUpAppointments', fn ($aq) => $aq->where('doctor_id', auth()->id()));
-            })
+            ->where('doctor_id', auth()->id())
             ->findOrFail($laboratoryRequestId);
 
         return view('doctor.laboratory-requests.show', compact('laboratoryRequest'));
@@ -355,28 +347,17 @@ class LaboratoryRequestController extends Controller
      */
     public function review(Request $request, $laboratoryRequestId, IProgSmsService $smsService)
     {
-        // review_notes (Interpretation / Remarks) and follow_up_instructions
-        // are PATIENT-FACING. The follow-up recommendation is optional;
-        // instructions are only required (and only kept) when it's checked.
+        // review_notes (Interpretation / Remarks) is PATIENT-FACING.
         $request->validate([
-            'review_notes'           => 'nullable|string|max:5000',
-            'follow_up_recommended'  => 'nullable|boolean',
-            'follow_up_instructions' => 'nullable|string|max:2000|required_if:follow_up_recommended,1',
-        ], [
-            'follow_up_instructions.required_if' => 'Please enter follow-up instructions for the patient, or uncheck "Follow-up consultation recommended".',
+            'review_notes' => 'nullable|string|max:5000',
         ]);
 
         $laboratoryRequest = LaboratoryRequest::where('doctor_id', auth()->id())
             ->findOrFail($laboratoryRequestId);
 
-        $followUpRecommended = $request->boolean('follow_up_recommended');
-        $followUpInstructions = $followUpRecommended
-            ? trim((string) $request->follow_up_instructions)
-            : null;
-
         // Row lock so an upload/replace or correction request at the same
         // moment can't slip in between the status check and the write.
-        $reviewed = DB::transaction(function () use ($laboratoryRequest, $request, $followUpRecommended, $followUpInstructions) {
+        $reviewed = DB::transaction(function () use ($laboratoryRequest, $request) {
             $locked = LaboratoryRequest::whereKey($laboratoryRequest->id)->lockForUpdate()->first();
 
             if (!$locked || $locked->status !== 'Result Received') {
@@ -388,8 +369,6 @@ class LaboratoryRequestController extends Controller
                 'reviewed_by'            => auth()->id(),
                 'reviewed_at'            => now(),
                 'review_notes'           => $request->review_notes,
-                'follow_up_recommended'  => $followUpRecommended,
-                'follow_up_instructions' => $followUpInstructions,
             ]);
 
             return true;
@@ -405,13 +384,13 @@ class LaboratoryRequestController extends Controller
             'action'  => 'Reviewed Laboratory Result',
             'module'  => 'Laboratory',
             'details' => 'Reviewed laboratory result for request ' . $laboratoryRequest->reference_no
-                       . ' (' . $laboratoryRequest->patientName() . ')'
-                       . ($followUpRecommended ? ' — follow-up consultation recommended.' : '.'),
+                       . ' (' . $laboratoryRequest->patientName() . ').',
         ]);
 
         // SMS notification — registered patients only (walk-in patients
         // have no account/contact_number on this model).
-        if ($laboratoryRequest->patient && $laboratoryRequest->patient->contact_number) {
+        if (SystemSettings::notificationEnabled('sms', 'lab_reviewed')
+            && $laboratoryRequest->patient && $laboratoryRequest->patient->contact_number) {
             try {
                 $phone = $laboratoryRequest->patient->contact_number;
 
@@ -421,7 +400,7 @@ class LaboratoryRequestController extends Controller
                 }
 
                 $message = 'Your laboratory result has been reviewed by your doctor. '
-                    . 'Please log in to your Clinic RMS account to view your result. - Clinic RMS';
+                    . 'Please log in to your Clinic RMS account to view your result. ' . SystemSettings::smsSignature();
 
                 $smsService->send($phone, $message);
             } catch (Throwable $e) {
@@ -432,9 +411,7 @@ class LaboratoryRequestController extends Controller
 
         return redirect()
             ->route('doctor.laboratory-requests.show', $laboratoryRequest->id)
-            ->with('success', $followUpRecommended
-                ? 'Laboratory result marked as reviewed. Follow-up consultation recommended to the patient.'
-                : 'Laboratory result marked as reviewed.');
+            ->with('success', 'Laboratory result marked as reviewed.');
     }
 
     /**

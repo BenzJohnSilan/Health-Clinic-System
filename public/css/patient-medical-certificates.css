@@ -722,6 +722,95 @@ body {
     width: 100%;
 }
 
+/* ================= CARDS (MOBILE) =================
+   Hidden by default; shown instead of the table on phones.
+   Same look as the Appointments / Appointment History cards. */
+.cert-cards { display: none; }
+
+.cert-card {
+    background: #fff;
+    border: 1px solid #f0e6ff;
+    border-radius: 14px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+    padding: 16px;
+}
+
+.cert-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f0e6ff;
+}
+
+.cert-card-row {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f5eeff;
+}
+
+.cert-card-label {
+    padding-top: 1px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    overflow-wrap: normal;
+    word-break: normal;
+}
+
+.cert-card-value {
+    min-width: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #374151;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.cert-card-actions { margin-top: 12px; }
+
+.cert-card-actions .btn-view {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    background-color: #fff;
+    color: #6a0dad;
+    border: 1.5px solid #6a0dad;
+}
+
+.cert-card-actions .btn-view:hover,
+.cert-card-actions .btn-view:active {
+    background-color: #6a0dad;
+    color: #fff;
+    box-shadow: none;
+}
+
+.cert-empty {
+    text-align: center;
+    font-style: italic;
+    color: #9ca3af;
+    padding: 32px 16px;
+    background: #fff;
+    border: 1px solid #f0e6ff;
+    border-radius: 14px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+}
+
 /* ================= RESPONSIVE ================= */
 @media screen and (max-width: 900px) {
     .medical-table th,
@@ -755,4 +844,47 @@ body {
         flex-direction: column;
         align-items: center;
     }
+}
+
+/* Phones: stacked cards instead of a table (list page only). */
+@media screen and (max-width: 640px) {
+    .table-wrapper { display: none; }
+
+    .cert-cards {
+        display: grid;
+        gap: 12px;
+    }
+
+    /* No table above it any more, so the pagination box is a full card. */
+    .pagination-wrapper {
+        border: 1px solid #f0e6ff;
+        border-radius: 12px;
+        margin-top: 16px;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    /* The top bar already shows "Medical Certificates", so the big page
+       title is hidden on phones (list page only). */
+    .page-header--list { display: none; }
+}
+
+@media screen and (max-width: 420px) {
+    .cert-card { padding: 14px 12px; }
+    .cert-card-row { grid-template-columns: 80px minmax(0, 1fr); gap: 8px; }
+    .cert-card-label { font-size: 10px; }
+    .cert-card-value { font-size: 13px; }
+
+    .pagination-wrapper { padding: 12px; }
+    .pagination-info { text-align: center; font-size: 12px; }
+    .pagination-nav { justify-content: center; }
+}
+
+@media screen and (max-width: 340px) {
+    .cert-card-row { grid-template-columns: 70px minmax(0, 1fr); }
+}
+
+/* Touch devices: no sticky hover lift after a tap. */
+@media (hover: none) {
+    .btn-view:hover { transform: none; }
 }

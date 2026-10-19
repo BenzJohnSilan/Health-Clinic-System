@@ -165,6 +165,8 @@
                                                     <option value="{{ $key }}"
                                                             data-editable="{{ !empty($type['rate_editable']) ? '1' : '0' }}"
                                                             data-rate="{{ $type['default_rate'] ?? '' }}"
+                                                            data-requires-id="{{ !empty($type['requires_id']) ? '1' : '0' }}"
+                                                            data-id-label="{{ $type['id_label'] ?? 'ID No.' }}"
                                                             @selected((string) $selType === (string) $key)>
                                                         {{ $type['label'] }}
                                                     </option>
@@ -205,6 +207,17 @@
 
                 @if($canEditDiscount)
                     @if($invoice->items->isNotEmpty())
+                        {{-- Proof of eligibility. Shown only while a Senior Citizen / PWD discount
+                             is selected; the server requires it and saves it on the invoice. --}}
+                        <div class="discount-id-group" id="discountIdGroup" style="display:none;">
+                            <label class="form-label" for="discountIdNumber">
+                                <span id="discountIdLabel">ID No.</span> <span class="required">*</span>
+                            </label>
+                            <input type="text" name="discount_id_number" id="discountIdNumber" class="form-input"
+                                   maxlength="60" autocomplete="off"
+                                   value="{{ old('discount_id_number', $invoice->discount_id_number) }}"
+                                   placeholder="As written on the patient's ID">
+                        </div>
                         <div class="discount-actions">
                             <button type="submit" class="btn-apply-discount" id="applyDiscountBtn">
                                 <i class='bx bx-purchase-tag-alt'></i> Apply Discounts
@@ -214,8 +227,9 @@
                             </span>
                         </div>
                         <div class="discount-locked-note">
-                            Before applying a Senior Citizen or PWD discount, verify the patient's eligibility
-                            (e.g. valid ID) according to clinic policy. Each item can have only one discount.
+                            Check the patient's valid Senior Citizen / PWD ID first, then type its number above.
+                            The discount is for the patient's own use only, each item can have only one discount,
+                            and one invoice can use only one kind (Senior Citizen or PWD).
                         </div>
                     @endif
                 </form>
@@ -241,6 +255,24 @@
                     <div><span>Amount Paid</span><span>₱{{ number_format($invoice->amount_paid, 2) }}</span></div>
                     <div class="billing-totals__bold"><span>Remaining Balance</span><span>₱{{ number_format($invoice->balance, 2) }}</span></div>
                 </div>
+
+                @if($invoice->discount_id_number)
+                    <div class="discount-locked-note">
+                        <i class='bx bx-id-card'></i>
+                        <span>Discount ID No.: <strong>{{ $invoice->discount_id_number }}</strong>
+                        @if($invoice->discountIdVerifiedBy) · entered by {{ $invoice->discountIdVerifiedBy->first_name }} {{ $invoice->discountIdVerifiedBy->last_name }} @endif
+                        @if($invoice->discount_id_verified_at) · {{ $invoice->discount_id_verified_at->format('M d, Y h:i A') }} @endif</span>
+                    </div>
+                @endif
+
+                @if($invoice->status === 'Cancelled' && $invoice->voided_at)
+                    <div class="discount-locked-note">
+                        <i class='bx bx-x-circle'></i>
+                        <span>Voided {{ $invoice->voided_at->format('M d, Y h:i A') }}
+                        @if($invoice->voidedBy) by {{ $invoice->voidedBy->first_name }} {{ $invoice->voidedBy->last_name }} @endif
+                        — Reason: {{ $invoice->void_reason }}</span>
+                    </div>
+                @endif
             </div>
 
         </div>
@@ -259,6 +291,8 @@
                 @else
                     <form method="POST" action="{{ route('staff.billing.payments.store', $invoice->id) }}" id="paymentForm">
                         @csrf
+                        {{-- One-time token: if this form is sent twice (double click, refresh), the payment is saved once. --}}
+                        <input type="hidden" name="submission_token" value="{{ old('submission_token', (string) \Illuminate\Support\Str::uuid()) }}">
 
                         <div class="pay-summary">
                             <div><span>Invoice No.</span><strong>{{ $invoice->invoice_no }}</strong></div>
@@ -338,7 +372,7 @@
                         </div>
                         <div class="payment-row__meta">
                             {{ $payment->paid_at->format('M d, Y · h:i A') }}
-                            · Received by {{ $payment->receivedBy->first_name ?? '—' }}
+                            · Received by {{ $payment->receivedByName() }}
                             @if($payment->payment_method === 'GCash')
                                 · Ref# {{ $payment->reference_number }}
                             @endif
@@ -353,6 +387,7 @@
                 @endforelse
                 @endif
             </div>
+
         </div>
 
     </div>
@@ -497,6 +532,19 @@ document.addEventListener('DOMContentLoaded', function () {
             rows.forEach(refreshRow);
             const anyDirty = Array.from(rows).some(r => r.dataset.dirty === '1');
             if (dirtyHint) dirtyHint.style.display = anyDirty ? '' : 'none';
+
+            // Show the ID number box while a Senior Citizen / PWD discount is selected.
+            const idGroup = document.getElementById('discountIdGroup');
+            if (idGroup) {
+                let idLabel = null;
+                rows.forEach(r => {
+                    const sel = r.querySelector('.discount-select');
+                    const opt = sel && sel.options[sel.selectedIndex];
+                    if (opt && opt.dataset.requiresId === '1') idLabel = opt.dataset.idLabel;
+                });
+                idGroup.style.display = idLabel ? '' : 'none';
+                if (idLabel) document.getElementById('discountIdLabel').textContent = idLabel;
+            }
         }
 
         discountForm.querySelectorAll('.discount-row').forEach(row => {

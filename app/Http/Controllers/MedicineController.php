@@ -80,8 +80,6 @@ class MedicineController extends Controller
         return [
             'quantity'     => 'required|integer|min:1',
             'reason'       => 'required|string|max:255',
-            'reference_no' => 'nullable|string|max:100',
-            'notes'        => 'nullable|string|max:1000',
         ];
     }
 
@@ -396,9 +394,7 @@ class MedicineController extends Controller
                 'quantity_before' => $before,
                 'quantity_after'  => $after,
                 'reason'          => $validated['reason'],
-                'reference_no'    => $validated['reference_no'] ?? null,
                 'batch_no'        => $batchNo,
-                'notes'           => $validated['notes'] ?? null,
             ]);
 
             $this->logAction(
@@ -467,9 +463,7 @@ class MedicineController extends Controller
                 'quantity_before' => $before,
                 'quantity_after'  => $after,
                 'reason'          => $validated['reason'],
-                'reference_no'    => $validated['reference_no'] ?? null,
                 'batch_no'        => $batch->batch_no,
-                'notes'           => $validated['notes'] ?? null,
             ]);
 
             $this->logAction(
@@ -495,8 +489,6 @@ class MedicineController extends Controller
             'adjustment_type'  => 'required|in:increase,decrease',
             'quantity'         => 'required|integer|min:1',
             'reason'           => 'required|string|max:255',
-            'reference_no'     => 'nullable|string|max:100',
-            'notes'            => 'nullable|string|max:1000',
         ]);
 
         DB::transaction(function () use ($validated, $medicine) {
@@ -537,9 +529,7 @@ class MedicineController extends Controller
                 'quantity_before' => $before,
                 'quantity_after'  => $after,
                 'reason'          => $validated['reason'],
-                'reference_no'    => $validated['reference_no'] ?? null,
                 'batch_no'        => $batch->batch_no,
-                'notes'           => $validated['notes'] ?? null,
             ]);
 
             $sign = $signedChange >= 0 ? '+' . $signedChange : (string) $signedChange;
@@ -561,7 +551,8 @@ class MedicineController extends Controller
     {
         $movements = $medicine->stockMovements()
             ->with(['user:id,first_name,last_name,role', 'batch:id,batch_no'])
-            ->paginate(15);
+            ->paginate(10)
+            ->withQueryString();
 
         return view('medicine.stock-history', [
             'medicine'    => $medicine,

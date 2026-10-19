@@ -98,6 +98,9 @@ nav {
 .nav-center a.active::after { width: 100%; }
 .nav-center a.active { color: var(--purple-dark); }
 
+/* Desktop: wrapper is transparent so brand / links / buttons stay in one row */
+.nav-menu { display: contents; }
+
 .nav-links { display: flex; gap: 12px; align-items: center; }
 
 .nav-toggle {
@@ -1088,17 +1091,25 @@ footer::before {
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 960px) {
-    nav { padding: 14px 24px; gap: 10px; justify-content: flex-start; }
-    .nav-toggle { display: inline-flex; }
-    .nav-links { margin-left: auto; }
-    .nav-center {
+    nav { padding: 14px 24px; gap: 10px; justify-content: space-between; }
+    .nav-toggle { display: inline-flex; margin-left: auto; flex-shrink: 0; }
+    .nav-menu {
         display: none; position: absolute; top: calc(100% + 8px); left: 16px; right: 16px;
         padding: 10px; flex-direction: column; gap: 2px; background: rgba(255,255,255,0.98);
         border: 1px solid rgba(106,17,203,0.12); border-radius: 16px;
         box-shadow: 0 16px 36px rgba(26,26,46,0.14);
     }
-    .nav-center.is-open { display: flex; }
+    .nav-menu.is-open { display: flex; }
+    .nav-center { flex-direction: column; gap: 2px; width: 100%; }
     .nav-center a { display: block; padding: 12px 14px; border-radius: 10px; }
+    .nav-center a::after { display: none; }
+    .nav-links {
+        width: 100%; gap: 10px; margin-top: 8px; padding: 12px 4px 4px;
+        border-top: 1px solid rgba(106,17,203,0.1);
+    }
+    .nav-links .btn-nav-outline, .nav-links .btn-nav-fill {
+        flex: 1 1 0; text-align: center; padding: 11px 14px; font-size: 14px;
+    }
     .nav-center a:hover,
     .nav-center a.active { background: var(--bg); }
 
@@ -1141,8 +1152,6 @@ footer::before {
 @media (max-width: 560px) {
     nav { padding: 12px 16px; gap: 8px; }
     .nav-brand { font-size: 18px; white-space: nowrap; }
-    .nav-links { gap: 5px; }
-    .btn-nav-outline, .btn-nav-fill { padding: 8px 12px; font-size: 12px; }
     #home { padding: 92px 18px 48px; }
     section { padding: 52px 18px; }
     .hero-content h1 { font-size: 2.05rem; }
@@ -1462,4 +1471,377 @@ footer { background: var(--ink); }
         background: #fff; border: 1px solid var(--pro-border); border-radius: 12px;
         padding: 14px 16px; box-shadow: var(--pro-shadow);
     }
+}
+/* =====================================================================
+   DESIGN PASS 3: clinical-themed ornaments
+   Quiet, on-theme details (medical cross, ECG line, fine grid, numbered
+   cards). All decorative: pointer-events none, no extra markup needed.
+   ===================================================================== */
+:root {
+    --ornament-grid: rgba(106,17,203,.07);
+    --ecg-line: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='90' viewBox='0 0 600 90'%3E%3Cpath d='M0 45H190l12-8 12 8h30l10 8 14-38 16 62 12-24h24l10-8H600' fill='none' stroke='%236a11cb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    --ecg-line-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='90' viewBox='0 0 600 90'%3E%3Cpath d='M0 45H190l12-8 12 8h30l10 8 14-38 16 62 12-24h24l10-8H600' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    --cross-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 22 22'%3E%3Cpath d='M11 2v18M2 11h18' stroke='%236a11cb' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E");
+    --title-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='16' viewBox='0 0 128 16'%3E%3Cpath d='M0 8H50M78 8H128' stroke='%23a044ff' stroke-opacity='.5' stroke-width='1.5' stroke-linecap='round'/%3E%3Cpath d='M64 2v12M58 8h12' stroke='%236a11cb' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+/* ---- Hero: fine grid + scattered crosses + ECG baseline ---- */
+#home::before {
+    display: block; content: ''; position: absolute; inset: 0; width: auto; height: auto;
+    border-radius: 0; animation: none; pointer-events: none; z-index: 0;
+    background:
+        var(--cross-mark) 7% 30% / 20px 20px no-repeat,
+        var(--cross-mark) 93% 24% / 28px 28px no-repeat,
+        var(--cross-mark) 14% 74% / 14px 14px no-repeat,
+        var(--cross-mark) 88% 66% / 16px 16px no-repeat,
+        linear-gradient(var(--ornament-grid) 1px, transparent 1px) 0 0 / 44px 44px,
+        linear-gradient(90deg, var(--ornament-grid) 1px, transparent 1px) 0 0 / 44px 44px;
+    opacity: .9;
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 92%);
+            mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 92%);
+}
+#home::after {
+    display: block; content: ''; position: absolute; left: 0; right: 0; bottom: 78px;
+    width: auto; height: 90px; inset-inline: 0; border-radius: 0; animation: none;
+    pointer-events: none; z-index: 0; opacity: .2;
+    background: var(--ecg-line) 0 50% / 600px 90px repeat-x;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+            mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+}
+#home .hero-grid { z-index: 1; }
+
+/* ---- Quick-info bar: brand accent edge ---- */
+.quick-info-inner { position: relative; }
+.quick-info-inner::before {
+    content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; z-index: 1;
+    background: linear-gradient(90deg, var(--purple-dark), var(--purple-light));
+}
+.quick-icon { background: linear-gradient(135deg, #f1e8ff, #f8f4ff); box-shadow: inset 0 0 0 1px rgba(106,17,203,.1); }
+
+/* ---- Section headings: medical-cross divider ---- */
+.section-title { padding-bottom: 30px; }
+.section-title::after {
+    display: block; content: ''; position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
+    width: 128px; height: 16px; border-radius: 0; box-shadow: none;
+    background: var(--title-mark) center / 128px 16px no-repeat;
+}
+.section-sub { margin-bottom: 56px; }
+
+/* ---- Fine dot texture on the remaining sections, fading downward ---- */
+#how-it-works::before, #faqs::before, #contact::before, #location::before, #workflow::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background-image: radial-gradient(rgba(106,17,203,.09) 1px, transparent 1px);
+    background-size: 22px 22px;
+    -webkit-mask-image: linear-gradient(to bottom, #000, transparent 55%);
+            mask-image: linear-gradient(to bottom, #000, transparent 55%);
+}
+#how-it-works > *, #faqs > *, #contact > *, #location > *, #workflow > * { position: relative; }
+
+/* About: soft brand glow behind the section */
+#about { background:
+    radial-gradient(520px 360px at 92% 50%, rgba(160,68,255,.10), transparent 70%),
+    var(--wash); }
+.about-img-wrap { box-shadow: 0 24px 54px rgba(106,17,203,.28); }
+.about-img-wrap::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .22;
+    background: var(--ecg-line-light) 0 78% / 420px 64px repeat-x;
+}
+
+/* ---- Services: numbered cards + permanent short accent ---- */
+.services-grid { counter-reset: svc; }
+.service-card { counter-increment: svc; padding-top: 34px; }
+.service-card::after {
+    content: counter(svc, decimal-leading-zero);
+    position: absolute; top: 14px; right: 20px; line-height: 1;
+    font-family: 'Playfair Display', serif; font-size: 2.7rem; font-weight: 700;
+    color: rgba(106,17,203,.08); pointer-events: none; transition: color .3s ease;
+}
+.service-card:hover::after { color: rgba(106,17,203,.16); }
+.service-card::before { transform: scaleX(.18); }
+.service-card:hover::before { transform: scaleX(1); }
+
+/* ---- Portal features: accent rail on the left ---- */
+.portal-feature { border-left: 3px solid var(--purple-dark); }
+.portal-feature-icon { box-shadow: 0 6px 16px rgba(106,17,203,.25); }
+
+/* ---- Steps / workflow: soft halo behind the icons ---- */
+.step-icon-wrap::before, .workflow-icon::before { pointer-events: none; }
+.step-icon-wrap::before {
+    content: ''; position: absolute; inset: -9px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(160,68,255,.16), transparent 70%);
+}
+.workflow-icon { background: linear-gradient(145deg, #fff, #f6f0ff); }
+
+/* ---- Contact / location icons share the same soft ring ---- */
+.contact-icon, .location-card-icon { box-shadow: 0 0 0 4px rgba(160,68,255,.12), 0 6px 14px rgba(106,17,203,.22); }
+.contact-form { position: relative; overflow: hidden; }
+.contact-form::before {
+    content: ''; position: absolute; inset: 0 0 auto 0; height: 3px;
+    background: linear-gradient(90deg, var(--purple-dark), var(--purple-light));
+}
+
+/* ---- Footer: faint ECG line + gradient edge ---- */
+footer { border-top: 0; }
+footer::after {
+    content: ''; position: absolute; inset: 0 0 auto 0; height: 4px;
+    background: linear-gradient(90deg, var(--purple-dark), var(--purple-light), var(--purple-dark));
+}
+.footer-inner::before {
+    content: ''; position: absolute; left: -60px; right: -60px; bottom: 6px; height: 90px;
+    background: var(--ecg-line-light) 0 50% / 600px 90px repeat-x; opacity: .05; pointer-events: none;
+}
+
+@media (max-width: 900px) {
+    #home::before {
+        background:
+            linear-gradient(var(--ornament-grid) 1px, transparent 1px) 0 0 / 36px 36px,
+            linear-gradient(90deg, var(--ornament-grid) 1px, transparent 1px) 0 0 / 36px 36px;
+        opacity: .7;
+    }
+    #home::after { bottom: 52px; height: 70px; background-size: 460px 70px; }
+    .service-card::after { font-size: 2.2rem; }
+}
+@media (prefers-reduced-motion: reduce) { .service-card::after { transition: none !important; } }
+/* =====================================================================
+   NAVBAR REFINEMENT
+   Aligned to the page container, truly centered links, brand mark tile,
+   pill-style active link, scroll shadow, visible keyboard focus.
+   ===================================================================== */
+
+/* Brand: gradient lives on the name only, so the icon tile keeps its colour */
+.nav-brand {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: none; -webkit-text-fill-color: initial;
+}
+.nav-brand-mark {
+    width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--purple-dark), var(--purple-light));
+    box-shadow: 0 4px 12px rgba(106,17,203,.28);
+}
+.nav-brand-mark i { color: #fff; font-size: 18px; line-height: 1; }
+.nav-brand-mark.has-logo { background: none; box-shadow: none; width: auto; max-width: 60px; }
+.nav-brand-mark.has-logo img { height: 30px; width: auto; max-width: 60px; object-fit: contain; border-radius: 4px; }
+.nav-brand-name {
+    font-family: 'Playfair Display', serif; font-size: 21px; font-weight: 700; letter-spacing: -.01em;
+    background: linear-gradient(135deg, var(--purple-dark), var(--purple-light));
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+/* Links: pill hover/active instead of underline */
+.nav-center { gap: 4px; }
+.nav-center a {
+    display: inline-block; padding: 8px 14px; border-radius: 999px;
+    color: #4a4a5a; font-size: 14px; font-weight: 500;
+    transition: background .2s, color .2s;
+}
+.nav-center a::after { display: none; }
+.nav-center a:hover { background: var(--wash); color: var(--purple-dark); }
+.nav-center a.active { background: rgba(106,17,203,.09); color: var(--purple-dark); font-weight: 600; }
+
+/* Buttons */
+.btn-nav-outline, .btn-nav-fill {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 9px 22px; font-weight: 600; line-height: 1.2;
+}
+.btn-nav-fill i { font-size: 18px; transition: transform .2s; }
+.btn-nav-fill:hover i { transform: translateX(3px); }
+
+/* Keyboard focus */
+.nav-brand:focus-visible, .nav-center a:focus-visible,
+.btn-nav-outline:focus-visible, .btn-nav-fill:focus-visible, .nav-toggle:focus-visible {
+    outline: 3px solid rgba(160,68,255,.55); outline-offset: 2px;
+}
+
+/* Scroll state */
+nav.is-scrolled { box-shadow: 0 8px 28px rgba(26,26,46,.08); }
+
+/* Desktop only: align with the 1160px container and centre the links exactly */
+@media (min-width: 961px) {
+    nav {
+        display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+        padding: 14px max(60px, calc((100vw - var(--pro-container)) / 2));
+        transition: padding .25s, box-shadow .25s, background .25s;
+    }
+    nav.is-scrolled { padding-top: 10px; padding-bottom: 10px; }
+    .nav-brand { justify-self: start; }
+    .nav-links { justify-self: end; }
+}
+
+@media (max-width: 960px) {
+    .nav-center a { border-radius: 10px; }
+    .nav-center a.active { background: var(--wash); }
+}
+@media (max-width: 560px) {
+    .nav-brand-name { font-size: 18px; }
+    .nav-brand-mark { width: 30px; height: 30px; border-radius: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    nav, .btn-nav-fill i { transition: none; }
+}
+/* ===== CONTACT FORM: validation, alerts, honeypot ===== */
+.contact-form .req { color: #dc2626; font-weight: 600; margin-left: 2px; }
+.contact-form .form-group input.is-invalid,
+.contact-form .form-group textarea.is-invalid {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220,38,38,0.08);
+}
+.contact-form .field-error { margin: 6px 0 0; font-size: 12.5px; color: #dc2626; line-height: 1.4; }
+.contact-alert {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 16px; border-radius: 12px; margin-bottom: 18px;
+    font-size: 13.5px; line-height: 1.5; border: 1px solid;
+}
+.contact-alert i { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.contact-alert-success { background: #ecfdf5; color: #047857; border-color: #bbf0d9; }
+.contact-alert-error   { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+.btn-send:disabled { opacity: .7; cursor: not-allowed; transform: none; }
+/* Honeypot: off-screen (not display:none, which some bots detect). */
+.cf-hp { position: absolute !important; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+
+/* =====================================================================
+   RESPONSIVE FIX PASS
+   Makes every section behave on phones, tablets, landscape phones and
+   laptops. Kept at the end of the file on purpose so it wins over the
+   earlier passes. Pure layout: no content or behaviour changes.
+   ===================================================================== */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+h1, h2, h3, h4, h5, p, li, .quick-item strong { overflow-wrap: break-word; }
+.quick-item strong { text-wrap: balance; }
+
+/* ---- Navbar: long clinic names never push the hamburger away ---- */
+@media (min-width: 961px) and (max-width: 1100px) {
+    .nav-center a { padding: 8px 10px; }
+    .btn-nav-outline, .btn-nav-fill { padding: 9px 16px; }
+}
+/* A long clinic name is cut with "..." instead of wrapping onto two lines */
+.nav-brand { min-width: 0; max-width: 100%; }
+.nav-brand-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 960px) {
+    .nav-brand { flex: 0 1 auto; }
+    /* Short (landscape) screens: the dropdown scrolls instead of running off-screen */
+    .nav-menu {
+        max-height: calc(100vh - 92px);
+        max-height: calc(100dvh - 92px);
+        overflow-y: auto; overscroll-behavior: contain;
+    }
+}
+
+/* ---- Hero: the ECG line sits between the buttons and the info bar,
+        it no longer runs through the buttons ---- */
+@media (min-width: 901px) {
+    #home::after { bottom: 50px; height: 90px; }
+}
+@media (max-width: 900px) {
+    /* tile keeps the SVG's 600:90 ratio, otherwise the line breaks at every tile edge */
+    #home::after { bottom: 30px; height: 60px; background-size: 400px 60px; }
+}
+@media (max-width: 350px) {
+    .hero-buttons { flex-direction: column; }
+    .hero-buttons a { flex: none; width: 100%; }
+}
+
+/* ---- Quick info bar ---- */
+@media (min-width: 641px) and (max-width: 900px) {
+    .quick-info-inner { display: flex; }
+    .quick-item { flex: 1 1 0; flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px; }
+    .quick-item + .quick-item { border-left: 1px solid var(--pro-border); border-top: 0; }
+}
+@media (max-width: 640px) {
+    .quick-info-inner { display: grid; grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---- Tablet: use the width instead of one giant column ---- */
+@media (min-width: 601px) and (max-width: 960px) {
+    .services-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .steps-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px 24px; }
+}
+@media (min-width: 700px) and (max-width: 960px) {
+    .portal-features-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 561px) and (max-width: 960px) {
+    .workflow-track { max-width: 400px; }
+}
+
+/* ---- Contact: both blocks fill the width (they were shrinking to
+        their content on tablets) ---- */
+@media (max-width: 960px) {
+    .contact-inner { align-items: stretch; }
+    .contact-info, .contact-form { width: 100%; flex: none; }
+}
+
+/* ---- Location / map ---- */
+@media (max-width: 960px) {
+    .map-wrap { flex: none; min-height: 0; height: 360px; }
+    .map-wrap iframe { min-height: 0; }
+}
+@media (max-width: 560px) {
+    .map-wrap { height: 300px; }
+}
+
+/* ---- FAQ: answers are never clipped, whatever length the Admin writes ---- */
+.faq-answer {
+    display: grid; grid-template-rows: 0fr; max-height: none;
+    transition: grid-template-rows .35s ease, padding .3s ease;
+}
+.faq-item.open .faq-answer { grid-template-rows: 1fr; max-height: none; }
+.faq-answer-inner { min-height: 0; overflow: hidden; }
+
+/* ---- Footer: same side padding as the sections, tidy columns ---- */
+@media (max-width: 960px) {
+    footer { padding: 52px 24px 0; }
+    .footer-inner { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 24px; }
+    .footer-brand { grid-column: 1 / -1; }
+    .footer-brand p { max-width: 420px; }
+    .footer-bottom { flex-direction: row; justify-content: space-between; text-align: left; }
+}
+@media (max-width: 560px) {
+    footer { padding: 44px 18px 0; }
+    .footer-inner { grid-template-columns: minmax(0, 1fr); }
+    .footer-bottom { flex-direction: column; align-items: center; text-align: center; }
+    .footer-legal { flex-wrap: wrap; justify-content: center; }
+}
+/* Landing page only: leave room so the chat button never covers the last links */
+@media (max-width: 960px) {
+    body:has(.viora-trigger) .footer-bottom { padding-bottom: 88px; }
+}
+
+/* ---- Forms: 16px inputs stop iPhone Safari from zooming in on focus ---- */
+@media (max-width: 900px) {
+    .form-group input, .form-group textarea, .viora-input { font-size: 16px; }
+}
+
+/* ---- Viora chat button + window ---- */
+.viora-trigger.is-tucked { transform: translateY(calc(100% + 32px)); opacity: 0; pointer-events: none; }
+@media (max-width: 960px) {
+    .viora-window {
+        width: min(400px, calc(100vw - 32px));
+        max-height: min(560px, calc(100vh - 110px));
+        max-height: min(560px, calc(100dvh - 110px));
+        bottom: 88px;
+    }
+    .viora-messages { flex: 1 1 auto; min-height: 0; max-height: none; }
+    .viora-header, .viora-quick-btns, .viora-input-area { flex: none; }
+    /* Quick replies become one scrollable row so the conversation keeps the room */
+    .viora-quick-btns {
+        flex-wrap: nowrap; overflow-x: auto; padding: 8px 14px;
+        -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    }
+    .viora-quick-btns::-webkit-scrollbar { display: none; }
+    .quick-btn { flex: none; white-space: nowrap; }
+}
+@media (max-width: 560px) {
+    .viora-trigger {
+        width: 54px; height: 54px; font-size: 24px;
+        right: 16px; bottom: 16px;
+        right: max(16px, env(safe-area-inset-right));
+        bottom: max(16px, env(safe-area-inset-bottom));
+    }
+    .viora-window { right: 16px; bottom: 80px; }
+    .faq-answer, .faq-item.open .faq-answer { padding-left: 16px; padding-right: 16px; }
+}
+@media (max-height: 480px) and (orientation: landscape) {
+    .viora-header { padding: 10px 16px; }
+    .viora-avatar { width: 36px; height: 36px; }
+    .viora-window { bottom: 80px; }
 }

@@ -8,6 +8,8 @@
  *    provides a #sidebarBackdrop element, a true overlay drawer
  *  - Accessible tooltips (title/aria-label) on nav icons while collapsed
  *  - Keeping the toggle button's aria-expanded state in sync
+ *  - Remembering the sidebar's scroll position between page loads, so
+ *    clicking a link near the bottom doesn't snap the menu back to the top
  *
  * The very-first-paint state (avoiding a flash of the expanded sidebar) is
  * applied by a small inline script in each layout, before this file loads —
@@ -91,6 +93,58 @@
         hamburger.setAttribute('aria-expanded', String(expanded));
     }
 
+    // ----- Keep the sidebar's scroll position across page loads -----------
+    // Every nav click is a full page load, which would otherwise reset the
+    // scrollable menu to the top. The position is saved in sessionStorage
+    // and put back right away (this script runs at the end of <body>, before
+    // the first paint, so there is no visible jump).
+    var SCROLL_KEY = 'clinicrms_sidebar_scroll';
+    var navScroller = sidebar.querySelector('.sidebar-nav-wrapper');
+
+    if (navScroller) {
+        var savedScroll = null;
+        try {
+            savedScroll = sessionStorage.getItem(SCROLL_KEY);
+        } catch (e) {}
+
+        navScroller.style.scrollBehavior = 'auto';
+        if (savedScroll !== null && !isNaN(parseInt(savedScroll, 10))) {
+            navScroller.scrollTop = parseInt(savedScroll, 10);
+        }
+
+        // If the current page's link is still out of view (first visit,
+        // direct link, or a different menu length), bring it into view.
+        var activeLink = navScroller.querySelector('a.active');
+        if (activeLink) {
+            var navRect  = navScroller.getBoundingClientRect();
+            var linkRect = activeLink.getBoundingClientRect();
+            if (linkRect.top < navRect.top || linkRect.bottom > navRect.bottom) {
+                navScroller.scrollTop += (linkRect.top - navRect.top)
+                    - (navScroller.clientHeight / 2) + (linkRect.height / 2);
+            }
+        }
+
+        var saveScroll = function () {
+            try {
+                sessionStorage.setItem(SCROLL_KEY, String(Math.round(navScroller.scrollTop)));
+            } catch (e) {}
+        };
+
+        var scrollTicking = false;
+        navScroller.addEventListener('scroll', function () {
+            if (scrollTicking) return;
+            scrollTicking = true;
+            requestAnimationFrame(function () {
+                saveScroll();
+                scrollTicking = false;
+            });
+        }, { passive: true });
+
+        // Also save right before leaving the page (link click, refresh, etc.)
+        window.addEventListener('pagehide', saveScroll);
+        navScroller.addEventListener('click', saveScroll);
+    }
+
     // Sync tooltip/aria state with whatever the blocking init script in the
     // layout already applied before this file loaded.
     updateTooltips(sidebar.classList.contains('collapsed'));
@@ -144,7 +198,28 @@
         });
 
         window.addEventListener('resize', function () {
-            if (!isMobile()) closeMobileDrawer();
+            if (!isMobile()) {
+                closeMobileDrawer();
+                return;
+            }
+
+            // Rotating/resizing from a collapsed desktop width: the icon-only
+            // state must not leak into the mobile drawer (it would open as a
+            // 68px strip with no labels). Visual only — the saved desktop
+            // preference is untouched.
+            if (sidebar.classList.contains('collapsed')) {
+                sidebar.classList.remove('collapsed');
+                mainContent.classList.remove('collapsed');
+                updateTooltips(false);
+            }
+        });
+
+        // Escape closes the open drawer (keyboard / external keyboard users).
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && isMobile() && sidebar.classList.contains('open')) {
+                closeMobileDrawer();
+                hamburger.focus();
+            }
         });
     }
 })();

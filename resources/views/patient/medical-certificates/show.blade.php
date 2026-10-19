@@ -74,6 +74,7 @@
 @php
     $certNo    = $medicalCertificate->certificate_number;
     $physician = $medicalCertificate->doctor ?? optional($medicalCertificate->appointment)->doctor;
+    $medicalCertificate->loadMissing('invoice');
 @endphp
 
 {{-- ================= HERO (same banner as the Dashboard) ================= --}}
@@ -87,9 +88,17 @@
             </div>
         </div>
 
-        <a href="{{ route('patient.medical-certificates.index') }}" class="hero-cta-btn">
-            <i class='bx bx-arrow-back'></i> Back to Medical Certificates
-        </a>
+        <div class="mc-actions">
+            @if($medicalCertificate->isPaid())
+                <a href="{{ route('patient.medical-certificates.print', $medicalCertificate->id) }}"
+                   target="_blank" class="hero-cta-btn">
+                    <i class='bx bx-printer'></i> Print / Save Copy
+                </a>
+            @endif
+            <a href="{{ route('patient.medical-certificates.index') }}" class="hero-cta-btn">
+                <i class='bx bx-arrow-back'></i> Back to Medical Certificates
+            </a>
+        </div>
     </div>
 </div>
 
@@ -180,7 +189,11 @@
     </div>
 
     <p class="mc-text" style="color:#6b7280;">
-        This page is a record only. The official certificate is the signed paper copy released to you by the clinic.
+        @if($medicalCertificate->isPaid())
+            You can print or save a copy of this certificate. The official certificate is still the signed paper copy released to you by the clinic.
+        @else
+            You can print or save a copy once the invoice for this certificate is fully paid. The official certificate is the signed paper copy released to you by the clinic.
+        @endif
     </p>
 
 </div>

@@ -33,6 +33,7 @@ use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\UserLogController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\BackupRestoreController;
+use App\Http\Controllers\Admin\SystemSettingsController;
 use App\Http\Controllers\Admin\AdminServiceController;
 use App\Http\Controllers\Admin\AdminBillingController;
 use App\Http\Controllers\Admin\AdminNotificationController;
@@ -121,6 +122,16 @@ function registerMedicineInventoryRoutes(): void
 |--------------------------------------------------------------------------
 */
 Route::get('/', [\App\Http\Controllers\LandingController::class, 'index'])->name('landing');
+
+// Public legal pages (no login needed): Terms and Conditions + Privacy Policy.
+Route::view('/terms-and-conditions', 'legal.terms')->name('terms');
+Route::view('/privacy-policy', 'legal.privacy')->name('privacy');
+
+// Contact Us form (public). Rate limited per IP — see RateLimiter::for('contact')
+// in AppServiceProvider. Inquiries are stored, then emailed to the clinic.
+Route::post('/contact', [\App\Http\Controllers\ContactMessageController::class, 'store'])
+    ->middleware('throttle:contact')
+    ->name('contact.store');
 
 
 /*
@@ -262,16 +273,20 @@ Route::prefix('patient')
         Route::get('/prescription/{id}', [PatientController::class, 'showPrescription'])
             ->name('prescription.show');
 
-        // Medical Certificates — READ-ONLY history. A Medical Certificate is
-        // never requested online: the Doctor creates it at the clinic, the
+        // Medical Certificates — history + personal copy. A Medical Certificate
+        // is never requested online: the Doctor creates it at the clinic, the
         // patient pays at the counter and receives the signed paper copy
-        // from Staff. Only certificates already RELEASED are listed here;
-        // there is no request, correction or print route for the patient.
+        // from Staff. Only certificates already RELEASED are listed here; once
+        // the invoice is paid the patient may print / save a COPY.
+        // There is no request or correction route for the patient.
         Route::get('/medical-certificates', [PatientMedicalCertificateController::class, 'index'])
             ->name('medical-certificates.index');
 
         Route::get('/medical-certificates/{medicalCertificate}', [PatientMedicalCertificateController::class, 'show'])
             ->name('medical-certificates.show');
+
+        Route::get('/medical-certificates/{medicalCertificate}/print', [PatientMedicalCertificateController::class, 'print'])
+            ->name('medical-certificates.print');
 
         // Laboratory Results (Section 6A of the Laboratory workflow
         // spec) — Patient can only ever see/upload against their OWN
@@ -480,8 +495,9 @@ Route::prefix('doctor')
         // Medical Certificates — created by the Doctor from a COMPLETED
         // consultation (never requested online by the patient). Saving the
         // form issues the certificate and attaches its invoice; the fee is
-        // paid at Staff → Billing & Payments, the Doctor prints it once paid
-        // and signs the paper copy, and Staff releases it.
+        // paid at Staff → Billing & Payments. The Doctor can print it at any
+        // time (paid or not — the payment state is shown on the page) and
+        // signs the paper copy; Staff releases it once the invoice is paid.
         //
         // NOTE: the fixed "/create" path is declared before the
         // {medicalCertificate} routes so it isn't captured as a certificate ID.
@@ -673,8 +689,57 @@ Route::prefix('admin')
             ->middleware('throttle:3,1,backup-restore')
             ->name('backups.restore.run');
 
+        // System Settings (Admin-only) — clinic info, appointment rules,
+        // notification toggles and session timeout. Same gate as the rest of
+        // this group (auth + verified + role:Admin), re-checked in the controller.
+        Route::get('/system-settings', [SystemSettingsController::class, 'index'])->name('system-settings.index');
+        Route::put('/system-settings', [SystemSettingsController::class, 'update'])->name('system-settings.update');
+
+        // Contact Us inquiries from the public landing page (Admin only).
+        Route::get('/contact-messages', [\App\Http\Controllers\Admin\ContactMessageController::class, 'index'])
+            ->name('contact-messages.index');
+        Route::get('/contact-messages/{contactMessage}', [\App\Http\Controllers\Admin\ContactMessageController::class, 'show'])
+            ->whereNumber('contactMessage')
+            ->name('contact-messages.show');
+        Route::patch('/contact-messages/{contactMessage}/read', [\App\Http\Controllers\Admin\ContactMessageController::class, 'markRead'])
+            ->whereNumber('contactMessage')
+            ->name('contact-messages.read');
+        Route::patch('/contact-messages/{contactMessage}/unread', [\App\Http\Controllers\Admin\ContactMessageController::class, 'markUnread'])
+            ->whereNumber('contactMessage')
+            ->name('contact-messages.unread');
+        Route::post('/contact-messages/{contactMessage}/resend', [\App\Http\Controllers\Admin\ContactMessageController::class, 'resend'])
+            ->whereNumber('contactMessage')
+            ->middleware('throttle:10,1')
+            ->name('contact-messages.resend');
+        Route::post('/contact-messages/{contactMessage}/reply', [\App\Http\Controllers\Admin\ContactMessageController::class, 'reply'])
+            ->whereNumber('contactMessage')
+            ->middleware('throttle:10,1')
+            ->name('contact-messages.reply');
+        Route::delete('/contact-messages/{contactMessage}', [\App\Http\Controllers\Admin\ContactMessageController::class, 'destroy'])
+            ->whereNumber('contactMessage')
+            ->name('contact-messages.destroy');
+
+        // Archive (Admin-only). Archive / Restore / guarded Permanent Delete.
+        // Records are addressed by archive-entry id; the generic "archive" POST
+        // validates the module key and the record id on the server.
+        Route::get('/archive', [\App\Http\Controllers\Admin\ArchiveController::class, 'index'])->name('archive.index');
+        Route::post('/archive', [\App\Http\Controllers\Admin\ArchiveController::class, 'store'])
+            ->middleware('throttle:30,1,archive-write')
+            ->name('archive.store');
+        Route::post('/archive/{entry}/recover', [\App\Http\Controllers\Admin\ArchiveController::class, 'restore'])
+            ->whereNumber('entry')
+            ->middleware('throttle:30,1,archive-write')
+            ->name('archive.restore');
+        Route::delete('/archive/{entry}', [\App\Http\Controllers\Admin\ArchiveController::class, 'destroy'])
+            ->whereNumber('entry')
+            ->middleware('throttle:30,1,archive-write')
+            ->name('archive.destroy');
+
         // Billing & Payments (monitoring — read only)
         Route::get('/billing', [AdminBillingController::class, 'index'])->name('billing.index');
+        // Revenue report — must stay ABOVE /billing/{invoice}
+        Route::get('/billing/report', [AdminBillingController::class, 'report'])->name('billing.report');
+        Route::get('/billing/report/print', [AdminBillingController::class, 'printReport'])->name('billing.report.print');
         Route::get('/billing/{invoice}', [AdminBillingController::class, 'show'])->name('billing.show');
         Route::get('/billing/{invoice}/receipt/{payment}', [AdminBillingController::class, 'receipt'])->name('billing.receipt');
 
@@ -852,6 +917,16 @@ Route::prefix('staff')
         Route::get('/billing', [StaffBillingController::class, 'index'])
             ->middleware('permission:view_billing')
             ->name('billing.index');
+
+        // Revenue report (Consultation / Medical Certificate / Medicine) +
+        // print view. Must stay ABOVE /billing/{invoice}.
+        Route::get('/billing/report', [StaffBillingController::class, 'report'])
+            ->middleware('permission:view_billing_reports')
+            ->name('billing.report');
+
+        Route::get('/billing/report/print', [StaffBillingController::class, 'printReport'])
+            ->middleware('permission:view_billing_reports')
+            ->name('billing.report.print');
 
         Route::get('/billing/{invoice}', [StaffBillingController::class, 'show'])
             ->middleware('permission:view_billing')

@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Patient;
 use App\Models\Appointment;
 use App\Models\UserLog;
+use App\Services\ClinicSchedule;
 use Carbon\Carbon;
 
 /**
@@ -66,7 +67,8 @@ class AdminPatientController extends Controller
         $registeredPatients = collect();
         if ($type === 'all' || $type === 'registered') {
             $registeredQuery = User::where('role', 'Patient')
-                ->where('approval_status', 'Approved');
+                ->where('approval_status', 'Approved')
+                ->notArchived();   // archived accounts live in Admin > Archive
             $this->applySearch($registeredQuery, $search);
 
             $registeredPatients = $registeredQuery->get()->map(function ($user) {
@@ -107,7 +109,7 @@ class AdminPatientController extends Controller
         // Walk-in patients (from patients table)
         $walkInPatients = collect();
         if ($type === 'all' || $type === 'walkin') {
-            $walkInQuery = Patient::where('is_walk_in', true);
+            $walkInQuery = Patient::where('is_walk_in', true)->notArchived();
             $this->applySearch($walkInQuery, $search);
 
             $walkInPatients = $walkInQuery->get()->map(function ($patient) {
@@ -571,6 +573,14 @@ class AdminPatientController extends Controller
             'appointment_time' => 'required',
             'reason'           => 'required|string|max:500',
         ]);
+
+        // The time must be a bookable slot of the clinic schedule
+        // (Admin > System Settings): operating hours, no lunch break.
+        if (!ClinicSchedule::isBookableTime($request->appointment_time)) {
+            return back()->withInput()->withErrors([
+                'appointment_time' => ClinicSchedule::INVALID_TIME_MESSAGE,
+            ]);
+        }
 
         // Prevent double-booking the same doctor at the same date and time.
         $conflict = Appointment::where('doctor_id', $request->doctor_id)

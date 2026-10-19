@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use App\Models\Appointment;
-use App\Models\LaboratoryRequest;
 use App\Models\MedicalRecord;
 use App\Models\Patient;
 use App\Models\User;
@@ -16,7 +15,9 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\AppointmentStatusMail;
+use App\Services\ClinicSchedule;
 use App\Services\IProgSmsService;
+use App\Services\SystemSettings;
 use Throwable;
 use Carbon\Carbon;
 
@@ -79,7 +80,120 @@ class StaffAppointmentController extends Controller
         return 'staff.appointments.index';
     }
 
+    // ================= SORTING (Appointments list) =================
+    /**
+     * Statuses where the visit is still "live" (not yet in a final state).
+     * Used by the All tab to split Upcoming vs Overdue.
+     */
+    private const ACTIVE_STATUSES = ['Pending', 'Approved', 'Rescheduled', 'Checked In', 'In Progress', 'Waiting'];
+
+    /**
+     * Active statuses where the patient is already here / being served.
+     * Their scheduled time is naturally in the past, so they are NOT
+     * "overdue" while the appointment date is still today or later.
+     */
+    private const IN_SERVICE_STATUSES = ['Checked In', 'In Progress', 'Waiting'];
+
+    /** Tabs that sort newest schedule first (final / historical records). */
+    private const DESC_STATUSES = ['Completed', 'Cancelled', 'Rejected', 'No Show'];
+
+    /**
+     * Applies the ordering of the Appointments list.
+     *
+     * Hook: AdminAppointmentController overrides this to keep its original
+     * ordering, so the Admin page behaves exactly as before.
+     */
+    protected function applyIndexOrdering($query, string $status): void
+    {
+        if ($status === 'all') {
+            $this->applyPriorityOrdering($query);
+            return;
+        }
+
+        // Individual status tabs: one simple rule per tab.
+        $this->applyScheduleOrdering($query, in_array($status, self::DESC_STATUSES, true) ? 'desc' : 'asc');
+    }
+
+    /**
+     * Plain schedule ordering (date, then time) with a deterministic tiebreak.
+     * A walk-in has no appointment_time, so it counts as the end of its day.
+     */
+    private function applyScheduleOrdering($query, string $direction): void
+    {
+        if ($direction === 'desc') {
+            $query->orderBy('appointment_date', 'desc')
+                ->orderByRaw("COALESCE(appointment_time, '23:59:59') DESC")
+                ->orderBy('id', 'desc');
+            return;
+        }
+
+        $query->orderBy('appointment_date')
+            ->orderByRaw("COALESCE(appointment_time, '23:59:59') ASC")
+            ->orderBy('arrived_at')        // walk-ins: ayon sa dating
+            ->orderBy('id');
+    }
+
+    /**
+     * "All" tab ordering, computed from the CURRENT date/time:
+     *   0 = active & upcoming        -> schedule ASC  (nearest first)
+     *   1 = active but already past  -> schedule ASC  (oldest overdue first)
+     *   2 = Completed                -> schedule DESC (latest first)
+     *   3 = Cancelled/Rejected/No Show -> schedule DESC
+     *   4 = anything else (safety)   -> schedule DESC
+     * Statuses are never changed here; this only affects display order.
+     */
+    private function applyPriorityOrdering($query): void
+    {
+        $now   = now();
+        $today = $now->toDateString();
+        $time  = $now->format('H:i:s');
+
+        $active    = $this->sqlList(self::ACTIVE_STATUSES);
+        $inService = $this->sqlList(self::IN_SERVICE_STATUSES);
+
+        $bucket = "(CASE
+            WHEN status IN ({$active}) THEN
+                CASE
+                    WHEN DATE(appointment_date) < ? THEN 1
+                    WHEN DATE(appointment_date) = ? AND appointment_time IS NOT NULL
+                         AND appointment_time < ? AND status NOT IN ({$inService}) THEN 1
+                    ELSE 0
+                END
+            WHEN status = 'Completed' THEN 2
+            WHEN status IN ('Cancelled', 'Rejected', 'No Show') THEN 3
+            ELSE 4
+        END)";
+        $b = [$today, $today, $time];
+
+        $query
+            ->orderByRaw("{$bucket} ASC", $b)
+            // Active groups (0, 1): earliest schedule first.
+            ->orderByRaw("CASE WHEN {$bucket} IN (0, 1) THEN DATE(appointment_date) END ASC", $b)
+            ->orderByRaw("CASE WHEN {$bucket} IN (0, 1) THEN COALESCE(appointment_time, '23:59:59') END ASC", $b)
+            ->orderByRaw("CASE WHEN {$bucket} IN (0, 1) THEN arrived_at END ASC", $b)
+            ->orderByRaw("CASE WHEN {$bucket} IN (0, 1) THEN id END ASC", $b)
+            // Final groups (2, 3, 4): latest schedule first.
+            ->orderByRaw("CASE WHEN {$bucket} NOT IN (0, 1) THEN DATE(appointment_date) END DESC", $b)
+            ->orderByRaw("CASE WHEN {$bucket} NOT IN (0, 1) THEN COALESCE(appointment_time, '23:59:59') END DESC", $b)
+            ->orderByRaw("CASE WHEN {$bucket} NOT IN (0, 1) THEN id END DESC", $b);
+    }
+
+    /** 'A','B' list for fixed, code-defined status names (never user input). */
+    private function sqlList(array $values): string
+    {
+        return implode(', ', array_map(fn ($v) => "'" . str_replace("'", "''", $v) . "'", $values));
+    }
+
     // ================= LIST ALL APPOINTMENTS (with status filter) =================
+    /**
+     * Hook: Staff sees every appointment. AdminAppointmentController overrides
+     * this to hide the ones the Admin moved to the Archive.
+     */
+    protected function applyArchiveVisibility($query)
+    {
+        return $query;
+    }
+
     public function index(Request $request)
     {
         $status = $request->query('status', 'all');
@@ -88,7 +202,7 @@ class StaffAppointmentController extends Controller
             $status = 'all';
         }
 
-        $query = Appointment::with(['patient', 'walkinPatient', 'doctor']);
+        $query = $this->applyArchiveVisibility(Appointment::with(['patient', 'walkinPatient', 'doctor']));
 
         if ($status !== 'all') {
             $query->where('status', $status);
@@ -116,13 +230,18 @@ class StaffAppointmentController extends Controller
             $query->whereDate('appointment_date', $date);
         }
 
-        $appointments = $query->latest()
+        // Ordering is applied in the database, BEFORE paginate(), so the
+        // order stays correct across every page.
+        $this->applyIndexOrdering($query, $status);
+
+        $appointments = $query
             ->paginate(10)
             ->appends($request->query());
 
         // Counts per status, for the tab badges — derived from the same
         // existing `status` column, no new fields.
-        $statusCounts = Appointment::selectRaw('status, count(*) as total')
+        $statusCounts = $this->applyArchiveVisibility(Appointment::query())
+            ->selectRaw('status, count(*) as total')
             ->groupBy('status')
             ->pluck('total', 'status');
 
@@ -245,14 +364,16 @@ class StaffAppointmentController extends Controller
     {
         $appointment = Appointment::findOrFail($id);
 
-        if ($appointment->isWalkIn() && $appointment->status === Appointment::STATUS_WAITING) {
-            return redirect()->back()
-                ->with('error', 'Check in the walk-in patient first, then record the Vital Signs.');
-        }
+        // Vital Signs can ONLY be recorded once the patient is Checked In
+        // (same rule for scheduled appointments and walk-ins). Enforced here,
+        // not just in the view, so a direct request cannot bypass it.
+        if ($appointment->status !== 'Checked In') {
+            $notArrivedYet = in_array($appointment->status, ['Approved', 'Rescheduled', Appointment::STATUS_WAITING], true);
 
-        if (!in_array($appointment->status, ['Approved', 'Rescheduled', 'Checked In'], true)) {
             return redirect()->back()
-                ->with('error', 'Vital Signs can only be recorded before the consultation starts.');
+                ->with('error', $notArrivedYet
+                    ? 'Check in the patient first, then record the Vital Signs.'
+                    : 'Vital Signs can only be recorded while the patient is Checked In, before the consultation starts.');
         }
 
         $keys = array_keys(MedicalRecord::VITALS);
@@ -351,36 +472,15 @@ class StaffAppointmentController extends Controller
             'appointment_date' => 'required|date|after_or_equal:today',
             'appointment_time' => 'required',
             'reason'           => 'required|string|max:500',
-            'follow_up_laboratory_request_id' => 'nullable|integer',
         ]);
 
-        // ── Follow-up Consultation (Laboratory result) ───────────────────
-        // Only when Staff explicitly chose the Follow-up appointment type.
-        // Re-checked from the database: the laboratory request must belong
-        // to THIS patient (registered or walk-in), be Reviewed with a
-        // follow-up recommended, and not already have an active follow-up.
-        $followUpLabRequest = null;
-
-        if ($request->filled('follow_up_laboratory_request_id')) {
-            $ownerColumn = $request->patient_type === 'user' ? 'patient_id' : 'walkin_patient_id';
-
-            $followUpLabRequest = LaboratoryRequest::where($ownerColumn, $request->patient_id)
-                ->awaitingFollowUpBooking()
-                ->find((int) $request->follow_up_laboratory_request_id);
-
-            if (!$followUpLabRequest) {
-                throw ValidationException::withMessages([
-                    'follow_up_laboratory_request_id' => 'This laboratory result has no follow-up consultation waiting to be booked for this patient.',
-                ]);
-            }
-
-            if ($followUpLabRequest->doctor_id && (int) $request->doctor_id !== (int) $followUpLabRequest->doctor_id) {
-                throw ValidationException::withMessages([
-                    'doctor_id' => 'A follow-up consultation must be scheduled with the doctor who reviewed the laboratory result.',
-                ]);
-            }
+        // The time must be a bookable slot of the clinic schedule
+        // (Admin > System Settings): operating hours, no lunch break.
+        if (!ClinicSchedule::isBookableTime($request->appointment_time)) {
+            throw ValidationException::withMessages([
+                'appointment_time' => ClinicSchedule::INVALID_TIME_MESSAGE,
+            ]);
         }
-        // ─────────────────────────────────────────────────────────────────
 
         // ── Duplicate slot check ──────────────────────────────────────────
         // Prevent double-booking the same doctor at the same date and time.
@@ -402,10 +502,9 @@ class StaffAppointmentController extends Controller
             'appointment_time'  => $request->appointment_time,
             'reason'            => $request->reason,
             // Existing Staff-created behavior: Approved directly (the
-            // patient is scheduled in person) — follow-up or not.
+            // patient is scheduled in person).
             'status'            => 'Approved',
-            'appointment_type'  => $followUpLabRequest ? Appointment::TYPE_FOLLOW_UP : Appointment::TYPE_REGULAR,
-            'follow_up_laboratory_request_id' => $followUpLabRequest?->id,
+            'appointment_type'  => Appointment::TYPE_REGULAR,
             'patient_id'        => null,
             'walkin_patient_id' => null,
         ];
@@ -422,16 +521,13 @@ class StaffAppointmentController extends Controller
             'user_id' => auth()->id(),
             'action'  => 'Created Appointment',
             'module'  => 'Appointments',
-            'details' => 'Scheduled ' . ($followUpLabRequest ? 'follow-up consultation ' : 'appointment ') . $appointment->reference_no
+            'details' => 'Scheduled appointment ' . $appointment->reference_no
                        . ' for ' . $appointment->patientName()
-                       . ' on ' . $this->appointmentSchedule($appointment)
-                       . ($followUpLabRequest ? ' (laboratory result ' . $followUpLabRequest->reference_no . ').' : '.'),
+                       . ' on ' . $this->appointmentSchedule($appointment) . '.',
         ]);
 
         return redirect()->route('staff.appointments.index')
-            ->with('success', $followUpLabRequest
-                ? 'Follow-up consultation scheduled successfully!'
-                : 'Appointment scheduled successfully!');
+            ->with('success', 'Appointment scheduled successfully!');
     }
 
     // ================= APPROVE APPOINTMENT =================
@@ -451,13 +547,15 @@ class StaffAppointmentController extends Controller
         ]);
 
         // Existing email notification
-        if ($appointment->patient && $appointment->patient->email) {
+        if (SystemSettings::notificationEnabled('email', 'approved')
+            && $appointment->patient && $appointment->patient->email) {
             Mail::to($appointment->patient->email)
                 ->send(new AppointmentStatusMail($appointment, 'Approved'));
         }
 
         // SMS notification
-        if ($appointment->patient && $appointment->patient->contact_number) {
+        if (SystemSettings::notificationEnabled('sms', 'approved')
+            && $appointment->patient && $appointment->patient->contact_number) {
             try {
                 $phone = $appointment->patient->contact_number;
 
@@ -474,7 +572,7 @@ class StaffAppointmentController extends Controller
                     : 'Your appointment has been approved. '
                     . 'Ref: ' . $appointment->reference_no
                     . '. Date: ' . $this->appointmentSchedule($appointment)
-                    . '. Please arrive on time. - Clinic RMS';
+                    . '. Please arrive on time. ' . SystemSettings::smsSignature();
 
                 $smsService->send($phone, $message);
             } catch (Throwable $e) {
@@ -704,13 +802,15 @@ class StaffAppointmentController extends Controller
                        . '. Reason: ' . $request->reason,
         ]);
 
-        if ($appointment->patient && $appointment->patient->email) {
+        if (SystemSettings::notificationEnabled('email', 'rejected')
+            && $appointment->patient && $appointment->patient->email) {
             Mail::to($appointment->patient->email)
                 ->send(new AppointmentStatusMail($appointment, 'Rejected'));
         }
 
         // SMS notification
-        if ($appointment->patient && $appointment->patient->contact_number) {
+        if (SystemSettings::notificationEnabled('sms', 'rejected')
+            && $appointment->patient && $appointment->patient->contact_number) {
             try {
                 $phone = $appointment->patient->contact_number;
 
@@ -721,7 +821,7 @@ class StaffAppointmentController extends Controller
 
                 $message = 'Your appointment request has been rejected. '
                     . 'Ref: ' . $appointment->reference_no
-                    . '. Please log in to your Clinic RMS account for more details. - Clinic RMS';
+                    . '. Please log in to your Clinic RMS account for more details. ' . SystemSettings::smsSignature();
 
                 $smsService->send($phone, $message);
             } catch (Throwable $e) {
@@ -749,13 +849,15 @@ class StaffAppointmentController extends Controller
                        . ' scheduled on ' . $this->appointmentSchedule($appointment) . '.',
         ]);
 
-        if ($appointment->patient && $appointment->patient->email) {
+        if (SystemSettings::notificationEnabled('email', 'cancelled')
+            && $appointment->patient && $appointment->patient->email) {
             Mail::to($appointment->patient->email)
                 ->send(new AppointmentStatusMail($appointment, 'Cancelled'));
         }
 
         // SMS notification
-        if ($appointment->patient && $appointment->patient->contact_number) {
+        if (SystemSettings::notificationEnabled('sms', 'cancelled')
+            && $appointment->patient && $appointment->patient->contact_number) {
             try {
                 $phone = $appointment->patient->contact_number;
 
@@ -766,7 +868,7 @@ class StaffAppointmentController extends Controller
 
                 $message = 'Your appointment has been cancelled. '
                     . 'Ref: ' . $appointment->reference_no
-                    . '. Please log in to your Clinic RMS account for more details. - Clinic RMS';
+                    . '. Please log in to your Clinic RMS account for more details. ' . SystemSettings::smsSignature();
 
                 $smsService->send($phone, $message);
             } catch (Throwable $e) {
@@ -786,6 +888,10 @@ class StaffAppointmentController extends Controller
             'appointment_time'  => 'required|date_format:H:i',
             'reschedule_reason' => 'required|string|max:500',
         ]);
+
+        if (!ClinicSchedule::isBookableTime($request->appointment_time)) {
+            return redirect()->back()->with('error', ClinicSchedule::INVALID_TIME_MESSAGE);
+        }
 
         $appointment = Appointment::with(['patient', 'walkinPatient', 'doctor'])->findOrFail($id);
 
@@ -829,13 +935,15 @@ class StaffAppointmentController extends Controller
                        . '. Reason: ' . $request->reschedule_reason,
         ]);
 
-        if ($appointment->patient && $appointment->patient->email) {
+        if (SystemSettings::notificationEnabled('email', 'rescheduled')
+            && $appointment->patient && $appointment->patient->email) {
             Mail::to($appointment->patient->email)
                 ->send(new AppointmentStatusMail($appointment, 'Rescheduled'));
         }
 
         // SMS notification
-        if ($appointment->patient && $appointment->patient->contact_number) {
+        if (SystemSettings::notificationEnabled('sms', 'rescheduled')
+            && $appointment->patient && $appointment->patient->contact_number) {
             try {
                 $phone = $appointment->patient->contact_number;
 
@@ -847,7 +955,7 @@ class StaffAppointmentController extends Controller
                 $message = 'Your appointment has been rescheduled. '
                     . 'Ref: ' . $appointment->reference_no
                     . '. New schedule: ' . $this->appointmentSchedule($appointment)
-                    . '. Please arrive on time. - Clinic RMS';
+                    . '. Please arrive on time. ' . SystemSettings::smsSignature();
 
                 $smsService->send($phone, $message);
             } catch (Throwable $e) {
@@ -869,12 +977,12 @@ class StaffAppointmentController extends Controller
                 ->with('error', 'Only approved or rescheduled appointments can be marked as No Show.');
         }
 
-        // Same 30-minute-slot rule used by the Doctor No Show action —
+        // Same slot-length rule (Admin > System Settings) used by the Doctor No Show action —
         // the stored appointment_time is the slot start time.
         $appointmentStart = Carbon::parse(
             $appointment->appointment_date->format('Y-m-d') . ' ' . $appointment->appointment_time
         );
-        $appointmentEnd = $appointmentStart->copy()->addMinutes(30);
+        $appointmentEnd = $appointmentStart->copy()->addMinutes(ClinicSchedule::slotMinutes());
 
         if (Carbon::now()->lt($appointmentEnd)) {
             return redirect()->back()

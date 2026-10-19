@@ -6,49 +6,13 @@
 @endsection
 
 @section('content')
-<div class="container">
+<div class="container invoices-page">
 
-    <div class="page-header">
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
         <h1 class="page-title">Billing &amp; Payments</h1>
-    </div>
-
-    <!-- ================= STATS ================= -->
-    <div class="ab-stats-grid">
-        <div class="ab-stat-card ab-stat-card--purple">
-            <div class="ab-stat-icon"><i class="fa-solid fa-sack-dollar"></i></div>
-            <div>
-                <p>Total Collected</p>
-                <h3>₱{{ number_format($totalCollected, 2) }}</h3>
-            </div>
-        </div>
-        <div class="ab-stat-card ab-stat-card--red">
-            <div class="ab-stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
-            <div>
-                <p>Outstanding Balance</p>
-                <h3>₱{{ number_format($totalOutstanding, 2) }}</h3>
-            </div>
-        </div>
-        <div class="ab-stat-card ab-stat-card--green">
-            <div class="ab-stat-icon"><i class="fa-solid fa-money-bill-wave"></i></div>
-            <div>
-                <p>Cash Collected</p>
-                <h3>₱{{ number_format($cashCollected, 2) }}</h3>
-            </div>
-        </div>
-        <div class="ab-stat-card ab-stat-card--blue">
-            <div class="ab-stat-icon"><i class="fa-solid fa-mobile-screen-button"></i></div>
-            <div>
-                <p>GCash Collected</p>
-                <h3>₱{{ number_format($gcashCollected, 2) }}</h3>
-            </div>
-        </div>
-    </div>
-
-    <div class="ab-counts-row">
-        <span class="ab-count-chip ab-count-chip--unpaid">Unpaid: {{ $counts['Unpaid'] }}</span>
-        <span class="ab-count-chip ab-count-chip--partial">Partially Paid: {{ $counts['Partially Paid'] }}</span>
-        <span class="ab-count-chip ab-count-chip--paid">Paid: {{ $counts['Paid'] }}</span>
-        <span class="ab-count-chip ab-count-chip--cancelled">Cancelled: {{ $counts['Cancelled'] }}</span>
+        <a href="{{ route('admin.billing.report') }}" class="btn-filter-apply" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+            <i class="fa-solid fa-chart-column"></i> Revenue Report
+        </a>
     </div>
 
     <!-- ================= FILTERS ================= -->

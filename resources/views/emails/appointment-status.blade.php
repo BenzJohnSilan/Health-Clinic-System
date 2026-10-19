@@ -75,6 +75,17 @@
                     <tr>
                         <td style="background:#f9fafb; padding:15px; text-align:center; font-size:13px; color:#777;">
                             <p style="margin:0;"><strong>Clinic Administration Team</strong></p>
+                            @php
+                                $__clinic = \App\Services\SystemSettings::all();
+                                $__contact = array_filter([
+                                    $__clinic['clinic_address'] ?? '',
+                                    $__clinic['clinic_phone'] ?? '',
+                                    $__clinic['clinic_email'] ?? '',
+                                ]);
+                            @endphp
+                            @if(count($__contact))
+                                <p style="margin:0;">{{ \App\Services\SystemSettings::clinicName() }} &middot; {{ implode(' · ', $__contact) }}</p>
+                            @endif
                             <p style="margin:0;">This is an automated message. Please do not reply.</p>
                         </td>
                     </tr>

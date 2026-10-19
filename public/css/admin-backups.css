@@ -177,13 +177,21 @@
     overflow-x: auto;
 }
 
+/* The table and its pagination share ONE white card, so there is no seam
+   or gap between the last row and the pagination bar. */
+.bk-table-card {
+    background: #fff;
+    border: 1px solid #f0e6ff;
+    border-radius: 14px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
 .medical-table {
     width: 100%;
     min-width: 760px;
     border-collapse: collapse;
-    border-radius: 12px 12px 0 0;
-    overflow: hidden;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
     font-family: "Poppins", Arial, sans-serif;
 }
 
@@ -206,7 +214,7 @@
 }
 
 .medical-table tbody tr:last-child td {
-    border-bottom: none;
+    border-bottom: none;      /* the pagination bar draws the separator */
 }
 
 .medical-table tbody tr:nth-child(even) td {
@@ -235,12 +243,24 @@
     color: #1f2937;
 }
 
+/* Actions column: Download + Restore always sit side by side on one line
+   (before, a long note in the Type column squeezed this column and the two
+   buttons stacked on top of each other, making the rows uneven). */
+.medical-table th:last-child,
+.medical-table td:last-child {
+    white-space: nowrap;
+    width: 1%;
+}
+
 .bk-sub {
     display: block;
     margin-top: 3px;
     font-size: 12px;
     color: #9ca3af;
     font-weight: 400;
+    max-width: 340px;           /* long notes / filenames wrap instead of stretching the column */
+    overflow-wrap: anywhere;
+    line-height: 1.45;
 }
 
 .bk-contents-title {
@@ -376,11 +396,7 @@
     gap: 12px;
     padding: 14px 18px;
     background: #fff;
-    border: 1px solid #f0e6ff;
-    border-top: none;
-    border-radius: 0 0 12px 12px;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
-    margin-bottom: 30px;
+    border-top: 1px solid #f0e6ff;
     font-family: "Poppins", Arial, sans-serif;
 }
 
@@ -894,8 +910,96 @@
         justify-content: center;
     }
 
-    .bk-btn--restore {
-        margin-left: 0;
-        margin-top: 6px;
-    }
+}
+
+/* ================= SEARCH & FILTER BAR ================= */
+.search-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    border: 1px solid #f0e6ff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+}
+
+.filter-input {
+    padding: 10px 14px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: "Poppins", Arial, sans-serif;
+    outline: none;
+    background: #fff;
+    color: #111827;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+input.filter-input {
+    flex: 1 1 240px;
+    min-width: 200px;
+}
+
+select.filter-input {
+    flex: 0 1 180px;
+    min-width: 150px;
+}
+
+.filter-input:focus {
+    border-color: #6a0dad;
+    box-shadow: 0 0 0 3px rgba(106, 13, 173, 0.1);
+}
+
+.btn-filter {
+    background-color: #6a0dad;
+    color: #fff;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: "Poppins", Arial, sans-serif;
+    transition: background-color 0.2s;
+}
+
+.btn-filter:hover {
+    background-color: #560aaf;
+}
+
+.btn-clear-filter {
+    background: none;
+    border: none;
+    color: #6b7280;
+    font-size: 13px;
+    text-decoration: underline;
+    padding: 10px 4px;
+    cursor: pointer;
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+.btn-clear-filter:hover {
+    color: #374151;
+}
+
+.medical-table td.bk-no-results {
+    text-align: center;
+    padding: 28px 12px;
+    color: #6b7280;
+    white-space: normal;
+    width: auto;
+}
+
+@media (max-width: 768px) {
+    .search-filter-bar { flex-direction: column; align-items: stretch; }
+    input.filter-input,
+    select.filter-input { max-width: 100%; min-width: 0; }
+    .btn-filter,
+    .btn-clear-filter { width: 100%; justify-content: center; text-align: center; }
 }

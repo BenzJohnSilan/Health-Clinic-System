@@ -333,6 +333,103 @@ body {
     color: #9ca3af;
 }
 
+/* ================= CARDS (MOBILE) =================
+   Hidden by default; shown instead of the table on phones. */
+.history-cards { display: none; }
+
+/* Same card look as the cards on the Appointments page. */
+.history-card {
+    background: #fff;
+    border: 1px solid #f0e6ff;
+    border-radius: 14px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+    padding: 16px;
+}
+
+.history-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f0e6ff;
+}
+
+.history-card-row {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f5eeff;
+}
+
+.history-card-label {
+    padding-top: 1px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.history-card-value {
+    min-width: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #374151;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.history-card-actions { margin-top: 12px; }
+
+/* Same buttons as the Appointments page cards: outlined purple "View",
+   and the "Not Available" label at the exact same size. */
+.history-card-actions .btn-view,
+.history-card-actions .btn-status-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+}
+
+.history-card-actions .btn-view {
+    background-color: #fff;
+    color: #6a0dad;
+    border: 1.5px solid #6a0dad;
+}
+
+.history-card-actions .btn-view:hover,
+.history-card-actions .btn-view:active {
+    background-color: #6a0dad;
+    color: #fff;
+    box-shadow: none;
+}
+
+.history-card-actions .btn-status-label {
+    border-width: 1.5px;
+}
+
+.history-empty {
+    text-align: center;
+    font-style: italic;
+    color: #9ca3af;
+    padding: 32px 16px;
+    background: #fff;
+    border: 1px solid #f0e6ff;
+    border-radius: 14px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+}
+
 /* ================= RESPONSIVE ================= */
 @media screen and (max-width: 900px) {
     .medical-table th,
@@ -342,26 +439,96 @@ body {
     }
 }
 
+/* Phones: stacked cards instead of a table. */
+@media screen and (max-width: 640px) {
+    .table-wrapper { display: none; }
+
+    .history-cards {
+        display: grid;
+        gap: 12px;
+    }
+
+    /* No table above it any more, so the pagination box is a full card. */
+    .pagination-wrapper {
+        border: 1px solid #f0e6ff;
+        border-radius: 12px;
+        margin-top: 16px;
+    }
+}
+
 @media screen and (max-width: 600px) {
-    .medical-table th,
-    .medical-table td {
-        padding: 9px 10px;
-        font-size: 12px;
+    /* The top bar already shows "Appointment History", so the big page
+       title is hidden on phones. */
+    .page-header { display: none; }
+
+    /* App-style toolbar:
+         row 1 = search field (full width)
+         row 2 = status dropdown + Filter button side by side.
+       Picking a status does NOT filter by itself — the Filter button does. */
+    .lab-toolbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        margin-bottom: 16px;
     }
 
-    .btn-view,
-    .btn-prescription,
-    .btn-certificate {
-        font-size: 12px;
-        padding: 6px 10px;
+    .lab-search-box {
+        grid-column: 1 / -1;
+        min-width: 0;
+        min-height: 48px;
+        padding: 0 16px;
+        border-radius: 14px;
+        border-color: #ece4f7;
+        box-shadow: 0 2px 10px rgba(106, 13, 173, 0.06);
     }
 
-    .lab-toolbar { flex-direction: column; }
-    .lab-search-box, .lab-select, .lab-search-btn { width: 100%; }
-    .lab-search-btn { justify-content: center; }
+    .lab-select {
+        grid-column: 1;
+        width: 100%;
+        min-width: 0;
+        min-height: 48px;
+        padding: 0 40px 0 16px;
+        border-radius: 14px;
+        border-color: #ece4f7;
+        box-shadow: 0 2px 10px rgba(106, 13, 173, 0.06);
+        -webkit-appearance: none;
+        appearance: none;
+        background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236a0dad' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center;
+    }
+
+    .lab-search-btn {
+        grid-column: 2;
+        justify-content: center;
+        min-height: 48px;
+        padding: 0 22px;
+        border-radius: 14px;
+        box-shadow: 0 4px 12px rgba(106, 13, 173, 0.28);
+    }
+    .lab-search-btn:active { transform: scale(0.97); }
 
     .pagination-wrapper {
         flex-direction: column;
         align-items: center;
     }
+}
+
+@media screen and (max-width: 420px) {
+    .history-card { padding: 14px 12px; }
+    .history-card-row { grid-template-columns: 72px minmax(0, 1fr); gap: 8px; }
+    .history-card-label { font-size: 10px; }
+    .history-card-value { font-size: 13px; }
+
+    .pagination-wrapper { padding: 12px; }
+    .pagination-info { text-align: center; font-size: 12px; }
+    .pagination-nav { justify-content: center; }
+}
+
+@media screen and (max-width: 340px) {
+    .history-card-row { grid-template-columns: 62px minmax(0, 1fr); }
+    .lab-search-btn { padding: 0 16px; }
+}
+
+/* Touch devices: no sticky hover lift after a tap. */
+@media (hover: none) {
+    .btn-view:hover { transform: none; }
 }

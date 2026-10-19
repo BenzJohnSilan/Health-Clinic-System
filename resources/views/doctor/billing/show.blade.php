@@ -257,6 +257,7 @@
                 @else
                     <form method="POST" action="{{ route('doctor.billing.payments.store', $invoice->id) }}" id="paymentForm">
                         @csrf
+                        <input type="hidden" name="submission_token" value="{{ old('submission_token', (string) \Illuminate\Support\Str::uuid()) }}">
 
                         <div class="pay-summary">
                             <div><span>Invoice No.</span><strong>{{ $invoice->invoice_no }}</strong></div>
@@ -321,7 +322,7 @@
                             </div>
                             <div class="payment-row__meta">
                                 {{ $payment->paid_at->format('M d, Y · h:i A') }}
-                                · Received by {{ $payment->receivedBy->first_name ?? '—' }}
+                                · Received by {{ $payment->receivedByName() }}
                                 @if($payment->payment_method === 'GCash')
                                     · Ref# {{ $payment->reference_number }}
                                 @endif

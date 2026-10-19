@@ -9,7 +9,7 @@
 <div class="container">
 
     {{-- ================= HEADER ================= --}}
-    <div class="page-header">
+    <div class="page-header page-header--list">
         <h1>Activity Logs</h1>
     </div>
 
@@ -21,7 +21,7 @@
             <div class="filter-grid">
 
                 {{-- Search --}}
-                <div class="filter-group">
+                <div class="filter-group filter-group--full">
                     <label for="search">Search</label>
                     <input
                         type="text"
@@ -33,7 +33,7 @@
                 </div>
 
                 {{-- Action --}}
-                <div class="filter-group">
+                <div class="filter-group filter-group--full">
                     <label for="action">Action</label>
                     <select id="action" name="action">
                         <option value="">All Actions</option>
@@ -115,7 +115,7 @@
         $activeFilters = array_filter([
             'search'    => request('search'),
             'action'    => request('action'),
-            'month'     => request('month') ? \Carbon\Carbon::create()->month($m)->format('F') : null,
+            'month'     => request('month') ? \Carbon\Carbon::create()->month((int) request('month'))->format('F') : null,
             'year'      => request('year'),
             'date_from' => request('date_from'),
             'date_to'   => request('date_to'),
@@ -196,6 +196,34 @@
 
         </table>
 
+    </div>
+
+    {{-- ================= CARDS (Mobile) =================
+         Phones (<= 640px) show these cards instead of the table. --}}
+    <div class="log-cards">
+        @forelse($logs as $index => $log)
+            <div class="log-card">
+                <div class="log-card-top">
+                    <span class="log-action-badge {{ strtolower(str_replace(' ', '-', $log->action)) }}">
+                        <i class='bx bx-history'></i>
+                        {{ $log->action }}
+                    </span>
+                    <span class="log-card-no">#{{ $logs->firstItem() + $index }}</span>
+                </div>
+
+                <div class="log-card-row">
+                    <span class="log-card-label">Details</span>
+                    <span class="log-card-value">{{ $log->details ?? '—' }}</span>
+                </div>
+
+                <div class="log-card-row">
+                    <span class="log-card-label">Date</span>
+                    <span class="log-card-value">{{ $log->created_at->format('M d, Y') }} &bull; {{ $log->created_at->format('h:i A') }}</span>
+                </div>
+            </div>
+        @empty
+            <div class="log-empty">No activity logs found.</div>
+        @endforelse
     </div>
 
     {{-- ================= PAGINATION ================= --}}

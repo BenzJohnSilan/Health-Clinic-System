@@ -10,7 +10,7 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        html, body { background: #e5e7eb; color: #000; }
+        html, body { background: #f4f0fa; color: #000; }
 
         body {
             font-family: 'Times New Roman', Times, 'Liberation Serif', serif;
@@ -19,12 +19,22 @@
             print-color-adjust: exact;
         }
 
-        /* ---------- screen-only action bar ---------- */
-        .mc-action-bar { display: flex; justify-content: center; gap: 10px; max-width: 794px; margin: 0 auto 16px; font-family: Arial, sans-serif; }
-        .btn-mc-print {
-            padding: 9px 22px; background: #000; color: #fff; border: none; border-radius: 6px;
-            font-size: 14px; font-weight: 600; cursor: pointer;
+        /* ---------- screen-only action bar (same look as the Prescription print) ---------- */
+        .mc-action-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            max-width: 794px; margin: 4px auto 14px; padding: 0 2px;
+            font-family: 'DM Sans', Arial, sans-serif;
         }
+        .btn-mc-back, .btn-mc-print {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 9px 20px; border-radius: 5px;
+            font-family: 'DM Sans', Arial, sans-serif; font-size: 13px; font-weight: 500;
+            cursor: pointer; transition: background .2s, color .2s;
+        }
+        .btn-mc-back { background: #fff; color: #6a0dad; border: 1.5px solid #6a0dad; }
+        .btn-mc-back:hover { background: #6a0dad; color: #fff; }
+        .btn-mc-print { background: #6a0dad; color: #fff; border: none; }
+        .btn-mc-print:hover { background: #783d7d; }
         .mc-sign-note { max-width: 794px; margin: 0 auto 14px; text-align: center; font: 13px Arial, sans-serif; color: #6b7280; }
 
         /* ---------- the sheet ---------- */
@@ -156,7 +166,22 @@
 
     {{-- Action bar (hidden on print) --}}
     <div class="mc-action-bar no-print">
-        <button class="btn-mc-print" onclick="window.print()">Print Certificate</button>
+        <button type="button" class="btn-mc-back" id="mcCloseBtn" data-fallback="{{ url()->previous() }}">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor" stroke-width="2" width="15" height="15">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+            Close
+        </button>
+
+        <button type="button" class="btn-mc-print" onclick="window.print()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor" stroke-width="2" width="15" height="15">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M9 16h6v5H9v-5z"/>
+            </svg>
+            Print / Save as PDF
+        </button>
     </div>
 
     <div class="mc-page" id="mc-printable">
@@ -219,6 +244,21 @@
         </div>
 
     </div>
+
+<script>
+    // Opened in its own tab: close it. If the browser won't let the script
+    // close the tab, go back to the page the user came from instead.
+    (function () {
+        var btn = document.getElementById('mcCloseBtn');
+        if (!btn) return;
+        btn.addEventListener('click', function () {
+            window.close();
+            setTimeout(function () {
+                if (!window.closed) { window.location.href = btn.dataset.fallback; }
+            }, 250);
+        });
+    })();
+</script>
 
 </body>
 </html>

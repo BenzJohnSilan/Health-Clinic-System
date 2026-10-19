@@ -110,11 +110,12 @@ class DoctorBillingController extends Controller
             'payment_method'   => 'required|in:Cash,GCash',
             'reference_number' => 'nullable|string|max:255',
             'notes'            => 'nullable|string|max:1000',
+            'submission_token' => 'nullable|string|max:64',
         ]);
 
         try {
             $payment = $this->billing->recordPayment($invoice, $request->only([
-                'amount', 'payment_method', 'reference_number', 'notes',
+                'amount', 'payment_method', 'reference_number', 'notes', 'submission_token',
             ]), auth()->user());
         } catch (ValidationException $e) {
             return redirect()
@@ -123,15 +124,19 @@ class DoctorBillingController extends Controller
                 ->withInput();
         }
 
-        UserLog::create([
-            'user_id' => auth()->id(),
-            'action'  => 'Recorded Payment',
-            'module'  => 'Billing & Payments',
-            'details' => 'Recorded ' . $payment->payment_method
-                       . ' payment of ₱' . number_format((float) $payment->amount, 2)
-                       . ' for invoice #' . $invoice->invoice_no
-                       . ' (' . $invoice->patientName() . ').',
-        ]);
+        if ($payment->wasRecentlyCreated) {
+            UserLog::create([
+                'user_id' => auth()->id(),
+                'action'  => 'Recorded Payment',
+                'module'  => 'Billing & Payments',
+                'details' => 'Recorded ' . $payment->payment_method
+                           . ' payment of ₱' . number_format((float) $payment->amount, 2)
+                           . ' (RCPT-' . str_pad($payment->id, 6, '0', STR_PAD_LEFT) . ')'
+                           . ($payment->reference_number ? ' ref ' . $payment->reference_number : '')
+                           . ' for invoice #' . $invoice->invoice_no
+                           . ' (' . $invoice->patientName() . ').',
+            ]);
+        }
 
         return redirect()
             ->route('doctor.billing.receipt', ['invoice' => $invoice->id, 'payment' => $payment->id])
@@ -148,6 +153,7 @@ class DoctorBillingController extends Controller
 
         $invoice->load(['items', 'patient', 'walkinPatient', 'appointment']);
         $payment->load('receivedBy');
+        $payment->setRelation('invoice', $invoice);
 
         return view('billing.receipt', [
             'invoice'   => $invoice,
